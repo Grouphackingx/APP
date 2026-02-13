@@ -211,12 +211,62 @@ export class OrdersService {
      * Get orders for a user.
      */
     async getUserOrders(userId: string) {
-        return this.prisma.order.findMany({
+        const orders = await this.prisma.order.findMany({
             where: { userId },
             include: {
                 tickets: true,
             },
             orderBy: { createdAt: 'desc' },
         });
+
+        // Enrich tickets with decoded QR info (event name, zone, seat, etc.)
+        const enrichedOrders = await Promise.all(
+            orders.map(async (order) => {
+                const enrichedTickets = await Promise.all(
+                    order.tickets.map(async (ticket) => {
+                        try {
+                            const decoded = this.jwtService.verify(ticket.qrCodeToken);
+                            // Fetch event title from DB
+                            let eventTitle = 'Evento';
+                            let eventDate = '';
+                            let eventLocation = '';
+                            if (decoded.eventId) {
+                                const event = await this.prisma.event.findUnique({
+                                    where: { id: decoded.eventId },
+                                    select: { title: true, date: true, location: true },
+                                });
+                                if (event) {
+                                    eventTitle = event.title;
+                                    eventDate = event.date.toISOString();
+                                    eventLocation = event.location;
+                                }
+                            }
+                            return {
+                                ...ticket,
+                                eventId: decoded.eventId || null,
+                                eventTitle,
+                                eventDate,
+                                eventLocation,
+                                zoneName: decoded.zoneName || 'General',
+                                seatNumber: decoded.seatNumber || '-',
+                            };
+                        } catch {
+                            return {
+                                ...ticket,
+                                eventId: null,
+                                eventTitle: 'Evento',
+                                eventDate: '',
+                                eventLocation: '',
+                                zoneName: 'General',
+                                seatNumber: '-',
+                            };
+                        }
+                    }),
+                );
+                return { ...order, tickets: enrichedTickets };
+            }),
+        );
+
+        return enrichedOrders;
     }
 }

@@ -9,3 +9,5 @@ import { PaymentsService } from './payments.service';
   exports: [PaymentsService],
 })
 export class PaymentsModule {}
+
+// TODO: Implementar pagos con Stripe
