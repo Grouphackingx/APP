@@ -1,0 +1,139 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { register, login } from '../../lib/api';
+import { useAuth } from '../../lib/AuthContext';
+
+export default function RegisterPage() {
+  const router = useRouter();
+  const { loginUser } = useAuth();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await register(name, email, password);
+      // Auto-login after registration
+      const result = await login(email, password);
+      loginUser(result.access_token, result.user);
+      router.push('/');
+    } catch (err: any) {
+      setError(err.message || 'Error al registrarse');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card animate-fade-in-up">
+        <h1>Crear Cuenta</h1>
+        <p className="auth-subtitle">Únete y descubre eventos increíbles</p>
+
+        {error && (
+          <div className="alert alert-error" id="register-error">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} id="register-form">
+          <div className="form-group">
+            <label htmlFor="name">Nombre Completo</label>
+            <input
+              id="name"
+              type="text"
+              placeholder="Tu nombre"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              autoComplete="name"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email">Correo Electrónico</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="tu@correo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Contraseña</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirm-password">Confirmar Contraseña</label>
+            <input
+              id="confirm-password"
+              type="password"
+              placeholder="Repite tu contraseña"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg btn-full"
+            disabled={loading}
+            id="register-submit"
+            style={{ marginTop: '0.5rem' }}
+          >
+            {loading ? (
+              <span
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <span
+                  className="spinner"
+                  style={{ width: 18, height: 18, borderWidth: 2 }}
+                />
+                Creando cuenta...
+              </span>
+            ) : (
+              '🎫 Crear Cuenta'
+            )}
+          </button>
+        </form>
+
+        <div className="auth-link">
+          ¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
