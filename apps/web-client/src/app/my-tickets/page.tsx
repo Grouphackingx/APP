@@ -5,6 +5,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { getUserOrders } from '../../lib/api';
 import Link from 'next/link';
 import QRCode from '../../components/QRCode';
+import './my-tickets.css';
 
 interface EnrichedTicket {
   id: string;

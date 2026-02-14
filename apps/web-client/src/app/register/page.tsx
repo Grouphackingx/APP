@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { register, login } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
+import '../login/auth.css';
 
 export default function RegisterPage() {
   const router = useRouter();

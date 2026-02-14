@@ -31,7 +31,7 @@ export default function QRCode({
         width: size,
         margin: 2,
         color: {
-          dark: isUsed ? '#64748b' : '#e2e8f0',
+          dark: isUsed ? '#64748b' : '#000000',
           light: '#00000000', // transparent background
         },
         errorCorrectionLevel: 'M',
