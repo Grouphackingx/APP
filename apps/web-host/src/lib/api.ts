@@ -51,3 +51,24 @@ export async function createEvent(data: any, token: string) {
     token,
   });
 }
+
+export async function uploadImage(file: File, token: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/upload`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Error uploading image' }));
+    throw new Error(error.message || 'Error uploading image');
+  }
+
+  const data = await res.json();
+  return data.url;
+}

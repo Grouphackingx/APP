@@ -1,6 +1,6 @@
 # PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
-**Última Actualización:** 12 de Febrero de 2026
+**Última Actualización:** 13 de Febrero de 2026
 **Estado del Proyecto:** ✅ Fases 1, 2 y 3 Completadas y Verificadas
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
@@ -59,7 +59,7 @@
 │   ├── web-client/              # ✅ Port 4200. Next.js Portal de Usuario.
 │   │   └── src/
 │   │       ├── app/
-│   │       │   ├── page.tsx             # Home: Hero + Catálogo de eventos
+│   │       │   ├── page.tsx             # Home: Hero + Catálogo de eventos + Buscador
 │   │       │   ├── login/page.tsx       # Formulario de login
 │   │       │   ├── register/page.tsx    # Formulario de registro
 │   │       │   ├── events/[id]/page.tsx # Detalle + Mapa de asientos interactivo
@@ -67,6 +67,8 @@
 │   │       ├── components/
 │   │       │   ├── Navbar.tsx           # Nav con link "Mis Tickets" (autenticado)
 │   │       │   ├── EventCard.tsx        # Card de evento para el catálogo
+│   │       │   ├── QRCode.tsx           # ✨ NUEVO: Generador QR real (qrcode lib)
+│   │       │   ├── SearchBar.tsx        # ✨ NUEVO: Barra de búsqueda con debounce
 │   │       │   ├── Footer.tsx           # Footer global
 │   │       │   └── Providers.tsx        # AuthProvider wrapper
 │   │       └── lib/
@@ -136,15 +138,16 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api
 
 ### A. Backend (NestJS API) — 7 módulos
 
-| Módulo       | Endpoints                                                                                      | Estado | Descripción                                       |
-| :----------- | :--------------------------------------------------------------------------------------------- | :----- | :------------------------------------------------ |
-| **Auth**     | `POST /auth/login`, `POST /auth/register`                                                      | ✅     | JWT Bearer tokens, bcrypt hashing                 |
-| **Events**   | `GET /events`, `GET /events/:id`, `POST /events`                                               | ✅     | CRUD con zonas, asientos auto-generados           |
-| **Orders**   | `POST /orders/lock-seats`, `POST /orders/unlock-seats`, `POST /orders/purchase`, `GET /orders` | ✅     | Redis locking (10min TTL), transacciones Prisma   |
-| **Payments** | Interno (no HTTP)                                                                              | ✅     | Simulación Stripe, siempre aprueba                |
-| **Tickets**  | `POST /tickets/validate`                                                                       | ✅     | Decodifica QR JWT, marca USED, previene doble uso |
-| **Prisma**   | Servicio global                                                                                | ✅     | PrismaClient inyectable                           |
-| **Redis**    | Servicio global                                                                                | ✅     | ioredis, lock/unlock/getSeatLockHolder            |
+| Módulo       | Endpoints                                                         | Estado | Descripción                                                        |
+| :----------- | :---------------------------------------------------------------- | :----- | :----------------------------------------------------------------- |
+| **Auth**     | `POST /auth/login`, `POST /auth/register`                         | ✅     | JWT Bearer tokens, bcrypt hashing                                  |
+| **Events**   | `GET /events?q=...`, `GET /events/:id`, `POST /events`            | ✅     | CRUD con zonas, asientos auto-generados, búsqueda por título/lugar |
+| **Upload**   | `POST /api/upload`, `GET /uploads/:file`                          | ✅     | Multer disk storage, ServeStatic root `/uploads`                   |
+| **Orders**   | `POST /orders/lock-seats`, `POST /orders/purchase`, `GET /orders` | ✅     | Redis locking (10min TTL), transacciones Prisma                    |
+| **Payments** | Interno (no HTTP)                                                 | ✅     | Simulación Stripe, siempre aprueba                                 |
+| **Tickets**  | `POST /tickets/validate`                                          | ✅     | Decodifica QR JWT, marca USED, previene doble uso                  |
+| **Prisma**   | Servicio global                                                   | ✅     | PrismaClient inyectable                                            |
+| **Redis**    | Servicio global                                                   | ✅     | ioredis, lock/unlock/getSeatLockHolder                             |
 
 ### B. Frontend Web Client (Next.js) — 5 páginas
 
@@ -305,10 +308,10 @@ cd apps/mobile-app && npx expo start
 - [ ] Panel de Admin (gestión global)
 - [ ] Reportes financieros para organizadores
 - [ ] Emails transaccionales (confirmación de compra)
-- [ ] Generar imagen QR real (librería `qrcode`) en la página "Mis Tickets"
-- [ ] Búsqueda y filtrado de eventos (por fecha, ubicación, categoría)
+- [x] ~~Generar imagen QR real (librería `qrcode`) en la página "Mis Tickets"~~ ✅
+- [x] ~~Búsqueda y filtrado de eventos (por fecha, ubicación, categoría)~~ ✅
 - [ ] Paginación en endpoints (eventos, órdenes)
-- [ ] Upload de imágenes de eventos
+- [x] ~~Upload de imágenes de eventos~~ ✅
 - [ ] Sistema de categorías de eventos
 
 ### Fase 5: Escalabilidad

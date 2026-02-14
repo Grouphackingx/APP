@@ -1,6 +1,6 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 12 de Febrero de 2026, 22:52  
+**Fecha de Última Actualización:** 13 de Febrero de 2026, 22:06  
 **Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2 y 3 Funcionando)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
@@ -160,12 +160,30 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
    - Tarjetas de ticket individual con zona, asiento, estado, sección QR, y link "Ver Evento"
    - Diseño responsive con tear-line effect en los tickets
 
-2. ✅ **API Orders enriquecida** — `GET /api/orders` ahora decodifica los QR JWT tokens de cada ticket para extraer y agregar:
+2. ✅ **QR Codes Reales** — Componente `QRCode.tsx` con librería `qrcode`:
+   - Genera QR codes escaneables a partir de los JWT tokens de cada ticket
+   - Efecto glow verde para tickets válidos, escala en grayscale para usados
+   - Animación pulse sutil en el label "Presenta este QR en la entrada"
+   - Manejo de errores con fallback visual
+
+3. ✅ **Búsqueda de Eventos** — Nuevo componente `SearchBar.tsx` integrado en HomePage:
+   - Filtro por título o ubicación (insensible a mayúsculas)
+   - Debounce de 500ms para optimizar peticiones
+   - Actualización de URL (`?q=...`) y estado vacío personalizado
+   - Estilo "Glassmorphism" flotante sobre el contenido
+
+4. ✅ **API Orders enriquecida** — `GET /api/orders` ahora decodifica los QR JWT tokens de cada ticket para extraer y agregar:
    - `eventTitle`, `eventDate`, `eventLocation`
    - `zoneName`, `seatNumber`
    - (El modelo Ticket no tiene relación directa con Seat, la info se extrae del JWT)
 
-3. ✅ **Botón "Mis Tickets"** en el Navbar — botón cyan que aparece solo cuando el usuario está autenticado
+5. ✅ **Upload de Imágenes** — Nueva funcionalidad completa para eventos:
+   - **Backend**: Endpoint `POST /api/upload` (Multer + DiskStorage)
+   - **Static Serving**: Imágenes accesibles en `http://localhost:3000/uploads/`
+   - **Frontend (Host)**: `CreateEventForm` actualizado con drag & drop y previsualización
+   - **Validación**: Límite de 5MB, solo imágenes (jpg/png)
+
+6. ✅ **Botón "Mis Tickets"** en el Navbar — botón cyan que aparece solo cuando el usuario está autenticado
 
 ### Correcciones previas:
 
@@ -192,14 +210,11 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
 
 ### Prioridad Alta
 
-- [ ] Generar imagen QR real con librería `qrcode` en la página "Mis Tickets"
+- [x] ~~Generar imagen QR real con librería `qrcode` en la página "Mis Tickets"~~ ✅
 - [ ] Integración real con Stripe (reemplazar el mock)
-- [ ] Búsqueda y filtrado de eventos (por fecha, ubicación, categoría)
-- [ ] Upload de imágenes para eventos (actualmente sin imagen)
-
-### Prioridad Media
-
-- [ ] Panel de Admin (gestión global de usuarios y eventos)
+- [x] ~~Búsqueda y filtrado de eventos (por fecha, ubicación, categoría)~~ ✅
+- [x] ~~Upload de imágenes para eventos (actualmente sin imagen)~~ ✅
+- [ ] Panel de Administración (dashboard de ventas, gestión de usuarios)
 - [ ] Emails transaccionales (confirmación de compra)
 - [ ] Reportes financieros para organizadores
 - [ ] Paginación en endpoints (eventos, órdenes)

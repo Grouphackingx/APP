@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createEvent } from '../lib/api';
+import { createEvent, uploadImage } from '../lib/api';
 
 interface ZoneInput {
   name: string;
@@ -22,9 +22,13 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   const [zones, setZones] = useState<ZoneInput[]>([
     { name: 'General', price: 25, capacity: 50 },
   ]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [message, setMessage] = useState<{
+    text: string;
+    type: 'error' | 'success';
+  } | null>(null);
 
   const addZone = () => {
     setZones([...zones, { name: '', price: 0, capacity: 10 }]);
@@ -49,19 +53,42 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
     setZones(updated);
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({ text: 'La imagen no debe superar 5MB', type: 'error' });
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setMessage(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setMessage(null);
     setLoading(true);
 
     try {
+      let imageUrl = '';
+
+      if (imageFile) {
+        try {
+          imageUrl = await uploadImage(imageFile, token);
+        } catch (uploadError: any) {
+          throw new Error(`Error subiendo imagen: ${uploadError.message}`);
+        }
+      }
+
       const eventData = {
         title,
         description,
         date: new Date(date).toISOString(),
         location,
         status: 'PUBLISHED',
+        imageUrl, // URL returned from backend
         zones: zones.map((z) => ({
           name: z.name,
           price: z.price,
@@ -70,10 +97,13 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
       };
 
       await createEvent(eventData, token);
-      setSuccess('🎉 ¡Evento creado exitosamente!');
+      setMessage({ text: '🎉 ¡Evento creado exitosamente!', type: 'success' });
       setTimeout(() => onSuccess(), 1500);
     } catch (err: any) {
-      setError(err.message || 'Error al crear evento');
+      setMessage({
+        text: err.message || 'Error al crear evento',
+        type: 'error',
+      });
     } finally {
       setLoading(false);
     }
@@ -81,8 +111,14 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
 
   return (
     <div className="form-card animate-fade-in-up">
-      {error && <div className="alert alert-error">⚠️ {error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {message && (
+        <div
+          className={`alert ${message.type === 'error' ? 'alert-error' : 'alert-success'}`}
+        >
+          {message.type === 'error' ? '⚠️ ' : ''}
+          {message.text}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -98,12 +134,42 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         </div>
 
         <div className="form-group">
+          <label>Imagen del Evento</label>
+          <div className="image-upload-container">
+            <input
+              type="file"
+              id="imageUpload"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="file-input"
+              hidden
+            />
+            <label htmlFor="imageUpload" className="file-label">
+              {imagePreview ? (
+                <div
+                  className="image-preview"
+                  style={{ backgroundImage: `url(${imagePreview})` }}
+                >
+                  <div className="image-overlay">Cambiar Imagen</div>
+                </div>
+              ) : (
+                <div className="upload-placeholder">
+                  <span>📸 Cargar Imagen</span>
+                  <small>(Max 5MB)</small>
+                </div>
+              )}
+            </label>
+          </div>
+        </div>
+
+        <div className="form-group">
           <label htmlFor="description">Descripción</label>
           <textarea
             id="description"
             placeholder="Describe tu evento..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            rows={3}
           />
         </div>
 
@@ -211,7 +277,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
           disabled={loading}
           style={{ marginTop: '1.5rem' }}
         >
-          {loading ? '⏳ Creando...' : '🚀 Crear Evento'}
+          {loading ? '⏳ Subiendo...' : '🚀 Crear Evento'}
         </button>
       </form>
     </div>

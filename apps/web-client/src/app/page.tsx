@@ -1,15 +1,21 @@
 import { getEvents } from '../lib/api';
 import { EventCard } from '../components/EventCard';
+import SearchBar from '../components/SearchBar';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
+export default async function HomePage(props: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const query = searchParams.q;
+
   let events: Awaited<ReturnType<typeof getEvents>> = [];
   let error = '';
 
   try {
-    events = await getEvents();
+    events = await getEvents(query);
   } catch (e: any) {
     error = e.message || 'No se pudieron cargar los eventos';
   }
@@ -45,7 +51,7 @@ export default async function HomePage() {
           <div className="hero-stats">
             <div className="hero-stat">
               <div className="stat-number">{events.length || '0'}</div>
-              <div className="stat-label">Eventos Activos</div>
+              <div className="stat-label">Eventos Encontrados</div>
             </div>
             <div className="hero-stat">
               <div className="stat-number">100%</div>
@@ -59,13 +65,20 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Search Bar */}
+      <SearchBar />
+
       {/* Events Section */}
       <section className="section" id="eventos">
         <div className="section-inner">
           <div className="section-header">
-            <h2>🎵 Próximos Eventos</h2>
+            <h2>
+              {query ? `🔍 Resultados para "${query}"` : '🎵 Próximos Eventos'}
+            </h2>
             <p>
-              No te pierdas las mejores experiencias. Asegura tu lugar ahora.
+              {query
+                ? 'Explora los eventos que coinciden con tu búsqueda.'
+                : 'No te pierdas las mejores experiencias. Asegura tu lugar ahora.'}
             </p>
           </div>
 
@@ -77,12 +90,26 @@ export default async function HomePage() {
             </div>
           ) : events.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">🎪</div>
-              <h3>Aún no hay eventos publicados</h3>
+              <div className="empty-icon">{query ? '🔍' : '🎪'}</div>
+              <h3>
+                {query
+                  ? 'No se encontraron eventos'
+                  : 'Aún no hay eventos publicados'}
+              </h3>
               <p>
-                Los organizadores están preparando experiencias increíbles.
-                ¡Vuelve pronto!
+                {query
+                  ? `No hay resultados para "${query}". Intenta con otra palabra clave.`
+                  : 'Los organizadores están preparando experiencias increíbles. ¡Vuelve pronto!'}
               </p>
+              {query && (
+                <Link
+                  href="/"
+                  className="btn btn-secondary"
+                  style={{ marginTop: '1rem' }}
+                >
+                  Ver Todos los Eventos
+                </Link>
+              )}
             </div>
           ) : (
             <div className="events-grid">

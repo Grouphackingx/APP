@@ -33,9 +33,20 @@ export class EventsService {
         });
     }
 
-    findAll() {
+    findAll(query?: string) {
+        const where: any = {};
+        
+        if (query) {
+            where.OR = [
+                { title: { contains: query, mode: 'insensitive' } },
+                { location: { contains: query, mode: 'insensitive' } },
+            ];
+        }
+
         return this.prisma.event.findMany({
+            where,
             include: { zones: true, organizer: { select: { name: true, email: true } } },
+            orderBy: { date: 'asc' },
         });
     }
 

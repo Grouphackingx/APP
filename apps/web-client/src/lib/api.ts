@@ -100,8 +100,9 @@ export interface EventItem {
   createdAt: string;
 }
 
-export async function getEvents(): Promise<EventItem[]> {
-  return fetchAPI<EventItem[]>('/events', { cache: 'no-store' });
+export async function getEvents(query?: string): Promise<EventItem[]> {
+  const url = query ? `/events?q=${encodeURIComponent(query)}` : '/events';
+  return fetchAPI<EventItem[]>(url, { cache: 'no-store' });
 }
 
 export async function getEventById(id: string): Promise<EventItem> {

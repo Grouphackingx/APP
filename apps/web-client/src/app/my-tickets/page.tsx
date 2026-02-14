@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/AuthContext';
 import { getUserOrders } from '../../lib/api';
 import Link from 'next/link';
+import QRCode from '../../components/QRCode';
 
 interface EnrichedTicket {
   id: string;
@@ -316,15 +317,14 @@ export default function MyTicketsPage() {
                             )}
                           </div>
 
-                          {/* QR Code visual representation */}
+                          {/* QR Code - Real */}
                           <div className="ticket-qr-section">
-                            <div className="ticket-qr-placeholder">
-                              <div className="qr-icon">📱</div>
-                              <span>Código QR</span>
-                              <span className="qr-id">
-                                #{ticket.id.slice(0, 8)}
-                              </span>
-                            </div>
+                            <QRCode
+                              value={ticket.qrCodeToken}
+                              size={180}
+                              ticketStatus={ticket.status}
+                              ticketId={ticket.id}
+                            />
                           </div>
 
                           {/* Tear line */}

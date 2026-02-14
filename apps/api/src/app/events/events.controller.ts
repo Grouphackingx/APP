@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -14,8 +14,8 @@ export class EventsController {
     }
 
     @Get()
-    findAll() {
-        return this.eventsService.findAll();
+    findAll(@Query('q') query?: string) {
+        return this.eventsService.findAll(query);
     }
 
     @Get(':id')
