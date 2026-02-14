@@ -1,6 +1,6 @@
 # PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
-**Última Actualización:** 13 de Febrero de 2026
+**Última Actualización:** 14 de Febrero de 2026
 **Estado del Proyecto:** ✅ Fases 1, 2 y 3 Completadas y Verificadas
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
@@ -333,3 +333,25 @@ cd apps/mobile-app && npx expo start
 - **Webpack NestJS**: Usa `npx -y webpack-cli` en `project.json` para asegurar que el build encuentra el CLI.
 - **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento se codifica en el QR JWT y se decodifica en runtime para el endpoint `GET /orders`.
 - **Evento "Borrador"**: Los eventos se crean con status `DRAFT` excepto cuando se especifica `PUBLISHED` en el body.
+
+---
+
+## 11. Registro de Cambios Recientes (13-14 Feb 2026)
+
+### Frontend (User Portal)
+
+- **Feature "My Tickets" Finalizada:**
+  - Implementada página `/my-tickets` con listado de órdenes y detalle de tickets.
+  - Generación de QR en cliente usando librería `qrcode`.
+  - Estilos específicos en `my-tickets.css` para evitar conflictos globales.
+  - Diseño responsive y "tear-line" visual.
+  - QR optimizado para legibilidad (dots negros, fondo blanco, centrado).
+- **Mejoras Visuales (Polishing):**
+  - **Auth Pages:** Nuevos estilos (`auth.css`) para Login y Register, corrigiendo layout y tarjetas.
+  - **Event Detail:** Eliminado estilo de "tarjeta flotante" para integración seamless con la página.
+  - **Grid de Tickets:** Ajustado ancho de tarjetas (max 240px) y márgenes para mejor UX.
+  - **Global CSS:** Limpieza de reglas conflictivas y duplicadas.
+
+### Backend (API)
+
+- **Orders Endpoint Updated:** `GET /orders` ahora decodifica el token QR para devolver `eventTitle`, `eventDate`, `eventLocation` y detalles de asiento (`zoneName`, `seatNumber`) directamente, facilitando el renderizado en frontend.
