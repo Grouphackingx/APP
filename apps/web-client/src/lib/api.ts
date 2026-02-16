@@ -92,6 +92,8 @@ export interface EventItem {
   description: string | null;
   date: string;
   location: string;
+  province?: string | null;
+  city?: string | null;
   imageUrl: string | null;
   mapUrl?: string | null;
   videoUrl?: string | null;

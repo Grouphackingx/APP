@@ -45,6 +45,8 @@ model Event {
   description String?
   date        DateTime
   location    String
+  province    String?
+  city        String?
   imageUrl    String?
   mapUrl      String?
   videoUrl    String?

@@ -14,11 +14,40 @@ interface CreateEventFormProps {
   onSuccess: () => void;
 }
 
+const ecuadorData: Record<string, string[]> = {
+  Azuay: ['Cuenca', 'Gualaceo', 'Paute'],
+  Bolívar: ['Guaranda', 'Chillanes', 'San Miguel'],
+  Cañar: ['Azogues', 'Biblián', 'La Troncal'],
+  Carchi: ['Tulcán', 'Montúfar', 'Espejo'],
+  Chimborazo: ['Riobamba', 'Guano', 'Colta'],
+  Cotopaxi: ['Latacunga', 'La Maná', 'Salcedo'],
+  'El Oro': ['Machala', 'Pasaje', 'Santa Rosa'],
+  Esmeraldas: ['Esmeraldas', 'Quinindé', 'Atacames'],
+  Galápagos: ['Puerto Baquerizo Moreno', 'Puerto Ayora'],
+  Guayas: ['Guayaquil', 'Samborondón', 'Durán', 'Milagro', 'Daule'],
+  Imbabura: ['Ibarra', 'Otavalo', 'Cotacachi'],
+  Loja: ['Loja', 'Catamayo', 'Saraguro'],
+  'Los Ríos': ['Babahoyo', 'Quevedo', 'Ventanas'],
+  Manabí: ['Portoviejo', 'Manta', 'Chone', 'Bahía de Caráquez'],
+  'Morona Santiago': ['Macas', 'Gualaquiza', 'Sucúa'],
+  Napo: ['Tena', 'Archidona', 'El Chaco'],
+  Orellana: ['Puerto Francisco de Orellana', 'La Joya de los Sachas'],
+  Pastaza: ['Puyo', 'Mera', 'Santa Clara'],
+  Pichincha: ['Quito', 'Cayambe', 'Rumiñahui'],
+  'Santa Elena': ['Santa Elena', 'La Libertad', 'Salinas'],
+  'Santo Domingo de los Tsáchilas': ['Santo Domingo'],
+  Sucumbíos: ['Nueva Loja', 'Shushufindi'],
+  Tungurahua: ['Ambato', 'Baños de Agua Santa', 'Pelileo'],
+  'Zamora Chinchipe': ['Zamora', 'Yantzaza'],
+};
+
 export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
+  const [province, setProvince] = useState('');
+  const [city, setCity] = useState('');
   const [mapEmbedCode, setMapEmbedCode] = useState('');
   const [videoEmbedCode, setVideoEmbedCode] = useState('');
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
@@ -137,6 +166,8 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         description,
         date: new Date(date).toISOString(),
         location,
+        province,
+        city,
         mapUrl: mapEmbedCode.match(/src="([^"]+)"/)?.[1] || mapEmbedCode,
         videoUrl: videoEmbedCode.match(/src="([^"]+)"/)?.[1] || videoEmbedCode,
         galleryUrls,
@@ -237,8 +268,51 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
               required
             />
           </div>
+        </div>
+
+        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="location">Ubicación *</label>
+            <label htmlFor="province">Provincia *</label>
+            <select
+              id="province"
+              value={province}
+              onChange={(e) => {
+                setProvince(e.target.value);
+                setCity('');
+              }}
+              required
+            >
+              <option value="">Selecciona una provincia</option>
+              {Object.keys(ecuadorData).map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="city">Ciudad *</label>
+            <select
+              id="city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+              disabled={!province}
+            >
+              <option value="">Selecciona una ciudad</option>
+              {province &&
+                ecuadorData[province as keyof typeof ecuadorData].map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="location">Dirección / Lugar *</label>
             <input
               id="location"
               type="text"

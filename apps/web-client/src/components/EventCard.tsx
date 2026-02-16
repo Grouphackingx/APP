@@ -64,6 +64,7 @@ export function EventCard({
           <span>
             <span className="meta-icon">📍</span>
             {event.location}
+            {event.city ? `, ${event.city}` : ''}
           </span>
         </div>
         <div className="event-card-footer">

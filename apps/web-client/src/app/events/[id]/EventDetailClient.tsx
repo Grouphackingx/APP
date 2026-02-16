@@ -125,6 +125,23 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                     <span className="info-item-value">{event.location}</span>
                   </div>
                 </div>
+
+                {(event.province || event.city) && (
+                  <div className="info-item">
+                    <div className="info-item-icon">🌍</div>
+                    <div className="info-item-content">
+                      <span className="info-item-label">
+                        Provincia / Ciudad
+                      </span>
+                      <span className="info-item-value">
+                        {event.province}
+                        {event.province && event.city ? ' - ' : ''}
+                        {event.city}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Placeholder Categories/Rating if available, assuming standard for now */}
                 <div className="info-item">
                   <div className="info-item-icon">🎭</div>

@@ -34,6 +34,14 @@ export class CreateEventDto {
 
     @IsString()
     @IsOptional()
+    province?: string;
+
+    @IsString()
+    @IsOptional()
+    city?: string;
+
+    @IsString()
+    @IsOptional()
     imageUrl?: string;
 
     @IsString()
