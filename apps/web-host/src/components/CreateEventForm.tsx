@@ -57,6 +57,11 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   ]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [seatingMapImageFile, setSeatingMapImageFile] = useState<File | null>(
+    null,
+  );
+  const [seatingMapImagePreview, setSeatingMapImagePreview] =
+    useState<string>('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
@@ -89,12 +94,30 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setMessage({ text: 'La imagen no debe superar 5MB', type: 'error' });
+      if (file.size > 1 * 1024 * 1024) {
+        setMessage({ text: 'La imagen no debe superar 1MB', type: 'error' });
         return;
       }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+      setMessage(null);
+    }
+  };
+
+  const handleSeatingMapImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({
+          text: 'La imagen del croquis no debe superar 5MB',
+          type: 'error',
+        });
+        return;
+      }
+      setSeatingMapImageFile(file);
+      setSeatingMapImagePreview(URL.createObjectURL(file));
       setMessage(null);
     }
   };
@@ -138,6 +161,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
 
     try {
       let imageUrl = '';
+      let seatingMapImageUrl = '';
 
       if (imageFile) {
         try {
@@ -146,6 +170,14 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
           throw new Error(
             `Error subiendo imagen portada: ${uploadError.message}`,
           );
+        }
+      }
+
+      if (seatingMapImageFile) {
+        try {
+          seatingMapImageUrl = await uploadImage(seatingMapImageFile, token);
+        } catch (uploadError: any) {
+          throw new Error(`Error subiendo croquis: ${uploadError.message}`);
         }
       }
 
@@ -172,7 +204,8 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         videoUrl: videoEmbedCode.match(/src="([^"]+)"/)?.[1] || videoEmbedCode,
         galleryUrls,
         status: 'PUBLISHED',
-        imageUrl, // URL returned from backend
+        imageUrl,
+        seatingMapImageUrl,
         zones: zones.map((z) => ({
           name: z.name,
           price: z.price,
@@ -441,6 +474,37 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
 
         {/* Zones */}
         <div className="form-section">
+          <div className="form-group">
+            <label>Croquis de Localidades (Opcional)</label>
+            <div className="image-upload-container">
+              <input
+                type="file"
+                id="seatingMapUpload"
+                accept="image/*"
+                onChange={handleSeatingMapImageChange}
+                className="file-input"
+                hidden
+              />
+              <label htmlFor="seatingMapUpload" className="file-label">
+                {seatingMapImagePreview ? (
+                  <div
+                    className="image-preview"
+                    style={{
+                      backgroundImage: `url(${seatingMapImagePreview})`,
+                    }}
+                  >
+                    <div className="image-overlay">Cambiar Croquis</div>
+                  </div>
+                ) : (
+                  <div className="upload-placeholder">
+                    <span>🗺️ Cargar Croquis</span>
+                    <small>(Max 1MB)</small>
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
+
           <div
             style={{
               display: 'flex',

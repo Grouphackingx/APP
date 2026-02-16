@@ -46,6 +46,10 @@ export class CreateEventDto {
 
     @IsString()
     @IsOptional()
+    seatingMapImageUrl?: string;
+
+    @IsString()
+    @IsOptional()
     mapUrl?: string;
 
     @IsString()

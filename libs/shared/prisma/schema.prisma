@@ -48,6 +48,7 @@ model Event {
   province    String?
   city        String?
   imageUrl    String?
+  seatingMapImageUrl String?
   mapUrl      String?
   videoUrl    String?
   galleryUrls String[]

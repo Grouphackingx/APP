@@ -361,6 +361,23 @@ export function EventDetailClient({ event }: { event: EventItem }) {
               <div className="tickets-sidebar-card">
                 <div className="tickets-sidebar-header">Localidades</div>
 
+                {event.seatingMapImageUrl && (
+                  <div
+                    className="seating-map-container"
+                    style={{ marginBottom: '1.5rem', textAlign: 'center' }}
+                  >
+                    <img
+                      src={event.seatingMapImageUrl}
+                      alt="Mapa de Localidades"
+                      style={{
+                        maxWidth: '100%',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border-color)',
+                      }}
+                    />
+                  </div>
+                )}
+
                 {!user && (
                   <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
                     <p
