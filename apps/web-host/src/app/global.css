@@ -3,14 +3,14 @@
 /* ===== CSS Custom Properties ===== */
 :root {
   /* Brand Colors - Green Theme */
-  --color-primary: #388c37;
+  --color-primary: #6AC44D;
   --color-primary-light: #4caf50;
   --color-primary-dark: #2e7031;
   --color-secondary: #0A0B0D;     /* Deep Black */
   --color-secondary-light: #1A1C1E;
-  --color-accent: #388c37;
+  --color-accent: #6AC44D;
   --color-accent-light: #4caf50;
-  --color-success: #388c37;
+  --color-success: #6AC44D;
   --color-error: #ef4444;
   
   /* Dark Theme Palette */
@@ -20,12 +20,12 @@
   --bg-card-hover: #1A1B1D; /* Card Hover */
   --bg-sidebar: #121314;    /* Sidebar specific */
   --bg-glass: rgba(18, 19, 20, 0.85);
-  --bg-glass-light: rgba(56, 140, 55, 0.08); /* Green tint */
+  --bg-glass-light: rgba(106, 196, 77, 0.08); /* Green tint */
   --bg-input: #121314;
   
   /* Borders */
   --border-color: #232426; 
-  --border-color-hover: #388c37;
+  --border-color-hover: #6AC44D;
 
   /* Typography */
   --text-primary: #FFFFFF;
@@ -47,7 +47,7 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 20px rgba(56, 140, 55, 0.2); 
+  --shadow-glow: 0 0 20px rgba(106, 196, 77, 0.2); 
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);

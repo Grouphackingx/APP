@@ -62,8 +62,6 @@ export default function MyTicketsPage() {
   const { user, token, isLoading: authLoading } = useAuth();
   const [orders, setOrders] = useState<OrderWithTickets[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-
   useEffect(() => {
     async function fetchOrders() {
       if (!token) return;
@@ -92,6 +90,49 @@ export default function MyTicketsPage() {
     (sum, o) => sum + o.tickets.filter((t) => t.status === 'USED').length,
     0,
   );
+
+  const groupedEvents = orders.reduce(
+    (acc, order) => {
+      if (!order.tickets || order.tickets.length === 0) return acc;
+
+      // Assuming all tickets in an order belong to the same event
+      const firstTicket = order.tickets[0];
+      const eventId = firstTicket.eventId || 'unknown';
+
+      if (!acc[eventId]) {
+        acc[eventId] = {
+          eventId,
+          eventTitle: firstTicket.eventTitle || 'Evento Desconocido',
+          eventDate: firstTicket.eventDate,
+          eventLocation: firstTicket.eventLocation,
+          totalAmount: 0,
+          tickets: [],
+          orderIds: [],
+        };
+      }
+
+      acc[eventId].totalAmount += Number(order.totalAmount);
+      acc[eventId].tickets.push(...order.tickets);
+      acc[eventId].orderIds.push(order.id);
+
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        eventId: string;
+        eventTitle: string;
+        eventDate: string;
+        eventLocation: string;
+        totalAmount: number;
+        tickets: EnrichedTicket[];
+        orderIds: string[];
+      }
+    >,
+  );
+
+  const eventGroups = Object.values(groupedEvents);
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
   if (authLoading) {
     return (
@@ -178,12 +219,12 @@ export default function MyTicketsPage() {
         </div>
       </div>
 
-      {/* Orders List */}
+      {/* Events List */}
       {loading ? (
         <div className="loading-container">
           <div className="spinner" />
         </div>
-      ) : orders.length === 0 ? (
+      ) : eventGroups.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">🎪</div>
           <h3>Aún no tienes tickets</h3>
@@ -198,45 +239,45 @@ export default function MyTicketsPage() {
         </div>
       ) : (
         <div className="orders-list">
-          {orders.map((order, idx) => {
-            const isExpanded = expandedOrder === order.id;
-            const eventTitle = order.tickets[0]?.eventTitle || 'Evento';
-            const eventDate = order.tickets[0]?.eventDate || '';
-            const eventLocation = order.tickets[0]?.eventLocation || '';
-            const eventId = order.tickets[0]?.eventId;
+          {eventGroups.map((group, idx) => {
+            const isExpanded = expandedEventId === group.eventId;
 
             return (
               <div
-                key={order.id}
+                key={group.eventId}
                 className={`order-card animate-fade-in-up stagger-${Math.min(idx + 1, 6)}`}
               >
-                {/* Order Header */}
+                {/* Event Header */}
                 <div
                   className="order-card-header"
-                  onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                  onClick={() =>
+                    setExpandedEventId(isExpanded ? null : group.eventId)
+                  }
                 >
                   <div className="order-event-info">
                     <div className="order-event-icon">🎵</div>
                     <div>
-                      <h3>{eventTitle}</h3>
+                      <h3>{group.eventTitle}</h3>
                       <div className="order-event-meta">
-                        {eventDate && (
+                        {group.eventDate && (
                           <span>
-                            📅 {formatDate(eventDate)} ⏰{' '}
-                            {formatTime(eventDate)}
+                            📅 {formatDate(group.eventDate)} ⏰{' '}
+                            {formatTime(group.eventDate)}
                           </span>
                         )}
-                        {eventLocation && <span>📍 {eventLocation}</span>}
+                        {group.eventLocation && (
+                          <span>📍 {group.eventLocation}</span>
+                        )}
                       </div>
                     </div>
                   </div>
                   <div className="order-summary-right">
                     <div className="order-amount">
-                      ${Number(order.totalAmount).toFixed(2)}
+                      ${group.totalAmount.toFixed(2)}
                     </div>
                     <div className="order-ticket-count">
-                      {order.tickets.length}{' '}
-                      {order.tickets.length === 1 ? 'ticket' : 'tickets'}
+                      {group.tickets.length}{' '}
+                      {group.tickets.length === 1 ? 'ticket' : 'tickets'}
                     </div>
                     <div className="order-expand-icon">
                       {isExpanded ? '▲' : '▼'}
@@ -244,33 +285,24 @@ export default function MyTicketsPage() {
                   </div>
                 </div>
 
-                {/* Order Details (expanded) */}
+                {/* Event Details (expanded) */}
                 {isExpanded && (
                   <div className="order-card-details animate-fade-in">
                     <div className="order-meta-row">
                       <span>
-                        <strong>Orden:</strong> #{order.id.slice(0, 8)}
+                        <strong>Event ID:</strong> {group.eventId.slice(0, 8)}
+                        ...
                       </span>
                       <span>
-                        <strong>Fecha de compra:</strong>{' '}
-                        {formatDateTime(order.createdAt)}
-                      </span>
-                      <span
-                        className={`order-status ${
-                          order.status === 'COMPLETED' ? 'status-completed' : ''
-                        }`}
-                      >
-                        {order.status === 'COMPLETED'
-                          ? '✅ Completada'
-                          : order.status}
+                        <strong>Total Tickets:</strong> {group.tickets.length}
                       </span>
                     </div>
 
                     {/* Tickets */}
                     <div className="tickets-grid">
-                      {order.tickets.map((ticket) => (
+                      {group.tickets.map((ticket, tIdx) => (
                         <div
-                          key={ticket.id}
+                          key={ticket.id || tIdx}
                           className={`ticket-card ${
                             ticket.status === 'USED'
                               ? 'ticket-used'
@@ -332,9 +364,9 @@ export default function MyTicketsPage() {
                           <div className="ticket-tear-line" />
                           <div className="ticket-footer">
                             <span>ID: {ticket.id.slice(0, 12)}...</span>
-                            {eventId && (
+                            {group.eventId && (
                               <Link
-                                href={`/events/${eventId}`}
+                                href={`/events/${group.eventId}`}
                                 className="ticket-link"
                               >
                                 Ver Evento →

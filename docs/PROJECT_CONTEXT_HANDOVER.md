@@ -355,3 +355,32 @@ cd apps/mobile-app && npx expo start
 ### Backend (API)
 
 - **Orders Endpoint Updated:** `GET /orders` ahora decodifica el token QR para devolver `eventTitle`, `eventDate`, `eventLocation` y detalles de asiento (`zoneName`, `seatNumber`) directamente, facilitando el renderizado en frontend.
+
+## 12. Registro de Cambios Recientes (15-16 Feb 2026)
+
+### Sistema de Pagos
+
+- **Reversión de Stripe:** Se ha revertido la integración de Stripe para priorizar la estabilidad del desarrollo.
+  - El sistema usa actualmente el **Mock Payment Service** (siempre aprueba).
+  - Eliminada dependencia `@stripe/stripe-js` del flujo principal por ahora.
+
+### Frontend (User Portal)
+
+- **Rediseño de Marca:**
+  - Actualizado color primario a un verde más vibrante: `#6AC44D`.
+  - Ajustados todos los componentes (botones, badges, links) para usar la nueva paleta.
+
+- **Página de Detalle de Evento (`/events/[id]`):**
+  - **Layout de 2 Columnas:** Separación clara entre información del evento (izquierda) y selección de tickets (derecha sticky).
+  - **Experiencia Inmersiva:** Eliminado el contenedor tipo "tarjeta" para que el contenido fluya en la página completa.
+  - **Mejoras de UI:** Títulos más grandes, grid de información con iconos, y alertas de estado mejoradas.
+
+- **Página de Inicio (Landing):**
+  - **Tarjetas de Evento:** Ahora tienen bordes redondeados (`border-radius-lg`), padding interno (`1.5rem`), y efectos de hover/zoom en la imagen.
+  - **Tipografía:** Mejor jerarquía visual en títulos y metadatos.
+
+- **Página "Mis Tickets" (`/my-tickets`):**
+  - **Agrupación por Evento:** Las órdenes ahora se agrupan por `eventId`.
+    - Si un usuario compra varias veces para el mismo evento, se muestra una sola tarjeta consolidada.
+    - El total ($) y la cantidad de tickets se suman automáticamente.
+  - **Visualización Unificada:** Al expandir, se muestran todos los tickets de todas las órdenes asociadas a ese evento en una sola grid.
