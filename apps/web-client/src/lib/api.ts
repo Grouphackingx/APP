@@ -93,6 +93,9 @@ export interface EventItem {
   date: string;
   location: string;
   imageUrl: string | null;
+  mapUrl?: string | null;
+  videoUrl?: string | null;
+  galleryUrls?: string[];
   status: string;
   organizerId: string;
   organizer?: EventOrganizer;

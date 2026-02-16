@@ -158,6 +158,131 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                 {event.description || 'Sin descripción disponible.'}
               </div>
 
+              {/* Map Section */}
+              {event.mapUrl && (
+                <div className="event-detail-map" style={{ marginTop: '2rem' }}>
+                  <h3
+                    style={{
+                      fontSize: '1.5rem',
+                      marginBottom: '1rem',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    Ubicación
+                  </h3>
+                  <div
+                    style={{
+                      overflow: 'hidden',
+                      borderRadius: 'var(--radius-xl)',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-secondary)',
+                      aspectRatio: '21/9',
+                    }}
+                  >
+                    <iframe
+                      src={event.mapUrl}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Mapa del evento"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Video Section */}
+              {event.videoUrl && (
+                <div
+                  className="event-detail-video"
+                  style={{ marginTop: '2rem' }}
+                >
+                  <h3
+                    style={{
+                      fontSize: '1.5rem',
+                      marginBottom: '1rem',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    Video
+                  </h3>
+                  <div
+                    style={{
+                      overflow: 'hidden',
+                      borderRadius: 'var(--radius-xl)',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-secondary)',
+                      aspectRatio: '16/9',
+                    }}
+                  >
+                    <iframe
+                      src={
+                        event.videoUrl.includes('youtube.com/watch?v=')
+                          ? event.videoUrl.replace('watch?v=', 'embed/')
+                          : event.videoUrl
+                      }
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      title="Video del evento"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Gallery Section */}
+              {event.galleryUrls && event.galleryUrls.length > 0 && (
+                <div
+                  className="event-detail-gallery"
+                  style={{ marginTop: '2rem' }}
+                >
+                  <h3
+                    style={{
+                      fontSize: '1.5rem',
+                      marginBottom: '1rem',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    Galería
+                  </h3>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2rem',
+                    }}
+                  >
+                    {event.galleryUrls.map((url, i) => (
+                      <div
+                        key={i}
+                        className="gallery-item"
+                        style={{
+                          borderRadius: 'var(--radius-xl)',
+                          overflow: 'hidden',
+                          border: '1px solid var(--border-color)',
+                          background: 'var(--bg-secondary)',
+                          position: 'relative',
+                        }}
+                      >
+                        <img
+                          src={url}
+                          alt={`Galería ${i + 1}`}
+                          style={{
+                            width: '100%',
+                            height: 'auto',
+                            display: 'block',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Error Alert */}
               {error && (
                 <div

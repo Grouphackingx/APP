@@ -36,6 +36,19 @@ export class CreateEventDto {
     @IsOptional()
     imageUrl?: string;
 
+    @IsString()
+    @IsOptional()
+    mapUrl?: string;
+
+    @IsString()
+    @IsOptional()
+    videoUrl?: string;
+
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    galleryUrls?: string[];
+
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateZoneDto)

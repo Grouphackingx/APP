@@ -19,6 +19,10 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
+  const [mapEmbedCode, setMapEmbedCode] = useState('');
+  const [videoEmbedCode, setVideoEmbedCode] = useState('');
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [zones, setZones] = useState<ZoneInput[]>([
     { name: 'General', price: 25, capacity: 50 },
   ]);
@@ -66,6 +70,38 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
     }
   };
 
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      if (files.length + galleryFiles.length > 3) {
+        setMessage({ text: 'Máximo 3 imágenes en la galería', type: 'error' });
+        return;
+      }
+
+      const newFiles = Array.from(files);
+      const invalidSize = newFiles.some((f) => f.size > 5 * 1024 * 1024);
+      if (invalidSize) {
+        setMessage({
+          text: 'Alguna imagen supera los 5MB',
+          type: 'error',
+        });
+        return;
+      }
+
+      setGalleryFiles([...galleryFiles, ...newFiles]);
+      setGalleryPreviews([
+        ...galleryPreviews,
+        ...newFiles.map((f) => URL.createObjectURL(f)),
+      ]);
+      setMessage(null);
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setGalleryFiles(galleryFiles.filter((_, i) => i !== index));
+    setGalleryPreviews(galleryPreviews.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -78,7 +114,21 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         try {
           imageUrl = await uploadImage(imageFile, token);
         } catch (uploadError: any) {
-          throw new Error(`Error subiendo imagen: ${uploadError.message}`);
+          throw new Error(
+            `Error subiendo imagen portada: ${uploadError.message}`,
+          );
+        }
+      }
+
+      const galleryUrls = [];
+      if (galleryFiles.length > 0) {
+        try {
+          for (const file of galleryFiles) {
+            const url = await uploadImage(file, token);
+            galleryUrls.push(url);
+          }
+        } catch (uploadError: any) {
+          throw new Error(`Error subiendo galería: ${uploadError.message}`);
         }
       }
 
@@ -87,6 +137,9 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         description,
         date: new Date(date).toISOString(),
         location,
+        mapUrl: mapEmbedCode.match(/src="([^"]+)"/)?.[1] || mapEmbedCode,
+        videoUrl: videoEmbedCode.match(/src="([^"]+)"/)?.[1] || videoEmbedCode,
+        galleryUrls,
         status: 'PUBLISHED',
         imageUrl, // URL returned from backend
         zones: zones.map((z) => ({
@@ -194,6 +247,121 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
               onChange={(e) => setLocation(e.target.value)}
               required
             />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="mapEmbedCode">
+            Mapa de Google Maps (Embed Code o URL)
+          </label>
+          <input
+            id="mapEmbedCode"
+            type="text"
+            placeholder='Pega aquí el código <iframe src="..."> o la URL del mapa embebido'
+            value={mapEmbedCode}
+            onChange={(e) => setMapEmbedCode(e.target.value)}
+          />
+          <small className="form-text text-muted">
+            Ve a Google Maps → Compartir → Insertar un mapa → Copiar HTML.
+          </small>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="videoEmbedCode">
+            Video (Embed Code o URL) - Opcional
+          </label>
+          <input
+            id="videoEmbedCode"
+            type="text"
+            placeholder='Pega aquí el código <iframe src="...">, URL de YouTube, etc.'
+            value={videoEmbedCode}
+            onChange={(e) => setVideoEmbedCode(e.target.value)}
+          />
+          <small className="form-text text-muted">
+            Soporta enlaces de YouTube, Vimeo, Facebook, etc.
+          </small>
+        </div>
+
+        <div className="form-group">
+          <label>Galería de Imágenes (Opcional - Max 3)</label>
+          <div
+            className="gallery-upload-container"
+            style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}
+          >
+            {galleryPreviews.map((preview, i) => (
+              <div
+                key={i}
+                className="gallery-preview-item"
+                style={{ position: 'relative', width: 100, height: 100 }}
+              >
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundImage: `url(${preview})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    borderRadius: 'var(--radius-md)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeGalleryImage(i)}
+                  style={{
+                    position: 'absolute',
+                    top: -5,
+                    right: -5,
+                    background: 'red',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: 20,
+                    height: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  X
+                </button>
+              </div>
+            ))}
+            {galleryFiles.length < 3 && (
+              <>
+                <input
+                  type="file"
+                  id="galleryUpload"
+                  accept="image/*"
+                  multiple
+                  onChange={handleGalleryChange}
+                  className="file-input"
+                  hidden
+                />
+                <label
+                  htmlFor="galleryUpload"
+                  className="file-label"
+                  style={{
+                    width: 100,
+                    height: 100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px dashed var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    background: 'var(--bg-secondary)',
+                  }}
+                >
+                  <span
+                    style={{ fontSize: '2rem', color: 'var(--text-muted)' }}
+                  >
+                    +
+                  </span>
+                </label>
+              </>
+            )}
           </div>
         </div>
 

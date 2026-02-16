@@ -46,6 +46,9 @@ model Event {
   date        DateTime
   location    String
   imageUrl    String?
+  mapUrl      String?
+  videoUrl    String?
+  galleryUrls String[]
   status      EventStatus @default(DRAFT)
   
   organizerId String
