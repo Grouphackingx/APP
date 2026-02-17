@@ -96,6 +96,7 @@ export interface EventItem {
   city?: string | null;
   imageUrl: string | null;
   seatingMapImageUrl?: string | null;
+  hasSeatingChart?: boolean;
   mapUrl?: string | null;
   videoUrl?: string | null;
   galleryUrls?: string[];

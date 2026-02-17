@@ -421,49 +421,160 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                         <span>${Number(zone.price).toFixed(2)}</span>
                       </div>
 
-                      {zone.seats && zone.seats.length > 0 ? (
-                        <div className="zone-seats" style={{ gap: '0.25rem' }}>
-                          {zone.seats.map((seat) => {
-                            const isSold =
-                              seat.isSold || soldSeatIds.includes(seat.id);
-                            const isSelected = selectedSeats.some(
-                              (s) => s.seatId === seat.id,
-                            );
-                            return (
-                              <button
-                                key={seat.id}
-                                className={`seat ${isSold ? 'seat-sold' : isSelected ? 'seat-selected' : 'seat-available'}`}
-                                onClick={() =>
-                                  user &&
-                                  !isSold &&
-                                  toggleSeat(
-                                    seat,
-                                    zone.name,
-                                    Number(zone.price),
-                                  )
-                                }
-                                disabled={isSold || !user}
-                                style={{
-                                  width: 28,
-                                  height: 28,
-                                  fontSize: '0.6rem',
-                                }} // Smaller seats for sidebar
-                                title={`Asiento ${seat.number}`}
-                              >
-                                {seat.number}
-                              </button>
-                            );
-                          })}
-                        </div>
+                      {event.hasSeatingChart !== false ? (
+                        /* Assigned Seating Logic */
+                        zone.seats && zone.seats.length > 0 ? (
+                          <div
+                            className="zone-seats"
+                            style={{
+                              gap: '0.25rem',
+                              flexWrap: 'wrap',
+                              display: 'flex',
+                            }}
+                          >
+                            {zone.seats.map((seat) => {
+                              const isSold =
+                                seat.isSold || soldSeatIds.includes(seat.id);
+                              const isSelected = selectedSeats.some(
+                                (s) => s.seatId === seat.id,
+                              );
+                              return (
+                                <button
+                                  key={seat.id}
+                                  className={`seat ${isSold ? 'seat-sold' : isSelected ? 'seat-selected' : 'seat-available'}`}
+                                  onClick={() =>
+                                    user &&
+                                    !isSold &&
+                                    toggleSeat(
+                                      seat,
+                                      zone.name,
+                                      Number(zone.price),
+                                    )
+                                  }
+                                  disabled={isSold || !user}
+                                  style={{
+                                    width: 28,
+                                    height: 28,
+                                    fontSize: '0.6rem',
+                                  }}
+                                  title={`Asiento ${seat.number}`}
+                                >
+                                  {seat.number}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              fontSize: '0.8rem',
+                              color: 'var(--text-muted)',
+                            }}
+                          >
+                            No hay asientos configurados
+                          </div>
+                        )
                       ) : (
-                        /* General Admission logic would go here, currently assuming seated for demo */
-                        <div
-                          style={{
-                            fontSize: '0.8rem',
-                            color: 'var(--text-muted)',
-                          }}
-                        >
-                          Entrada General
+                        /* General Admission Logic */
+                        <div className="ga-selector">
+                          {(() => {
+                            const availableSeats = (zone.seats || []).filter(
+                              (s) => !s.isSold && !soldSeatIds.includes(s.id),
+                            );
+                            const currentQty = selectedSeats.filter(
+                              (s) => s.zoneName === zone.name,
+                            ).length;
+
+                            return (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: '0.8rem',
+                                    color: 'var(--text-muted)',
+                                    marginBottom: '0.5rem',
+                                  }}
+                                >
+                                  Disponibles: {availableSeats.length}
+                                </div>
+                                {user ? (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                    }}
+                                  >
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      disabled={currentQty === 0}
+                                      onClick={() => {
+                                        // Remove last selected seat from this zone
+                                        const seatsInZone =
+                                          selectedSeats.filter(
+                                            (s) => s.zoneName === zone.name,
+                                          );
+                                        if (seatsInZone.length > 0) {
+                                          const lastSeat =
+                                            seatsInZone[seatsInZone.length - 1];
+                                          // Toggle off (remove)
+                                          setSelectedSeats((prev) =>
+                                            prev.filter(
+                                              (s) =>
+                                                s.seatId !== lastSeat.seatId,
+                                            ),
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      -
+                                    </button>
+                                    <span
+                                      style={{
+                                        fontWeight: 600,
+                                        minWidth: '20px',
+                                        textAlign: 'center',
+                                      }}
+                                    >
+                                      {currentQty}
+                                    </span>
+                                    <button
+                                      className="btn btn-secondary btn-sm"
+                                      disabled={
+                                        availableSeats.length <= currentQty
+                                      }
+                                      onClick={() => {
+                                        // Add next available seat
+                                        const availableInZone = (
+                                          zone.seats || []
+                                        ).filter(
+                                          (s) =>
+                                            !s.isSold &&
+                                            !soldSeatIds.includes(s.id) &&
+                                            !selectedSeats.some(
+                                              (sel) => sel.seatId === s.id,
+                                            ),
+                                        );
+                                        if (availableInZone.length > 0) {
+                                          const nextSeat = availableInZone[0];
+                                          toggleSeat(
+                                            nextSeat,
+                                            zone.name,
+                                            Number(zone.price),
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: '0.8rem' }}>
+                                    Inicia sesión para comprar
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>

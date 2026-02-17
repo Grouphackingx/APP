@@ -62,6 +62,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   );
   const [seatingMapImagePreview, setSeatingMapImagePreview] =
     useState<string>('');
+  const [hasSeatingChart, setHasSeatingChart] = useState(true);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
@@ -206,6 +207,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         status: 'PUBLISHED',
         imageUrl,
         seatingMapImageUrl,
+        hasSeatingChart,
         zones: zones.map((z) => ({
           name: z.name,
           price: z.price,
@@ -475,35 +477,68 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         {/* Zones */}
         <div className="form-section">
           <div className="form-group">
-            <label>Croquis de Localidades (Opcional)</label>
-            <div className="image-upload-container">
-              <input
-                type="file"
-                id="seatingMapUpload"
-                accept="image/*"
-                onChange={handleSeatingMapImageChange}
-                className="file-input"
-                hidden
-              />
-              <label htmlFor="seatingMapUpload" className="file-label">
-                {seatingMapImagePreview ? (
-                  <div
-                    className="image-preview"
-                    style={{
-                      backgroundImage: `url(${seatingMapImagePreview})`,
-                    }}
-                  >
-                    <div className="image-overlay">Cambiar Croquis</div>
-                  </div>
-                ) : (
-                  <div className="upload-placeholder">
-                    <span>🗺️ Cargar Croquis</span>
-                    <small>(Max 1MB)</small>
-                  </div>
-                )}
-              </label>
+            <label className="form-label">Tipo de Localidad</label>
+            <div
+              className="eventType-toggle"
+              style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}
+            >
+              <button
+                type="button"
+                className={`btn ${hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setHasSeatingChart(true)}
+              >
+                🪑 Asientos Numerados
+              </button>
+              <button
+                type="button"
+                className={`btn ${!hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setHasSeatingChart(false)}
+              >
+                🎫 Entradas
+              </button>
             </div>
+            <p
+              className="form-text text-muted"
+              style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}
+            >
+              {hasSeatingChart
+                ? 'Los usuarios seleccionarán sus asientos específicos desde un mapa interactivo.'
+                : 'Los usuarios solo seleccionarán la cantidad de entradas para cada zona/área.'}
+            </p>
           </div>
+
+          {hasSeatingChart && (
+            <div className="form-group">
+              <label>Croquis de Localidades (Opcional)</label>
+              <div className="image-upload-container">
+                <input
+                  type="file"
+                  id="seatingMapUpload"
+                  accept="image/*"
+                  onChange={handleSeatingMapImageChange}
+                  className="file-input"
+                  hidden
+                />
+                <label htmlFor="seatingMapUpload" className="file-label">
+                  {seatingMapImagePreview ? (
+                    <div
+                      className="image-preview"
+                      style={{
+                        backgroundImage: `url(${seatingMapImagePreview})`,
+                      }}
+                    >
+                      <div className="image-overlay">Cambiar Croquis</div>
+                    </div>
+                  ) : (
+                    <div className="upload-placeholder">
+                      <span>🗺️ Cargar Croquis</span>
+                      <small>(Max 1MB)</small>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+          )}
 
           <div
             style={{

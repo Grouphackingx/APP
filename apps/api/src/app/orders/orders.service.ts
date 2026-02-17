@@ -227,18 +227,21 @@ export class OrdersService {
                         try {
                             const decoded = this.jwtService.verify(ticket.qrCodeToken);
                             // Fetch event title from DB
+                            // Fetch event title from DB
                             let eventTitle = 'Evento';
                             let eventDate = '';
                             let eventLocation = '';
+                            let hasSeatingChart = true; // Default to true for backward compatibility
                             if (decoded.eventId) {
                                 const event = await this.prisma.event.findUnique({
                                     where: { id: decoded.eventId },
-                                    select: { title: true, date: true, location: true },
+                                    select: { title: true, date: true, location: true, hasSeatingChart: true },
                                 });
                                 if (event) {
                                     eventTitle = event.title;
                                     eventDate = event.date.toISOString();
                                     eventLocation = event.location;
+                                    hasSeatingChart = event.hasSeatingChart ?? true;
                                 }
                             }
                             return {
@@ -247,6 +250,7 @@ export class OrdersService {
                                 eventTitle,
                                 eventDate,
                                 eventLocation,
+                                hasSeatingChart,
                                 zoneName: decoded.zoneName || 'General',
                                 seatNumber: decoded.seatNumber || '-',
                             };

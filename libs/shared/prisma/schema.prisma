@@ -49,6 +49,7 @@ model Event {
   city        String?
   imageUrl    String?
   seatingMapImageUrl String?
+  hasSeatingChart Boolean @default(true)
   mapUrl      String?
   videoUrl    String?
   galleryUrls String[]

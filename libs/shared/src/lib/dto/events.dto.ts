@@ -1,4 +1,4 @@
-import { IsDateString, IsNotEmpty, IsOptional, IsString, IsArray, ValidateNested, IsNumber, Min } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, IsArray, ValidateNested, IsNumber, Min, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateZoneDto {
@@ -47,6 +47,10 @@ export class CreateEventDto {
     @IsString()
     @IsOptional()
     seatingMapImageUrl?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    hasSeatingChart?: boolean;
 
     @IsString()
     @IsOptional()

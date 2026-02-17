@@ -17,6 +17,7 @@ interface EnrichedTicket {
   eventDate: string;
   eventLocation: string;
   zoneName: string;
+  hasSeatingChart?: boolean;
   seatNumber: string;
 }
 
@@ -336,10 +337,14 @@ export default function MyTicketsPage() {
                               </div>
                               <div className="ticket-info-item">
                                 <span className="ticket-info-label">
-                                  Asiento
+                                  {ticket.hasSeatingChart !== false
+                                    ? 'Asiento'
+                                    : 'Entrada'}
                                 </span>
                                 <span className="ticket-info-value">
-                                  {ticket.seatNumber || '-'}
+                                  {ticket.hasSeatingChart !== false
+                                    ? ticket.seatNumber || '-'
+                                    : `#${ticket.seatNumber}`}
                                 </span>
                               </div>
                             </div>
