@@ -21,6 +21,40 @@ function formatTime(dateStr: string): string {
   return d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
 }
 
+// Curated palette for high contrast and distinctiveness
+const ZONE_COLORS = [
+  '#3B82F6', // Blue 500
+  '#EF4444', // Red 500
+  '#10B981', // Emerald 500
+  '#F59E0B', // Amber 500
+  '#8B5CF6', // Violet 500
+  '#EC4899', // Pink 500
+  '#06B6D4', // Cyan 500
+  '#F97316', // Orange 500
+  '#6366F1', // Indigo 500
+  '#14B8A6', // Teal 500
+  // Additional 10 colors
+  '#84CC16', // Lime 500
+  '#A855F7', // Purple 500
+  '#0EA5E9', // Sky 500
+  '#EAB308', // Yellow 500
+  '#F43F5E', // Rose 500
+  '#22C55E', // Green 500
+  '#64748B', // Slate 500 (distinct grey-blue)
+  '#D946EF', // Fuchsia 500
+  '#0F766E', // Teal 700 (Darker)
+  '#B45309', // Amber 700 (Darker)
+];
+
+function stringToColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % ZONE_COLORS.length;
+  return ZONE_COLORS[index];
+}
+
 interface SelectedSeat {
   seatId: string;
   zoneName: string;
@@ -399,203 +433,251 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                 )}
 
                 <div className="zones-list">
-                  {event.zones.map((zone) => (
-                    <div
-                      key={zone.id}
-                      className="zone-item-sidebar"
-                      style={{
-                        marginBottom: '1rem',
-                        paddingBottom: '1rem',
-                        borderBottom: '1px dashed var(--border-color)',
-                      }}
-                    >
+                  {event.zones.map((zone) => {
+                    const availableCount = (zone.seats || []).filter(
+                      (s) => !s.isSold && !soldSeatIds.includes(s.id),
+                    ).length;
+                    const isSoldOut = availableCount === 0;
+
+                    return (
                       <div
+                        key={zone.id}
+                        className="zone-item-sidebar"
                         style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          marginBottom: '0.5rem',
-                          fontWeight: 600,
+                          marginBottom: '1rem',
+                          paddingBottom: '1rem',
+                          borderBottom: '1px dashed var(--border-color)',
+                          opacity: isSoldOut ? 0.7 : 1,
                         }}
                       >
-                        <div className="zone-info">
-                          <h3>{zone.name}</h3>
-                          {zone.description && (
-                            <div
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: '0.5rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          <div className="zone-info">
+                            <h3
                               style={{
-                                fontSize: '0.85rem',
-                                color: 'var(--text-secondary)',
-                                marginTop: '0.25rem',
-                                marginBottom: '0.5rem',
-                                fontWeight: 400,
-                                lineHeight: '1.4',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
                               }}
                             >
-                              {zone.description}
-                            </div>
-                          )}
-                        </div>
-                        <span>${Number(zone.price).toFixed(2)}</span>
-                      </div>
-
-                      {event.hasSeatingChart !== false &&
-                      zone.capacity <= 50 ? (
-                        /* Assigned Seating Logic */
-                        zone.seats && zone.seats.length > 0 ? (
-                          <div
-                            className="zone-seats"
-                            style={{
-                              gap: '0.25rem',
-                              flexWrap: 'wrap',
-                              display: 'flex',
-                            }}
-                          >
-                            {zone.seats.map((seat) => {
-                              const isSold =
-                                seat.isSold || soldSeatIds.includes(seat.id);
-                              const isSelected = selectedSeats.some(
-                                (s) => s.seatId === seat.id,
-                              );
-                              return (
-                                <button
-                                  key={seat.id}
-                                  className={`seat ${isSold ? 'seat-sold' : isSelected ? 'seat-selected' : 'seat-available'}`}
-                                  onClick={() =>
-                                    user &&
-                                    !isSold &&
-                                    toggleSeat(
-                                      seat,
-                                      zone.name,
-                                      Number(zone.price),
-                                    )
-                                  }
-                                  disabled={isSold || !user}
+                              <span
+                                style={{
+                                  width: '12px',
+                                  height: '12px',
+                                  borderRadius: '50%',
+                                  backgroundColor: stringToColor(zone.name),
+                                  display: 'inline-block',
+                                }}
+                              />
+                              {zone.name}
+                              {isSoldOut && (
+                                <span
                                   style={{
-                                    width: 28,
-                                    height: 28,
                                     fontSize: '0.6rem',
+                                    background: '#EF4444',
+                                    color: 'white',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    textTransform: 'uppercase',
+                                    marginTop: '1px',
                                   }}
-                                  title={`Asiento ${seat.number}`}
                                 >
-                                  {seat.number}
-                                </button>
-                              );
-                            })}
+                                  Agotado
+                                </span>
+                              )}
+                            </h3>
+                            {zone.description && (
+                              <div
+                                style={{
+                                  fontSize: '0.85rem',
+                                  color: 'var(--text-secondary)',
+                                  marginTop: '0.25rem',
+                                  marginBottom: '0.5rem',
+                                  fontWeight: 400,
+                                  lineHeight: '1.4',
+                                }}
+                              >
+                                {zone.description}
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div
-                            style={{
-                              fontSize: '0.8rem',
-                              color: 'var(--text-muted)',
-                            }}
-                          >
-                            No hay asientos configurados
-                          </div>
-                        )
-                      ) : (
-                        /* General Admission Logic */
-                        <div className="ga-selector">
-                          {(() => {
-                            const availableSeats = (zone.seats || []).filter(
-                              (s) => !s.isSold && !soldSeatIds.includes(s.id),
-                            );
-                            const currentQty = selectedSeats.filter(
-                              (s) => s.zoneName === zone.name,
-                            ).length;
+                          <span>${Number(zone.price).toFixed(2)}</span>
+                        </div>
 
-                            return (
-                              <div>
-                                <div
-                                  style={{
-                                    fontSize: '0.8rem',
-                                    color: 'var(--text-muted)',
-                                    marginBottom: '0.5rem',
-                                  }}
-                                >
-                                  Disponibles: {availableSeats.length}
-                                </div>
-                                {user ? (
+                        {event.hasSeatingChart !== false &&
+                        zone.capacity <= 50 ? (
+                          /* Assigned Seating Logic */
+                          zone.seats && zone.seats.length > 0 ? (
+                            <div
+                              className="zone-seats"
+                              style={{
+                                gap: '0.25rem',
+                                flexWrap: 'wrap',
+                                display: 'flex',
+                              }}
+                            >
+                              {zone.seats.map((seat) => {
+                                const isSold =
+                                  seat.isSold || soldSeatIds.includes(seat.id);
+                                const isSelected = selectedSeats.some(
+                                  (s) => s.seatId === seat.id,
+                                );
+                                return (
+                                  <button
+                                    key={seat.id}
+                                    className={`seat ${isSold ? 'seat-sold' : isSelected ? 'seat-selected' : 'seat-available'}`}
+                                    onClick={() =>
+                                      user &&
+                                      !isSold &&
+                                      toggleSeat(
+                                        seat,
+                                        zone.name,
+                                        Number(zone.price),
+                                      )
+                                    }
+                                    disabled={isSold || !user}
+                                    style={{
+                                      width: 28,
+                                      height: 28,
+                                      fontSize: '0.6rem',
+                                      backgroundColor: isSelected
+                                        ? stringToColor(zone.name)
+                                        : undefined,
+                                      borderColor: isSelected
+                                        ? stringToColor(zone.name)
+                                        : undefined,
+                                      color: isSelected ? 'white' : undefined,
+                                    }}
+                                    title={`Asiento ${seat.number}`}
+                                  >
+                                    {seat.number}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div
+                              style={{
+                                fontSize: '0.8rem',
+                                color: 'var(--text-muted)',
+                              }}
+                            >
+                              No hay asientos configurados
+                            </div>
+                          )
+                        ) : (
+                          /* General Admission Logic */
+                          <div className="ga-selector">
+                            {(() => {
+                              const currentQty = selectedSeats.filter(
+                                (s) => s.zoneName === zone.name,
+                              ).length;
+
+                              return (
+                                <div>
                                   <div
                                     style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '0.5rem',
+                                      fontSize: '0.8rem',
+                                      color: isSoldOut
+                                        ? '#EF4444'
+                                        : 'var(--text-muted)',
+                                      marginBottom: '0.5rem',
+                                      fontWeight: isSoldOut ? 600 : 400,
                                     }}
                                   >
-                                    <button
-                                      className="btn btn-secondary btn-sm"
-                                      disabled={currentQty === 0}
-                                      onClick={() => {
-                                        // Remove last selected seat from this zone
-                                        const seatsInZone =
-                                          selectedSeats.filter(
-                                            (s) => s.zoneName === zone.name,
-                                          );
-                                        if (seatsInZone.length > 0) {
-                                          const lastSeat =
-                                            seatsInZone[seatsInZone.length - 1];
-                                          // Toggle off (remove)
-                                          setSelectedSeats((prev) =>
-                                            prev.filter(
-                                              (s) =>
-                                                s.seatId !== lastSeat.seatId,
-                                            ),
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      -
-                                    </button>
-                                    <span
-                                      style={{
-                                        fontWeight: 600,
-                                        minWidth: '20px',
-                                        textAlign: 'center',
-                                      }}
-                                    >
-                                      {currentQty}
-                                    </span>
-                                    <button
-                                      className="btn btn-secondary btn-sm"
-                                      disabled={
-                                        availableSeats.length <= currentQty
-                                      }
-                                      onClick={() => {
-                                        // Add next available seat
-                                        const availableInZone = (
-                                          zone.seats || []
-                                        ).filter(
-                                          (s) =>
-                                            !s.isSold &&
-                                            !soldSeatIds.includes(s.id) &&
-                                            !selectedSeats.some(
-                                              (sel) => sel.seatId === s.id,
-                                            ),
-                                        );
-                                        if (availableInZone.length > 0) {
-                                          const nextSeat = availableInZone[0];
-                                          toggleSeat(
-                                            nextSeat,
-                                            zone.name,
-                                            Number(zone.price),
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      +
-                                    </button>
+                                    {isSoldOut
+                                      ? '¡No quedan entradas! 😢'
+                                      : `Disponibles: ${availableCount}`}
                                   </div>
-                                ) : (
-                                  <span style={{ fontSize: '0.8rem' }}>
-                                    Inicia sesión para comprar
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                                  {!isSoldOut && user ? (
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                      }}
+                                    >
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        disabled={currentQty === 0}
+                                        onClick={() => {
+                                          // Remove last selected seat from this zone
+                                          const seatsInZone =
+                                            selectedSeats.filter(
+                                              (s) => s.zoneName === zone.name,
+                                            );
+                                          if (seatsInZone.length > 0) {
+                                            const lastSeat =
+                                              seatsInZone[
+                                                seatsInZone.length - 1
+                                              ];
+                                            // Toggle off (remove)
+                                            setSelectedSeats((prev) =>
+                                              prev.filter(
+                                                (s) =>
+                                                  s.seatId !== lastSeat.seatId,
+                                              ),
+                                            );
+                                          }
+                                        }}
+                                      >
+                                        -
+                                      </button>
+                                      <span
+                                        style={{
+                                          fontWeight: 600,
+                                          minWidth: '20px',
+                                          textAlign: 'center',
+                                        }}
+                                      >
+                                        {currentQty}
+                                      </span>
+                                      <button
+                                        className="btn btn-secondary btn-sm"
+                                        disabled={availableCount <= currentQty}
+                                        onClick={() => {
+                                          const availableInZone = (
+                                            zone.seats || []
+                                          ).filter(
+                                            (s) =>
+                                              !s.isSold &&
+                                              !soldSeatIds.includes(s.id) &&
+                                              !selectedSeats.some(
+                                                (sel) => sel.seatId === s.id,
+                                              ),
+                                          );
+                                          if (availableInZone.length > 0) {
+                                            const nextSeat = availableInZone[0];
+                                            toggleSeat(
+                                              nextSeat,
+                                              zone.name,
+                                              Number(zone.price),
+                                            );
+                                          }
+                                        }}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  ) : !isSoldOut ? (
+                                    <span style={{ fontSize: '0.8rem' }}>
+                                      Inicia sesión para comprar
+                                    </span>
+                                  ) : null}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Purchase Action */}
@@ -629,7 +711,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                         marginTop: '0.5rem',
                       }}
                     >
-                      Selecciona tus asientos arriba
+                      Selecciona tus entradas/asientos arriba
                     </p>
                   )}
                 </div>

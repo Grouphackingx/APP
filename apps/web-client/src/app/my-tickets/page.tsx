@@ -59,6 +59,40 @@ function formatDateTime(d: string) {
   });
 }
 
+// Curated palette for high contrast and distinctiveness
+const ZONE_COLORS = [
+  '#3B82F6', // Blue 500
+  '#EF4444', // Red 500
+  '#10B981', // Emerald 500
+  '#F59E0B', // Amber 500
+  '#8B5CF6', // Violet 500
+  '#EC4899', // Pink 500
+  '#06B6D4', // Cyan 500
+  '#F97316', // Orange 500
+  '#6366F1', // Indigo 500
+  '#14B8A6', // Teal 500
+  // Additional 10 colors
+  '#84CC16', // Lime 500
+  '#A855F7', // Purple 500
+  '#0EA5E9', // Sky 500
+  '#EAB308', // Yellow 500
+  '#F43F5E', // Rose 500
+  '#22C55E', // Green 500
+  '#64748B', // Slate 500 (distinct grey-blue)
+  '#D946EF', // Fuchsia 500
+  '#0F766E', // Teal 700 (Darker)
+  '#B45309', // Amber 700 (Darker)
+];
+
+function stringToColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % ZONE_COLORS.length;
+  return ZONE_COLORS[index];
+}
+
 export default function MyTicketsPage() {
   const { user, token, isLoading: authLoading } = useAuth();
   const [orders, setOrders] = useState<OrderWithTickets[]>([]);
@@ -301,85 +335,130 @@ export default function MyTicketsPage() {
 
                     {/* Tickets */}
                     <div className="tickets-grid">
-                      {group.tickets.map((ticket, tIdx) => (
-                        <div
-                          key={ticket.id || tIdx}
-                          className={`ticket-card ${
-                            ticket.status === 'USED'
-                              ? 'ticket-used'
-                              : 'ticket-valid'
-                          }`}
-                        >
-                          <div className="ticket-top">
-                            <div className="ticket-badge-row">
-                              <span
-                                className={`ticket-status-badge ${
-                                  ticket.status === 'VALID'
-                                    ? 'badge-valid'
+                      {group.tickets.map((ticket, tIdx) => {
+                        const zoneColorRaw = stringToColor(ticket.zoneName);
+                        // Ensure good contrast for text if used as background
+                        const zoneColor = zoneColorRaw;
+
+                        return (
+                          <div
+                            key={ticket.id || tIdx}
+                            className={`ticket-card ${
+                              ticket.status === 'USED'
+                                ? 'ticket-used'
+                                : 'ticket-valid'
+                            }`}
+                            style={{
+                              borderTop: `6px solid ${zoneColor}`,
+                              position: 'relative',
+                            }}
+                          >
+                            <div className="ticket-top">
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  marginBottom: '0.75rem',
+                                }}
+                              >
+                                <span
+                                  className={`ticket-status-badge ${
+                                    ticket.status === 'VALID'
+                                      ? 'badge-valid'
+                                      : ticket.status === 'USED'
+                                        ? 'badge-used'
+                                        : 'badge-default'
+                                  }`}
+                                  style={{
+                                    fontSize: '0.75rem',
+                                    padding: '0.2rem 0.5rem',
+                                  }}
+                                >
+                                  {ticket.status === 'VALID'
+                                    ? '✅ Válido'
                                     : ticket.status === 'USED'
-                                      ? 'badge-used'
-                                      : 'badge-default'
-                                }`}
-                              >
-                                {ticket.status === 'VALID'
-                                  ? '✅ Válido'
-                                  : ticket.status === 'USED'
-                                    ? '✔️ Usado'
-                                    : ticket.status}
-                              </span>
-                            </div>
-                            <div className="ticket-info-grid">
-                              <div className="ticket-info-item">
-                                <span className="ticket-info-label">Zona</span>
-                                <span className="ticket-info-value">
+                                      ? '✔️ Usado'
+                                      : ticket.status}
+                                </span>
+                                <div
+                                  style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    color: zoneColor,
+                                    background: `${zoneColor}15`, // 15 = ~8% opacity
+                                    padding: '0.2rem 0.6rem',
+                                    borderRadius: '12px',
+                                    border: `1px solid ${zoneColor}40`,
+                                  }}
+                                >
                                   {ticket.zoneName}
-                                </span>
+                                </div>
                               </div>
-                              <div className="ticket-info-item">
-                                <span className="ticket-info-label">
-                                  {ticket.hasSeatingChart !== false
-                                    ? 'Asiento'
-                                    : 'Entrada'}
-                                </span>
-                                <span className="ticket-info-value">
-                                  {ticket.hasSeatingChart !== false
-                                    ? ticket.seatNumber || '-'
-                                    : `#${ticket.seatNumber}`}
-                                </span>
+                              <div className="ticket-info-grid">
+                                <div className="ticket-info-item">
+                                  <span className="ticket-info-label">
+                                    Zona
+                                  </span>
+                                  <span
+                                    className="ticket-info-value"
+                                    style={{ color: zoneColor }}
+                                  >
+                                    {ticket.zoneName}
+                                  </span>
+                                </div>
+                                <div className="ticket-info-item">
+                                  <span className="ticket-info-label">
+                                    {ticket.hasSeatingChart !== false
+                                      ? 'Asiento'
+                                      : 'Entrada'}
+                                  </span>
+                                  <span className="ticket-info-value">
+                                    {ticket.hasSeatingChart !== false
+                                      ? ticket.seatNumber || '-'
+                                      : `#${ticket.seatNumber}`}
+                                  </span>
+                                </div>
                               </div>
+                              {ticket.scannedAt && (
+                                <div className="ticket-scanned">
+                                  📱 Escaneado:{' '}
+                                  {formatDateTime(ticket.scannedAt)}
+                                </div>
+                              )}
                             </div>
-                            {ticket.scannedAt && (
-                              <div className="ticket-scanned">
-                                📱 Escaneado: {formatDateTime(ticket.scannedAt)}
-                              </div>
-                            )}
-                          </div>
 
-                          {/* QR Code - Real */}
-                          <div className="ticket-qr-section">
-                            <QRCode
-                              value={ticket.qrCodeToken}
-                              size={180}
-                              ticketStatus={ticket.status}
-                              ticketId={ticket.id}
-                            />
-                          </div>
+                            {/* QR Code - Real */}
+                            <div className="ticket-qr-section">
+                              <QRCode
+                                value={ticket.qrCodeToken}
+                                size={180}
+                                ticketStatus={ticket.status}
+                                ticketId={ticket.id}
+                              />
+                            </div>
 
-                          {/* Tear line */}
-                          <div className="ticket-tear-line" />
-                          <div className="ticket-footer">
-                            <span>ID: {ticket.id.slice(0, 12)}...</span>
-                            {group.eventId && (
-                              <Link
-                                href={`/events/${group.eventId}`}
-                                className="ticket-link"
-                              >
-                                Ver Evento →
-                              </Link>
-                            )}
+                            {/* Tear line */}
+                            <div className="ticket-tear-line" />
+                            <div className="ticket-footer">
+                              <span style={{ fontSize: '0.7rem' }}>
+                                ID: {ticket.id.slice(0, 8)}...
+                              </span>
+                              {group.eventId && (
+                                <Link
+                                  href={`/events/${group.eventId}`}
+                                  className="ticket-link"
+                                  style={{ fontSize: '0.8rem' }}
+                                >
+                                  Ver Evento →
+                                </Link>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
