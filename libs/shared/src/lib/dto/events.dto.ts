@@ -6,6 +6,10 @@ export class CreateZoneDto {
     @IsNotEmpty()
     name!: string;
 
+    @IsString()
+    @IsOptional()
+    description?: string;
+
     @IsNumber()
     @Min(0)
     price!: number;

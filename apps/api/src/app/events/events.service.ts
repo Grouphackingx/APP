@@ -18,6 +18,7 @@ export class EventsService {
                 zones: {
                     create: zones.map(zone => ({
                         name: zone.name,
+                        description: zone.description,
                         price: zone.price,
                         capacity: zone.capacity,
                         seats: {

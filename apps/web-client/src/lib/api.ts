@@ -68,6 +68,7 @@ export async function register(name: string, email: string, password: string): P
 export interface Zone {
   id: string;
   name: string;
+  description?: string;
   price: string | number;
   capacity: number;
   isReservedSeating: boolean;

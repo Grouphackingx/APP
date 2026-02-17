@@ -417,7 +417,23 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                           fontWeight: 600,
                         }}
                       >
-                        <span>{zone.name}</span>
+                        <div className="zone-info">
+                          <h3>{zone.name}</h3>
+                          {zone.description && (
+                            <div
+                              style={{
+                                fontSize: '0.85rem',
+                                color: 'var(--text-secondary)',
+                                marginTop: '0.25rem',
+                                marginBottom: '0.5rem',
+                                fontWeight: 400,
+                                lineHeight: '1.4',
+                              }}
+                            >
+                              {zone.description}
+                            </div>
+                          )}
+                        </div>
                         <span>${Number(zone.price).toFixed(2)}</span>
                       </div>
 

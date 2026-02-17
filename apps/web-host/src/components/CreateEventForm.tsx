@@ -5,6 +5,7 @@ import { createEvent, uploadImage } from '../lib/api';
 
 interface ZoneInput {
   name: string;
+  description?: string;
   price: number;
   capacity: number;
 }
@@ -84,7 +85,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
     value: string | number,
   ) => {
     const updated = [...zones];
-    if (field === 'name') {
+    if (field === 'name' || field === 'description') {
       updated[index][field] = value as string;
     } else {
       updated[index][field] = Number(value);
@@ -210,6 +211,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         hasSeatingChart,
         zones: zones.map((z) => ({
           name: z.name,
+          description: z.description,
           price: z.price,
           capacity: z.capacity,
         })),
@@ -582,30 +584,45 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                     required
                   />
                 </div>
-                <div className="form-row" style={{ gap: '0.5rem' }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Precio ($)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={zone.price}
-                      onChange={(e) => updateZone(i, 'price', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Capacidad</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={zone.capacity}
-                      onChange={(e) =>
-                        updateZone(i, 'capacity', e.target.value)
-                      }
-                      required
-                    />
-                  </div>
+                <div
+                  className="form-group"
+                  style={{ marginBottom: 0, flex: 2 }}
+                >
+                  <label>Descripción (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Incluye una bebida, cerca del escenario..."
+                    value={zone.description || ''}
+                    onChange={(e) =>
+                      updateZone(i, 'description', e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+              <div
+                className="form-row"
+                style={{ gap: '0.5rem', marginTop: '1rem' }}
+              >
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Precio ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={zone.price}
+                    onChange={(e) => updateZone(i, 'price', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Capacidad</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={zone.capacity}
+                    onChange={(e) => updateZone(i, 'capacity', e.target.value)}
+                    required
+                  />
                 </div>
               </div>
             </div>

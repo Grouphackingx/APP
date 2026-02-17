@@ -67,6 +67,7 @@ model Zone {
   eventId   String
   event     Event   @relation(fields: [eventId], references: [id])
   name      String
+  description String?
   price     Decimal @db.Decimal(10, 2)
   capacity  Int
   
