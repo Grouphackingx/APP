@@ -437,7 +437,8 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                         <span>${Number(zone.price).toFixed(2)}</span>
                       </div>
 
-                      {event.hasSeatingChart !== false ? (
+                      {event.hasSeatingChart !== false &&
+                      zone.capacity <= 50 ? (
                         /* Assigned Seating Logic */
                         zone.seats && zone.seats.length > 0 ? (
                           <div
