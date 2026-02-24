@@ -231,16 +231,18 @@ export class OrdersService {
                             let eventTitle = 'Evento';
                             let eventDate = '';
                             let eventLocation = '';
+                            let eventCity = '';
                             let hasSeatingChart = true; // Default to true for backward compatibility
                             if (decoded.eventId) {
                                 const event = await this.prisma.event.findUnique({
                                     where: { id: decoded.eventId },
-                                    select: { title: true, date: true, location: true, hasSeatingChart: true },
+                                    select: { title: true, date: true, location: true, city: true, hasSeatingChart: true },
                                 });
                                 if (event) {
                                     eventTitle = event.title;
                                     eventDate = event.date.toISOString();
                                     eventLocation = event.location;
+                                    eventCity = event.city || '';
                                     hasSeatingChart = event.hasSeatingChart ?? true;
                                 }
                             }
@@ -250,6 +252,7 @@ export class OrdersService {
                                 eventTitle,
                                 eventDate,
                                 eventLocation,
+                                eventCity,
                                 hasSeatingChart,
                                 zoneName: decoded.zoneName || 'General',
                                 seatNumber: decoded.seatNumber || '-',
@@ -261,6 +264,7 @@ export class OrdersService {
                                 eventTitle: 'Evento',
                                 eventDate: '',
                                 eventLocation: '',
+                                eventCity: '',
                                 zoneName: 'General',
                                 seatNumber: '-',
                             };

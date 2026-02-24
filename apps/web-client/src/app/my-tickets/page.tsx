@@ -16,6 +16,7 @@ interface EnrichedTicket {
   eventTitle: string;
   eventDate: string;
   eventLocation: string;
+  eventCity?: string;
   zoneName: string;
   hasSeatingChart?: boolean;
   seatNumber: string;
@@ -140,6 +141,7 @@ export default function MyTicketsPage() {
           eventTitle: firstTicket.eventTitle || 'Evento Desconocido',
           eventDate: firstTicket.eventDate,
           eventLocation: firstTicket.eventLocation,
+          eventCity: firstTicket.eventCity || '',
           totalAmount: 0,
           tickets: [],
           orderIds: [],
@@ -159,6 +161,7 @@ export default function MyTicketsPage() {
         eventTitle: string;
         eventDate: string;
         eventLocation: string;
+        eventCity: string;
         totalAmount: number;
         tickets: EnrichedTicket[];
         orderIds: string[];
@@ -301,7 +304,10 @@ export default function MyTicketsPage() {
                           </span>
                         )}
                         {group.eventLocation && (
-                          <span>📍 {group.eventLocation}</span>
+                          <span>
+                            📍 {group.eventLocation}
+                            {group.eventCity ? `, ${group.eventCity}` : ''}
+                          </span>
                         )}
                       </div>
                     </div>
