@@ -173,17 +173,19 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
    - Estilo "Glassmorphism" flotante sobre el contenido
 
 4. ✅ **API Orders enriquecida** — `GET /api/orders` ahora decodifica los QR JWT tokens de cada ticket para extraer y agregar:
-   - `eventTitle`, `eventDate`, `eventLocation`
+   - `eventTitle`, `eventDate`, `eventLocation`, `eventCity`
    - `zoneName`, `seatNumber`
    - (El modelo Ticket no tiene relación directa con Seat, la info se extrae del JWT)
 
-5. ✅ **Upload de Imágenes** — Nueva funcionalidad completa para eventos:
+5. ✅ **Mejora en "Mis Tickets"** — Ahora se visualiza la ciudad del evento al lado del lugar (ej. `📍 Lugar, Ciudad`).
+
+6. ✅ **Upload de Imágenes** — Nueva funcionalidad completa para eventos:
    - **Backend**: Endpoint `POST /api/upload` (Multer + DiskStorage)
    - **Static Serving**: Imágenes accesibles en `http://localhost:3000/uploads/`
    - **Frontend (Host)**: `CreateEventForm` actualizado con drag & drop y previsualización
    - **Validación**: Límite de 5MB, solo imágenes (jpg/png)
 
-6. ✅ **Botón "Mis Tickets"** en el Navbar — botón cyan que aparece solo cuando el usuario está autenticado
+7. ✅ **Botón "Mis Tickets"** en el Navbar — botón cyan que aparece solo cuando el usuario está autenticado
 
 ### Correcciones previas:
 
