@@ -323,10 +323,11 @@ textarea {
 /* ===== Search Bar ===== */
 .search-wrapper {
   max-width: 600px;
-  margin: -2rem auto 3rem;
+  margin: 2.5rem auto 3rem;
   padding: 0 1rem;
   position: relative;
   z-index: 10;
+  animation: fadeInUp 0.6s ease 0.2s both;
 }
 
 .search-bar {
@@ -387,10 +388,11 @@ textarea {
   height: 56px;
   width: 100%;
   max-width: 600px;
-  margin: -2rem auto 3rem;
+  margin: 2.5rem auto 3rem;
   background: var(--bg-card);
   border-radius: var(--radius-full);
   opacity: 0.5;
+  animation: fadeInUp 0.6s ease 0.2s both;
 }
 
 /* ===== Section ===== */

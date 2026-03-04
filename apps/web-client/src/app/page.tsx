@@ -33,11 +33,9 @@ export default async function HomePage(props: {
             <span className="gradient-text">Que Te Inspiran</span>
           </h1>
 
-          <p>
-            Encuentra conciertos, festivales y experiencias únicas. Compra tus
-            tickets al instante con selección de asientos y entrada digital con
-            QR.
-          </p>
+          <div className="hero-search">
+            <SearchBar />
+          </div>
 
           <div className="hero-actions">
             <a href="#eventos" className="btn btn-primary btn-lg">
@@ -64,9 +62,6 @@ export default async function HomePage(props: {
           </div>
         </div>
       </section>
-
-      {/* Search Bar */}
-      <SearchBar />
 
       {/* Events Section */}
       <section className="section" id="eventos">
