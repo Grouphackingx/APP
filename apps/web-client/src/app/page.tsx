@@ -15,7 +15,8 @@ export default async function HomePage(props: {
   let error = '';
 
   try {
-    events = await getEvents(query);
+    const allEvents = await getEvents(query);
+    events = allEvents.filter((e: any) => e.status === 'PUBLISHED');
   } catch (e: any) {
     error = e.message || 'No se pudieron cargar los eventos';
   }

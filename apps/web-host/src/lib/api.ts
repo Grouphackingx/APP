@@ -72,3 +72,18 @@ export async function uploadImage(file: File, token: string): Promise<string> {
   const data = await res.json();
   return data.url;
 }
+
+export async function updateEvent(id: string, data: any, token: string) {
+  return fetchAPI<any>(`/events/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function deleteEvent(id: string, token: string) {
+  return fetchAPI<any>(`/events/${id}`, {
+    method: 'DELETE',
+    token,
+  });
+}

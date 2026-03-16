@@ -20,16 +20,20 @@ export default async function EventDetailPage({ params }: Props) {
     error = e.message || 'Evento no encontrado';
   }
 
-  if (error || !event) {
+  if (error || !event || event.status === 'INACTIVE') {
     return (
       <div
         className="event-detail"
         style={{ textAlign: 'center', paddingTop: '10rem' }}
       >
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>😕</div>
-        <h1 style={{ marginBottom: '1rem' }}>Evento no encontrado</h1>
+        <h1 style={{ marginBottom: '1rem' }}>
+          {event?.status === 'INACTIVE' ? 'Evento Finalizado' : 'Evento no encontrado'}
+        </h1>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-          {error}
+          {event?.status === 'INACTIVE'
+            ? 'Este evento ya se ha llevado a cabo o ya no está disponible.'
+            : error}
         </p>
         <Link href="/" className="btn btn-primary">
           ← Volver a Eventos

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, Delete } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,5 +21,17 @@ export class EventsController {
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.eventsService.findOne(id);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(':id')
+    update(@Param('id') id: string, @Body() updateData: any) {
+        return this.eventsService.update(id, updateData);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id')
+    remove(@Param('id') id: string) {
+        return this.eventsService.remove(id);
     }
 }

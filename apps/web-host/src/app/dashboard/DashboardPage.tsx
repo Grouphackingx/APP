@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../lib/AuthContext';
-import { getEvents, createEvent } from '../../lib/api';
+import { getEvents, deleteEvent } from '../../lib/api';
 import { Sidebar } from '../../components/Sidebar';
 import { CreateEventForm } from '../../components/CreateEventForm';
+import { EditEventForm } from '../../components/EditEventForm';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-EC', {
@@ -18,7 +19,8 @@ export default function DashboardPage() {
   const { user, token, logout } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'dashboard' | 'create'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'create' | 'edit'>('dashboard');
+  const [editingEvent, setEditingEvent] = useState<any>(null);
 
   const fetchEvents = useCallback(async () => {
     if (!token) return;
@@ -71,9 +73,26 @@ export default function DashboardPage() {
     0,
   );
 
-  const handleEventCreated = () => {
+  const handleEventCreatedOrUpdated = () => {
     setView('dashboard');
     fetchEvents();
+  };
+
+  const handleEdit = (event: any) => {
+    setEditingEvent(event);
+    setView('edit');
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!token) return;
+    if (window.confirm('¿Estás seguro de que deseas eliminar este evento?')) {
+      try {
+        await deleteEvent(id, token);
+        fetchEvents();
+      } catch (err: any) {
+        alert(err.message || 'Error al eliminar el evento');
+      }
+    }
   };
 
   return (
@@ -162,6 +181,7 @@ export default function DashboardPage() {
                       <th>Zonas</th>
                       <th>Vendidos</th>
                       <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -200,12 +220,34 @@ export default function DashboardPage() {
                           </td>
                           <td>
                             <span
-                              className={`status-badge ${event.status === 'PUBLISHED' ? 'status-published' : 'status-draft'}`}
+                              className={`status-badge ${event.status === 'PUBLISHED' ? 'status-published' : event.status === 'INACTIVE' ? 'status-inactive' : 'status-draft'}`}
                             >
                               {event.status === 'PUBLISHED'
-                                ? '🟢 Publicado'
-                                : '📝 Borrador'}
+                                ? '🟢 Activo'
+                                : event.status === 'INACTIVE'
+                                  ? '🔴 Inactivo'
+                                  : '📝 Borrador'}
                             </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleEdit(event)}
+                                title="Editar Evento"
+                              >
+                                ✏️
+                              </button>
+                              {eventSold === 0 && (
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleDelete(event.id)}
+                                  title="Eliminar Evento"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -234,7 +276,31 @@ export default function DashboardPage() {
                 ← Volver al Dashboard
               </button>
             </div>
-            <CreateEventForm token={token!} onSuccess={handleEventCreated} />
+            <CreateEventForm token={token!} onSuccess={handleEventCreatedOrUpdated} />
+          </>
+        )}
+
+        {view === 'edit' && editingEvent && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Editar Evento</h1>
+                <p>
+                  Actualiza los detalles básicos de tu evento.
+                </p>
+              </div>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setView('dashboard')}
+              >
+                ← Volver al Dashboard
+              </button>
+            </div>
+            <EditEventForm
+              token={token!}
+              initialData={editingEvent}
+              onSuccess={handleEventCreatedOrUpdated}
+            />
           </>
         )}
       </div>

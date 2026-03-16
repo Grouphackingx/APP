@@ -1,17 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { createEvent, uploadImage } from '../lib/api';
+import { updateEvent, uploadImage } from '../lib/api';
 
-interface ZoneInput {
-  name: string;
-  description?: string;
-  price: number;
-  capacity: number;
-}
-
-interface CreateEventFormProps {
+interface EditEventFormProps {
   token: string;
+  initialData: any;
   onSuccess: () => void;
 }
 
@@ -42,57 +36,27 @@ const ecuadorData: Record<string, string[]> = {
   'Zamora Chinchipe': ['Zamora', 'Yantzaza'],
 };
 
-export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
-  const [location, setLocation] = useState('');
-  const [province, setProvince] = useState('');
-  const [city, setCity] = useState('');
-  const [mapEmbedCode, setMapEmbedCode] = useState('');
-  const [videoEmbedCode, setVideoEmbedCode] = useState('');
-  const [status, setStatus] = useState('DRAFT');
+export function EditEventForm({ token, initialData, onSuccess }: EditEventFormProps) {
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [date, setDate] = useState(initialData?.date ? new Date(initialData.date).toISOString().slice(0, 16) : '');
+  const [location, setLocation] = useState(initialData?.location || '');
+  const [province, setProvince] = useState(initialData?.province || '');
+  const [city, setCity] = useState(initialData?.city || '');
+  const [mapEmbedCode, setMapEmbedCode] = useState(initialData?.mapUrl || '');
+  const [videoEmbedCode, setVideoEmbedCode] = useState(initialData?.videoUrl || '');
+  const [status, setStatus] = useState(initialData?.status || 'DRAFT');
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
-  const [zones, setZones] = useState<ZoneInput[]>([
-    { name: 'General', price: 25, capacity: 50 },
-  ]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>(initialData?.galleryUrls || []);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [seatingMapImageFile, setSeatingMapImageFile] = useState<File | null>(
-    null,
-  );
-  const [seatingMapImagePreview, setSeatingMapImagePreview] =
-    useState<string>('');
-  const [hasSeatingChart, setHasSeatingChart] = useState(true);
+  const [imagePreview, setImagePreview] = useState<string>(initialData?.imageUrl || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
     type: 'error' | 'success';
   } | null>(null);
 
-  const addZone = () => {
-    setZones([...zones, { name: '', price: 0, capacity: 10 }]);
-  };
-
-  const removeZone = (index: number) => {
-    if (zones.length <= 1) return;
-    setZones(zones.filter((_, i) => i !== index));
-  };
-
-  const updateZone = (
-    index: number,
-    field: keyof ZoneInput,
-    value: string | number,
-  ) => {
-    const updated = [...zones];
-    if (field === 'name' || field === 'description') {
-      updated[index][field] = value as string;
-    } else {
-      updated[index][field] = Number(value);
-    }
-    setZones(updated);
-  };
+  // Removing zone handlers
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,23 +71,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
     }
   };
 
-  const handleSeatingMapImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setMessage({
-          text: 'La imagen del croquis no debe superar 5MB',
-          type: 'error',
-        });
-        return;
-      }
-      setSeatingMapImageFile(file);
-      setSeatingMapImagePreview(URL.createObjectURL(file));
-      setMessage(null);
-    }
-  };
+// Removed seating map logic
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -164,7 +112,6 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
 
     try {
       let imageUrl = '';
-      let seatingMapImageUrl = '';
 
       if (imageFile) {
         try {
@@ -176,13 +123,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         }
       }
 
-      if (seatingMapImageFile) {
-        try {
-          seatingMapImageUrl = await uploadImage(seatingMapImageFile, token);
-        } catch (uploadError: any) {
-          throw new Error(`Error subiendo croquis: ${uploadError.message}`);
-        }
-      }
+// Removed seating map upload
 
       const galleryUrls = [];
       if (galleryFiles.length > 0) {
@@ -205,21 +146,13 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         city,
         mapUrl: mapEmbedCode.match(/src="([^"]+)"/)?.[1] || mapEmbedCode,
         videoUrl: videoEmbedCode.match(/src="([^"]+)"/)?.[1] || videoEmbedCode,
-        galleryUrls,
+        galleryUrls: [...(initialData?.galleryUrls || []), ...galleryUrls],
         status: status,
-        imageUrl,
-        seatingMapImageUrl,
-        hasSeatingChart,
-        zones: zones.map((z) => ({
-          name: z.name,
-          description: z.description,
-          price: z.price,
-          capacity: z.capacity,
-        })),
+        imageUrl: imageUrl || initialData?.imageUrl || '',
       };
 
-      await createEvent(eventData, token);
-      setMessage({ text: '🎉 ¡Evento creado exitosamente!', type: 'success' });
+      await updateEvent(initialData.id, eventData, token);
+      setMessage({ text: '🎉 ¡Evento guardado exitosamente!', type: 'success' });
       setTimeout(() => onSuccess(), 1500);
     } catch (err: any) {
       setMessage({
@@ -478,159 +411,6 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
           </div>
         </div>
 
-        {/* Zones */}
-        <div className="form-section">
-          <div className="form-group">
-            <label className="form-label">Tipo de Localidad</label>
-            <div
-              className="eventType-toggle"
-              style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}
-            >
-              <button
-                type="button"
-                className={`btn ${hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setHasSeatingChart(true)}
-              >
-                🪑 Asientos Numerados
-              </button>
-              <button
-                type="button"
-                className={`btn ${!hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setHasSeatingChart(false)}
-              >
-                🎫 Entradas
-              </button>
-            </div>
-            <p
-              className="form-text text-muted"
-              style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}
-            >
-              {hasSeatingChart
-                ? 'Los usuarios seleccionarán sus asientos específicos desde un mapa interactivo.'
-                : 'Los usuarios solo seleccionarán la cantidad de entradas para cada zona/área.'}
-            </p>
-          </div>
-
-          {hasSeatingChart && (
-            <div className="form-group">
-              <label>Croquis de Localidades (Opcional)</label>
-              <div className="image-upload-container">
-                <input
-                  type="file"
-                  id="seatingMapUpload"
-                  accept="image/*"
-                  onChange={handleSeatingMapImageChange}
-                  className="file-input"
-                  hidden
-                />
-                <label htmlFor="seatingMapUpload" className="file-label">
-                  {seatingMapImagePreview ? (
-                    <div
-                      className="image-preview"
-                      style={{
-                        backgroundImage: `url(${seatingMapImagePreview})`,
-                      }}
-                    >
-                      <div className="image-overlay">Cambiar Croquis</div>
-                    </div>
-                  ) : (
-                    <div className="upload-placeholder">
-                      <span>🗺️ Cargar Croquis</span>
-                      <small>(Max 1MB)</small>
-                    </div>
-                  )}
-                </label>
-              </div>
-            </div>
-          )}
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <h3>🏟️ Zonas de Asientos</h3>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={addZone}
-            >
-              + Agregar Zona
-            </button>
-          </div>
-
-          {zones.map((zone, i) => (
-            <div key={i} className="zone-form-item">
-              <div className="zone-header">
-                <h4>Zona {i + 1}</h4>
-                {zones.length > 1 && (
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={() => removeZone(i)}
-                  >
-                    🗑️ Eliminar
-                  </button>
-                )}
-              </div>
-              <div className="form-row">
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Nombre</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: VIP, General"
-                    value={zone.name}
-                    onChange={(e) => updateZone(i, 'name', e.target.value)}
-                    required
-                  />
-                </div>
-                <div
-                  className="form-group"
-                  style={{ marginBottom: 0, flex: 2 }}
-                >
-                  <label>Descripción (Opcional)</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Incluye una bebida, cerca del escenario..."
-                    value={zone.description || ''}
-                    onChange={(e) =>
-                      updateZone(i, 'description', e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-              <div
-                className="form-row"
-                style={{ gap: '0.5rem', marginTop: '1rem' }}
-              >
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Precio ($)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={zone.price}
-                    onChange={(e) => updateZone(i, 'price', e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Capacidad</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={zone.capacity}
-                    onChange={(e) => updateZone(i, 'capacity', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
         <div className="form-section" style={{ marginTop: '2rem' }}>
           <div className="form-group">
             <label htmlFor="status" style={{ fontSize: '1.2rem', color: '#22D3EE' }}>Estado del Evento *</label>
@@ -656,7 +436,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
           disabled={loading}
           style={{ marginTop: '1.5rem' }}
         >
-          {loading ? '⏳ Subiendo...' : '🚀 Crear Evento'}
+          {loading ? '⏳ Guardando...' : '💾 Guardar Cambios'}
         </button>
       </form>
     </div>

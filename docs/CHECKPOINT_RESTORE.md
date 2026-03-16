@@ -187,6 +187,11 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
 
 7. ✅ **Botón "Mis Tickets"** en el Navbar — botón cyan que aparece solo cuando el usuario está autenticado
 
+8. ✅ **Mejoras UI/UX en el Buscador (SearchBar)** — Integración perfecta en el Hero Section del web-client:
+   - Se reemplazó el texto descriptivo del hero por el componente `<SearchBar />` dándole más protagonismo.
+   - Reubicación estratégica entre el título principal y los botones de acción ("Explorar Eventos" y "Crear Cuenta").
+   - Ajustes de márgenes (`2.5rem` superior y `3rem` inferior) en `global.css` para optimizar el espacio (breathing room) y la experiencia de usuario.
+
 ### Correcciones previas:
 
 - 🔧 Bug en `orders.service.ts`: eliminado `if` anidado redundante en verificación de lock

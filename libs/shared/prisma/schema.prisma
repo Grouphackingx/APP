@@ -16,9 +16,8 @@ enum Role {
 
 enum EventStatus {
   DRAFT
-  PUBLISHED
-  CANCELLED
-  COMPLETED
+  PUBLISHED // Acts as ACTIVO
+  INACTIVE  // INACTIVO
 }
 
 enum TicketStatus {
