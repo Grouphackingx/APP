@@ -1,6 +1,6 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 13 de Febrero de 2026, 22:06  
+**Fecha de Última Actualización:** 16 de Marzo de 2026, 01:40  
 **Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2 y 3 Funcionando)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
@@ -191,6 +191,23 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
    - Se reemplazó el texto descriptivo del hero por el componente `<SearchBar />` dándole más protagonismo.
    - Reubicación estratégica entre el título principal y los botones de acción ("Explorar Eventos" y "Crear Cuenta").
    - Ajustes de márgenes (`2.5rem` superior y `3rem` inferior) en `global.css` para optimizar el espacio (breathing room) y la experiencia de usuario.
+
+9. ✅ **Sistema de Estados de Eventos (Activo, Inactivo, Borrador)**:
+   - **Backend**: 
+     - Se actualizó el enum `EventStatus` en Prisma a `DRAFT`, `PUBLISHED`, e `INACTIVE`.
+     - Lógica automatizada en `events.service.ts` (`updatePastEventsStatus`) que detecta eventos `PUBLISHED` con fechas en el pasado y los cambia a `INACTIVE` automáticamente al ser consultados.
+     - Bloqueo de seguridad al intentar crear o modificar eventos asignándoles una fecha pasada (`BadRequestException`).
+   - **Frontend (Host)**: 
+     - Tabla del Dashboard ahora muestra visualmente los estados ("🔴 Inactivo", "🟢 Activo", "📝 Borrador").
+     - Formularios de Creación (`CreateEventForm`) y Edición (`EditEventForm`) actualizados con un menú desplegable al final de la página para definir si el evento nace como "Borrador" o "Activo".
+     - Bloqueo en el input de calendario (`datetime-local`) para que no permita elegir días u horas que ya pasaron (basado en la zona horaria local).
+   - **Frontend (Web Client)**: 
+     - Los eventos que caen en estado `INACTIVE` son excluidos automáticamente del Home y búsquedas.
+     - Si se navega directamente a la URL de un evento `INACTIVE`, se muestra un recuadro indicando "Evento Finalizado".
+
+10. ✅ **Edición y Eliminación Condicional de Eventos**:
+    - **Backend**: Endpoint PATCH `/events/:id` para editar y DELETE `/events/:id` para borrar. El borrado verifica en BD (`hasSoldSeats`) que **no haya tickets vendidos**; caso contrario lanza error.
+    - **Frontend (Host)**: Formularios de Edición acoplados al nuevo endpoint. Botón de papelera en el Dashboard que solo aparece si los "Tickets Vendidos" son 0.
 
 ### Correcciones previas:
 
