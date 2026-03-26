@@ -64,6 +64,10 @@ export class CreateEventDto {
     @IsOptional()
     videoUrl?: string;
 
+    @IsString()
+    @IsOptional()
+    status?: string;
+
     @IsArray()
     @IsString({ each: true })
     @IsOptional()

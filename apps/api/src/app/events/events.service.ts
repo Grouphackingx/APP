@@ -7,6 +7,7 @@ export class EventsService {
     constructor(private prisma: PrismaService) { }
 
     async create(organizerId: string, createEventDto: CreateEventDto) {
+        console.log('--- CREATE EVENT DTO ---', createEventDto);
         const { zones, ...eventData } = createEventDto;
 
         if (new Date(eventData.date) < new Date()) {
@@ -17,7 +18,7 @@ export class EventsService {
         // In production, this would be more complex based on layout
         return this.prisma.event.create({
             data: {
-                ...eventData,
+                ...(eventData as any),
                 organizer: { connect: { id: organizerId } },
                 zones: {
                     create: zones.map(zone => ({

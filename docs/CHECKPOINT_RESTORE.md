@@ -1,6 +1,6 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 16 de Marzo de 2026, 01:40  
+**Fecha de Última Actualización:** 26 de Marzo de 2026, 00:15  
 **Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2 y 3 Funcionando)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
@@ -208,6 +208,15 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
 10. ✅ **Edición y Eliminación Condicional de Eventos**:
     - **Backend**: Endpoint PATCH `/events/:id` para editar y DELETE `/events/:id` para borrar. El borrado verifica en BD (`hasSoldSeats`) que **no haya tickets vendidos**; caso contrario lanza error.
     - **Frontend (Host)**: Formularios de Edición acoplados al nuevo endpoint. Botón de papelera en el Dashboard que solo aparece si los "Tickets Vendidos" son 0.
+
+11. ✅ **Pestañas de Estado en Dashboard**:
+    - **Frontend (Host)**: Se añadieron 3 pestañas ("Activos", "Inactivos" y "Borrador") separando los eventos visualmente mediante filtros vinculados a `PUBLISHED`, `INACTIVE` y `DRAFT`. Integrado en `DashboardPage.tsx` con UI y animaciones adaptadas.
+
+12. ✅ **Integración Inteligente de Videos de YouTube**:
+    - **Frontend (Web Client)**: Función nativa `getVideoEmbedUrl` añadida en `EventDetailClient.tsx` que intercepta cualquier tipo de enlace (youtu.be, URL acortadas o /watch) pegado por el organizador y lo convierte al formato seguro `/embed/`, evitando bloqueos de permisos.
+
+13. ✅ **Corrección Flujo de Estado (Draft/Published)**:
+    - **Full-Stack**: Se corrigió un bug donde los nuevos eventos se creaban como borradores por defecto a pesar de que se escogiera "Activo". Se integró `status?: string` en el Validator global (`CreateEventDto`) que permite a NestJS leer y almacenar explícitamente el cambio eludiendo las restricciones de Prisma en `events.service.ts`.
 
 ### Correcciones previas:
 

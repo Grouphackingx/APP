@@ -55,6 +55,15 @@ function stringToColor(str: string): string {
   return ZONE_COLORS[index];
 }
 
+function getVideoEmbedUrl(url: string): string {
+  if (!url) return '';
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  }
+  return url;
+}
+
 interface SelectedSeat {
   seatId: string;
   zoneName: string;
@@ -269,11 +278,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                     }}
                   >
                     <iframe
-                      src={
-                        event.videoUrl.includes('youtube.com/watch?v=')
-                          ? event.videoUrl.replace('watch?v=', 'embed/')
-                          : event.videoUrl
-                      }
+                      src={getVideoEmbedUrl(event.videoUrl)}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}

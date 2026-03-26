@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'dashboard' | 'create' | 'edit'>('dashboard');
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
 
   const fetchEvents = useCallback(async () => {
     if (!token) return;
@@ -72,6 +73,12 @@ export default function DashboardPage() {
       ),
     0,
   );
+
+  const filteredEvents = events.filter((e) => {
+    if (activeTab === 'ACTIVOS') return e.status === 'PUBLISHED';
+    if (activeTab === 'INACTIVOS') return e.status === 'INACTIVE';
+    return e.status === 'DRAFT' || !e.status; // BORRADOR
+  });
 
   const handleEventCreatedOrUpdated = () => {
     setView('dashboard');
@@ -150,8 +157,28 @@ export default function DashboardPage() {
 
             {/* Events Table */}
             <div className="table-container">
-              <div className="table-header">
+              <div className="table-header" style={{ borderBottom: 'none', paddingBottom: '0.5rem' }}>
                 <h2>🎪 Mis Eventos</h2>
+              </div>
+              <div className="tabs-container" style={{ padding: '0 1.5rem' }}>
+                <button 
+                  className={`tab-btn ${activeTab === 'ACTIVOS' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('ACTIVOS')}
+                >
+                  Activos ({events.filter(e => e.status === 'PUBLISHED').length})
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'INACTIVOS' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('INACTIVOS')}
+                >
+                  Inactivos ({events.filter(e => e.status === 'INACTIVE').length})
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'BORRADOR' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('BORRADOR')}
+                >
+                  Borrador ({events.filter(e => e.status === 'DRAFT' || !e.status).length})
+                </button>
               </div>
 
               {loading ? (
@@ -171,6 +198,10 @@ export default function DashboardPage() {
                     ➕ Crear Evento
                   </button>
                 </div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="empty-state" style={{ padding: '2rem' }}>
+                  <p>No hay eventos en esta pestaña.</p>
+                </div>
               ) : (
                 <table>
                   <thead>
@@ -185,7 +216,7 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {events.map((event) => {
+                    {filteredEvents.map((event) => {
                       const eventSeats = (event.zones || []).reduce(
                         (s: number, z: any) =>
                           s + (z.seats?.length || z.capacity || 0),
