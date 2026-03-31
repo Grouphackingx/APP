@@ -63,7 +63,7 @@ export class EventsService {
 
         return this.prisma.event.findMany({
             where,
-            include: { zones: true, organizer: { select: { name: true, email: true } } },
+            include: { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true } } },
             orderBy: { date: 'asc' },
         });
     }
@@ -77,14 +77,145 @@ export class EventsService {
     }
 
     async update(id: string, updateData: any) {
-        // If zones are provided, we'd need more complex logic.
-        // For now let's just update the basic event details.
-        const { zones, ...basicData } = updateData;
+        const { zones, ...rawBasicData } = updateData;
 
-        if (basicData.date && new Date(basicData.date) < new Date()) {
-            throw new BadRequestException('La fecha del evento no puede estar en el pasado');
+        // Clean basicData: only include fields that exist on the Event model
+        const allowedEventFields = [
+            'title', 'description', 'date', 'location', 'province', 'city',
+            'imageUrl', 'seatingMapImageUrl', 'hasSeatingChart', 'mapUrl',
+            'videoUrl', 'galleryUrls', 'status'
+        ];
+        const basicData: Record<string, any> = {};
+        for (const key of allowedEventFields) {
+            if (rawBasicData[key] !== undefined) {
+                basicData[key] = rawBasicData[key];
+            }
+        }
+        // Convert date string to Date object for Prisma
+        if (basicData.date && typeof basicData.date === 'string') {
+            basicData.date = new Date(basicData.date);
         }
 
+        if (zones && zones.length > 0) {
+            return this.prisma.$transaction(async (prisma) => {
+                const existingEvent = await prisma.event.findUnique({
+                    where: { id },
+                    include: { zones: { include: { seats: true } } }
+                });
+
+                if (!existingEvent) {
+                    throw new BadRequestException('Evento no encontrado');
+                }
+
+                const incomingZoneIds = new Set(zones.filter((z: any) => z.id).map((z: any) => z.id));
+
+                // Remove zones deleted from the form, only if they have no sold seats
+                for (const existingZone of existingEvent.zones) {
+                    if (!incomingZoneIds.has(existingZone.id)) {
+                        const hasSold = existingZone.seats.some(s => s.isSold);
+                        if (hasSold) {
+                            throw new BadRequestException(
+                                `No se puede eliminar la zona "${existingZone.name}" porque ya tiene tickets vendidos.`
+                            );
+                        }
+                        await prisma.seat.deleteMany({ where: { zoneId: existingZone.id } });
+                        await prisma.zone.delete({ where: { id: existingZone.id } });
+                    }
+                }
+
+                // Upsert zones
+                for (const zone of zones) {
+                    if (zone.id) {
+                        // Find the existing zone to check sold seats for capacity protection
+                        const existingZone = existingEvent.zones.find(ez => ez.id === zone.id);
+                        const soldCount = existingZone
+                            ? existingZone.seats.filter(s => s.isSold).length
+                            : 0;
+                        const newCapacity = Number(zone.capacity);
+
+                        // Cannot reduce capacity below the number of sold seats
+                        if (newCapacity < soldCount) {
+                            throw new BadRequestException(
+                                `La zona "${zone.name}" tiene ${soldCount} entradas vendidas. No se puede reducir la capacidad por debajo de ese número.`
+                            );
+                        }
+
+                        // Update zone metadata
+                        await prisma.zone.update({
+                            where: { id: zone.id },
+                            data: {
+                                name: zone.name,
+                                description: zone.description || null,
+                                price: zone.price,
+                                capacity: newCapacity,
+                            }
+                        });
+
+                        // Handle seat count changes
+                        if (existingZone) {
+                            const currentSeatCount = existingZone.seats.length;
+                            if (newCapacity > currentSeatCount) {
+                                // Add more seats
+                                const seatsToAdd = newCapacity - currentSeatCount;
+                                await prisma.seat.createMany({
+                                    data: Array.from({ length: seatsToAdd }).map((_, i) => ({
+                                        zoneId: zone.id,
+                                        number: `${currentSeatCount + i + 1}`,
+                                        isSold: false,
+                                    }))
+                                });
+                            } else if (newCapacity < currentSeatCount) {
+                                // Remove unsold seats from the end
+                                const unsoldSeats = existingZone.seats
+                                    .filter(s => !s.isSold)
+                                    .sort((a, b) => Number(b.number) - Number(a.number));
+                                const seatsToRemove = currentSeatCount - newCapacity;
+                                const seatsToDelete = unsoldSeats.slice(0, seatsToRemove);
+                                if (seatsToDelete.length > 0) {
+                                    await prisma.seat.deleteMany({
+                                        where: { id: { in: seatsToDelete.map(s => s.id) } }
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        // Create new zone with seats
+                        const newCapacity = Number(zone.capacity);
+                        await prisma.zone.create({
+                            data: {
+                                eventId: id,
+                                name: zone.name,
+                                description: zone.description || null,
+                                price: zone.price,
+                                capacity: newCapacity,
+                                seats: {
+                                    create: Array.from({ length: newCapacity }).map((_, i) => ({
+                                        number: `${i + 1}`,
+                                        isSold: false
+                                    }))
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Update event basic data
+                if (Object.keys(basicData).length > 0) {
+                    await prisma.event.update({
+                        where: { id },
+                        data: basicData,
+                    });
+                }
+
+                // Return the full updated event
+                return prisma.event.findUnique({
+                    where: { id },
+                    include: { zones: { include: { seats: true } } }
+                });
+            });
+        }
+
+        // No zones to update, just update basic event data
         return this.prisma.event.update({
             where: { id },
             data: basicData,

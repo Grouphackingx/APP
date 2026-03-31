@@ -3,6 +3,16 @@
 import { useState } from 'react';
 import { updateEvent, uploadImage } from '../lib/api';
 
+interface ZoneInput {
+  id?: string;
+  name: string;
+  description?: string;
+  price: number | string;
+  capacity: number | string;
+  hasSold?: boolean;
+  soldCount?: number;
+}
+
 interface EditEventFormProps {
   token: string;
   initialData: any;
@@ -56,7 +66,63 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
     type: 'error' | 'success';
   } | null>(null);
 
-  // Removing zone handlers
+  const [zones, setZones] = useState<ZoneInput[]>(
+    initialData?.zones?.map((z: any) => {
+      const soldCount = z.seats?.filter((s: any) => s.isSold)?.length || 0;
+      return {
+        id: z.id,
+        name: z.name,
+        description: z.description || '',
+        price: z.price,
+        capacity: z.capacity,
+        hasSold: soldCount > 0,
+        soldCount,
+      };
+    }) || [{ name: 'General', description: '', price: 25, capacity: 50, hasSold: false, soldCount: 0 }]
+  );
+  const [seatingMapImageFile, setSeatingMapImageFile] = useState<File | null>(null);
+  const [seatingMapImagePreview, setSeatingMapImagePreview] = useState<string>(initialData?.seatingMapImageUrl || '');
+  const [hasSeatingChart, setHasSeatingChart] = useState(initialData?.hasSeatingChart ?? true);
+
+  const addZone = () => {
+    setZones([...zones, { name: '', price: 0, capacity: 10 }]);
+  };
+
+  const removeZone = (index: number) => {
+    if (zones.length <= 1) return;
+    setZones(zones.filter((_, i) => i !== index));
+  };
+
+  const updateZone = (
+    index: number,
+    field: keyof ZoneInput,
+    value: string | number,
+  ) => {
+    const updated = [...zones];
+    updated[index] = {
+      ...updated[index],
+      [field]: value
+    };
+    setZones(updated);
+  };
+
+  const handleSeatingMapImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({
+          text: 'La imagen del croquis no debe superar 5MB',
+          type: 'error',
+        });
+        return;
+      }
+      setSeatingMapImageFile(file);
+      setSeatingMapImagePreview(URL.createObjectURL(file));
+      setMessage(null);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,8 +136,6 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       setMessage(null);
     }
   };
-
-// Removed seating map logic
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -111,6 +175,19 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
     setLoading(true);
 
     try {
+      // Validate capacity is not below sold count
+      for (const z of zones) {
+        const cap = Number(z.capacity);
+        if (z.soldCount && cap < z.soldCount) {
+          setMessage({
+            text: `La zona "${z.name}" tiene ${z.soldCount} entradas vendidas. La capacidad no puede ser menor a ese número.`,
+            type: 'error',
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       let imageUrl = '';
 
       if (imageFile) {
@@ -123,7 +200,15 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         }
       }
 
-// Removed seating map upload
+      let seatingMapImageUrl = initialData?.seatingMapImageUrl || '';
+
+      if (seatingMapImageFile) {
+        try {
+          seatingMapImageUrl = await uploadImage(seatingMapImageFile, token);
+        } catch (uploadError: any) {
+          throw new Error(`Error subiendo croquis: ${uploadError.message}`);
+        }
+      }
 
       const galleryUrls = [];
       if (galleryFiles.length > 0) {
@@ -149,6 +234,15 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         galleryUrls: [...(initialData?.galleryUrls || []), ...galleryUrls],
         status: status,
         imageUrl: imageUrl || initialData?.imageUrl || '',
+        seatingMapImageUrl,
+        hasSeatingChart,
+        zones: zones.map((z: any) => ({
+          id: z.id,
+          name: z.name,
+          description: z.description,
+          price: Number(z.price),
+          capacity: Number(z.capacity),
+        })),
       };
 
       await updateEvent(initialData.id, eventData, token);
@@ -409,6 +503,169 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
               </>
             )}
           </div>
+        </div>
+
+        {/* Zones */}
+        <div className="form-section" style={{ marginTop: '2rem' }}>
+          <div className="form-group">
+            <label className="form-label">Tipo de Localidad</label>
+            <div
+              className="eventType-toggle"
+              style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}
+            >
+              <button
+                type="button"
+                className={`btn ${hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setHasSeatingChart(true)}
+              >
+                🪑 Asientos Numerados
+              </button>
+              <button
+                type="button"
+                className={`btn ${!hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setHasSeatingChart(false)}
+              >
+                🎫 Entradas
+              </button>
+            </div>
+            <p
+              className="form-text text-muted"
+              style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}
+            >
+              {hasSeatingChart
+                ? 'Los usuarios seleccionarán sus asientos específicos desde un mapa interactivo.'
+                : 'Los usuarios solo seleccionarán la cantidad de entradas para cada zona/área.'}
+            </p>
+          </div>
+
+          {hasSeatingChart && (
+            <div className="form-group">
+              <label>Croquis de Localidades (Opcional)</label>
+              <div className="image-upload-container">
+                <input
+                  type="file"
+                  id="seatingMapUpload"
+                  accept="image/*"
+                  onChange={handleSeatingMapImageChange}
+                  className="file-input"
+                  hidden
+                />
+                <label htmlFor="seatingMapUpload" className="file-label">
+                  {seatingMapImagePreview ? (
+                    <div
+                      className="image-preview"
+                      style={{
+                        backgroundImage: `url(${seatingMapImagePreview})`,
+                      }}
+                    >
+                      <div className="image-overlay">Cambiar Croquis</div>
+                    </div>
+                  ) : (
+                    <div className="upload-placeholder">
+                      <span>🗺️ Cargar Croquis</span>
+                      <small>(Max 1MB)</small>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <h3>🏟️ Zonas de Asientos</h3>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={addZone}
+            >
+              + Agregar Zona
+            </button>
+          </div>
+
+          {zones.map((zone, i) => (
+            <div key={i} className="zone-form-item">
+              <div className="zone-header">
+                <h4>Zona {i + 1}</h4>
+                {zones.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => removeZone(i)}
+                  >
+                    🗑️ Eliminar
+                  </button>
+                )}
+              </div>
+              <div className="form-row">
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Nombre</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: VIP, General"
+                    value={zone.name}
+                    onChange={(e) => updateZone(i, 'name', e.target.value)}
+                    required
+                    disabled={zone.hasSold}
+                    title={zone.hasSold ? 'No se puede modificar (boletos vendidos)' : ''}
+                  />
+                  {zone.hasSold && <small style={{color:'red'}}>Bloqueado (ventas activas)</small>}
+                </div>
+                <div
+                  className="form-group"
+                  style={{ marginBottom: 0, flex: 2 }}
+                >
+                  <label>Descripción (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Incluye una bebida, cerca del escenario..."
+                    value={zone.description || ''}
+                    onChange={(e) =>
+                      updateZone(i, 'description', e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+              <div
+                className="form-row"
+                style={{ gap: '0.5rem', marginTop: '1rem' }}
+              >
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Precio ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={zone.price}
+                    onChange={(e) => updateZone(i, 'price', e.target.value)}
+                    required
+                    disabled={zone.hasSold}
+                    title={zone.hasSold ? 'No se puede modificar (boletos vendidos)' : ''}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Capacidad</label>
+                  <input
+                    type="number"
+                    min={zone.soldCount && zone.soldCount > 0 ? zone.soldCount : 1}
+                    value={zone.capacity}
+                    onChange={(e) => updateZone(i, 'capacity', e.target.value)}
+                    required
+                  />
+                  {zone.soldCount != null && zone.soldCount > 0 && (
+                    <small style={{ color: '#f59e0b' }}>
+                      Mínimo: {zone.soldCount} (vendidos)
+                    </small>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="form-section" style={{ marginTop: '2rem' }}>

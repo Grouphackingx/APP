@@ -3,6 +3,10 @@ import { Type } from 'class-transformer';
 
 export class CreateZoneDto {
     @IsString()
+    @IsOptional()
+    id?: string;
+
+    @IsString()
     @IsNotEmpty()
     name!: string;
 
@@ -76,5 +80,9 @@ export class CreateEventDto {
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateZoneDto)
+    @IsOptional()
     zones!: CreateZoneDto[];
 }
+
+import { PartialType } from '@nestjs/mapped-types';
+export class UpdateEventDto extends PartialType(CreateEventDto) {}

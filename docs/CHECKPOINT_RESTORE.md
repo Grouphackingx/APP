@@ -1,6 +1,6 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 26 de Marzo de 2026, 00:15  
+**Fecha de Última Actualización:** 31 de Marzo de 2026, 00:00
 **Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2 y 3 Funcionando)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
@@ -42,16 +42,30 @@ Abre **3 terminales** en VS Code (`Ctrl+Shift+ñ`) y ejecuta:
 
 **Terminal 1: Backend (API)**
 
+> ⚠️ **IMPORTANTE**: El NX Daemon NO funciona correctamente en este proyecto. La API NO se recompila automáticamente cuando haces cambios. Debes usar el siguiente flujo:
+
 ```bash
-npx nx serve api --no-dte
+# Opción A: Build manual + Run directo (RECOMENDADO)
+npx nx build api
+node dist/apps/api/main.js
+
+# Opción B: Si quieres try nx serve (puede no recompilar cambios automáticamente)
+npx nx serve api
 ```
+
+> **Si cambias código del backend**, debes Ctrl+C, re-build y re-run:
+> ```bash
+> npx nx build api
+> node dist/apps/api/main.js
+> ```
 
 _(Espera a que diga "Application is running on: http://localhost:3000/api")_
 
 **Terminal 2: Web Client (Usuarios)**
 
 ```bash
-npx nx dev web-client --no-dte
+cd apps/web-client
+npx next dev --port=4200
 ```
 
 _(Accesible en http://localhost:4200)_
@@ -65,7 +79,7 @@ npx next dev --port=4201
 
 _(Accesible en http://localhost:4201)_
 
-> **⚠️ Nota**: No uses `npx nx dev web-host` ya que la TUI interactiva de Nx puede dar problemas. Usa `npx next dev --port=4201` directamente.
+> **⚠️ Nota**: No uses `npx nx dev web-host` ni `npx nx dev web-client` ya que la TUI interactiva de Nx puede dar problemas. Usa `npx next dev --port=XXXX` directamente.
 
 ### Paso 5: Iniciar App Móvil (Staff — Opcional)
 
@@ -90,167 +104,172 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
 
 ---
 
-## 3. 📦 Estado de la Implementación (Verificado ✅)
+## 3. ✅ Funcionalidades Verificadas
 
-### Backend (NestJS) ✅ — 7 módulos
+### Backend (API - Puerto 3000)
 
-- **Auth**: Login JWT y Registro con bcrypt.
-- **Eventos**: CRUD completo, soporte de zonas y asientos auto-generados.
-- **Órdenes**: Bloqueo de asientos con Redis (10 min TTL), transacciones atómicas en Postgres, compra y generación de QR JWT.
-- **Pagos**: Módulo `/payments` simulando Stripe (siempre aprueba). `// TODO: Implementar pagos con Stripe`.
-- **Validación**: Endpoint `/tickets/validate` para APP Móvil (VALID → USED, previene doble uso).
-- **Prisma**: PrismaService como singleton inyectable.
-- **Redis**: RedisService con ioredis (lock/unlock/getSeatLockHolder).
+| Método | Endpoint                        | Auth        | Estado | Descripción                             |
+| :----- | :------------------------------ | :---------- | :----- | :-------------------------------------- |
+| POST   | `/api/auth/login`               | No          | ✅ OK  | Login JWT (retorna access_token + user) |
+| POST   | `/api/auth/register`            | No          | ✅ OK  | Registro de usuarios                    |
+| GET    | `/api/events`                   | No          | ✅ OK  | Listar eventos con zonas y asientos     |
+| GET    | `/api/events/:id`               | No          | ✅ OK  | Detalle de evento con zonas y asientos  |
+| POST   | `/api/events`                   | JWT (HOST)  | ✅ OK  | Crear evento con zonas y asientos       |
+| PATCH  | `/api/events/:id`               | JWT (HOST)  | ✅ OK  | Editar evento, zonas, descripciones     |
+| DELETE | `/api/events/:id`               | JWT (HOST)  | ✅ OK  | Borrar evento (solo si 0 vendidos)      |
+| POST   | `/api/orders/lock-seats`        | JWT         | ✅ OK  | Bloquear asientos (Redis 10 min)        |
+| POST   | `/api/orders/unlock-seats`      | JWT         | ✅ OK  | Liberar asientos bloqueados             |
+| POST   | `/api/orders/purchase`          | JWT         | ✅ OK  | Comprar tickets (genera QR JWT)         |
+| GET    | `/api/orders`                   | JWT         | ✅ OK  | Obtener órdenes enriquecidos            |
+| POST   | `/api/tickets/validate`         | JWT         | ✅ OK  | Validar ticket QR (VALID → USED)        |
+| POST   | `/api/upload`                   | JWT         | ✅ OK  | Subir imágenes                          |
 
-### API Endpoints Verificados
+### Web Client (Puerto 4200)
 
-| Método | Endpoint                   | Auth        | Estado | Descripción                             |
-| :----- | :------------------------- | :---------- | :----- | :-------------------------------------- |
-| GET    | `/api`                     | No          | ✅ OK  | Health check                            |
-| POST   | `/api/auth/register`       | No          | ✅ OK  | Registro de usuario                     |
-| POST   | `/api/auth/login`          | No          | ✅ OK  | Login JWT (retorna access_token + user) |
-| GET    | `/api/events`              | No          | ✅ OK  | Listar eventos con zonas                |
-| GET    | `/api/events/:id`          | No          | ✅ OK  | Detalle de evento con zonas y asientos  |
-| POST   | `/api/events`              | JWT (HOST)  | ✅ OK  | Crear evento con zonas y asientos       |
-| POST   | `/api/orders/lock-seats`   | JWT         | ✅ OK  | Bloquear asientos (Redis 10 min)        |
-| POST   | `/api/orders/unlock-seats` | JWT         | ✅ OK  | Liberar asientos bloqueados             |
-| POST   | `/api/orders/purchase`     | JWT         | ✅ OK  | Comprar tickets (genera QR JWT)         |
-| GET    | `/api/orders`              | JWT         | ✅ OK  | Mis órdenes con tickets enriquecidos    |
-| POST   | `/api/tickets/validate`    | JWT (STAFF) | ✅ OK  | Validar ticket QR (VALID → USED)        |
+| Ruta           | Estado | Descripción                                                |
+| :------------- | :----- | :--------------------------------------------------------- |
+| `/`            | ✅     | Home: Hero + catálogo de eventos en grid + buscador        |
+| `/login`       | ✅     | Formulario de login con JWT y localStorage                 |
+| `/register`    | ✅     | Formulario de registro                                     |
+| `/events/[id]` | ✅     | Detalle del evento + mapa de asientos interactivo + compra |
+| `/my-tickets`  | ✅     | Lista de tickets comprados con QR y estado                 |
 
-### Frontend Web Client (Next.js) ✅ — 5 páginas
+### Web Host (Puerto 4201)
 
-| Ruta           | Estado       | Descripción                                                |
-| :------------- | :----------- | :--------------------------------------------------------- |
-| `/`            | ✅           | Hero animado + catálogo de eventos en grid                 |
-| `/login`       | ✅           | Formulario de login con JWT y localStorage                 |
-| `/register`    | ✅           | Formulario de registro                                     |
-| `/events/[id]` | ✅           | Detalle del evento + mapa de asientos interactivo + compra |
-| `/my-tickets`  | ✅ **NUEVO** | Mis órdenes con tickets, zona, asiento, estado y QR        |
-
-**Características UI:**
-
-- 🎨 Tema oscuro premium con glassmorphism, gradientes y animaciones CSS
-- 🔤 Tipografía: Inter + Space Grotesk (Google Fonts)
-- 🪑 Mapa de asientos interactivo (verde=disponible, morado=seleccionado, gris=vendido)
-- 🎫 Navbar con botón "Mis Tickets" (solo cuando está logueado)
-- 📊 Página "Mis Tickets" con stats, órdenes expandibles, tarjetas estilo ticket con tear-line
-
-### Frontend Web Host (Next.js) ✅
-
-- **Login**: Autenticación exclusiva para organizadores.
-- **Dashboard**: Stats (eventos, tickets vendidos, ingresos) + tabla de eventos.
-- **Crear Evento**: Formulario con zonas dinámicas (nombre, precio, capacidad).
-
-### Mobile App (React Native / Expo) ✅
-
-- **Login**: Autenticación para Staff.
-- **Scanner**: Uso de cámara para leer QRs.
-- **Validación**: Feedback visual al validar tickets contra el backend.
+| Sección          | Estado | Descripción                                            |
+| :--------------- | :----- | :----------------------------------------------------- |
+| Login            | ✅     | Login para organizadores                               |
+| Dashboard        | ✅     | Stats + tabla de eventos con pestañas (Activos/Inactivos/Borrador) |
+| Crear Evento     | ✅     | Formulario completo con zonas, galería, mapa, video    |
+| Editar Evento    | ✅     | Edición de zonas con protección de ventas activas      |
+| Eliminar Evento  | ✅     | Solo visible si 0 tickets vendidos                     |
 
 ---
 
-## 4. 📋 Cambios Recientes (Última Sesión)
+## 4. 🔧 Cambios Realizados en Esta Sesión (30-31 Marzo 2026)
 
-### Nuevas funcionalidades:
+### Problema Principal Resuelto: Edición de Zonas en Eventos
 
-1. ✅ **Página "Mis Tickets"** (`/my-tickets`) en el web-client — muestra todas las órdenes y tickets comprados con:
-   - Resumen con stats (órdenes, tickets totales, válidos, usados)
-   - Órdenes expandibles mostrando nombre del evento, fecha, ubicación, monto
-   - Tarjetas de ticket individual con zona, asiento, estado, sección QR, y link "Ver Evento"
-   - Diseño responsive con tear-line effect en los tickets
+**Síntoma**: Al editar un evento desde el dashboard del Host, los campos "Descripción" y "Capacidad" de las zonas no se guardaban. Los cambios se perdían al recargar.
 
-2. ✅ **QR Codes Reales** — Componente `QRCode.tsx` con librería `qrcode`:
-   - Genera QR codes escaneables a partir de los JWT tokens de cada ticket
-   - Efecto glow verde para tickets válidos, escala en grayscale para usados
-   - Animación pulse sutil en el label "Presenta este QR en la entrada"
-   - Manejo de errores con fallback visual
+**Causa Raíz Encontrada**: Tres problemas interconectados:
 
-3. ✅ **Búsqueda de Eventos** — Nuevo componente `SearchBar.tsx` integrado en HomePage:
-   - Filtro por título o ubicación (insensible a mayúsculas)
-   - Debounce de 500ms para optimizar peticiones
-   - Actualización de URL (`?q=...`) y estado vacío personalizado
-   - Estilo "Glassmorphism" flotante sobre el contenido
+#### 4.1. NX Daemon No Recompilaba la API Automáticamente
 
-4. ✅ **API Orders enriquecida** — `GET /api/orders` ahora decodifica los QR JWT tokens de cada ticket para extraer y agregar:
-   - `eventTitle`, `eventDate`, `eventLocation`, `eventCity`
-   - `zoneName`, `seatNumber`
-   - (El modelo Ticket no tiene relación directa con Seat, la info se extrae del JWT)
+**Archivo afectado**: Flujo de desarrollo
+**Problema**: El mensaje `NX Daemon is not running. Node process will not restart automatically after file changes` aparecía al correr `npx nx serve api`. Esto significaba que TODOS los cambios al código del backend que se hicieron en sesiones anteriores **nunca se aplicaron** porque el servidor seguía ejecutando el código viejo compilado.
+**Solución**: Documentado el flujo correcto: `npx nx build api` → `node dist/apps/api/main.js`. Se debe reiniciar manualmente tras cada cambio en el backend.
 
-5. ✅ **Mejora en "Mis Tickets"** — Ahora se visualiza la ciudad del evento al lado del lugar (ej. `📍 Lugar, Ciudad`).
+#### 4.2. `basicData` No Estaba Sanitizado Para Prisma
 
-6. ✅ **Upload de Imágenes** — Nueva funcionalidad completa para eventos:
-   - **Backend**: Endpoint `POST /api/upload` (Multer + DiskStorage)
-   - **Static Serving**: Imágenes accesibles en `http://localhost:3000/uploads/`
-   - **Frontend (Host)**: `CreateEventForm` actualizado con drag & drop y previsualización
-   - **Validación**: Límite de 5MB, solo imágenes (jpg/png)
+**Archivo**: `apps/api/src/app/events/events.service.ts` (método `update`)
+**Problema**: El `basicData` (datos del evento sin zonas) se pasaba directamente a `prisma.event.update()`. Si contenía campos desconocidos o tipos incorrectos (ej: `date` como string en vez de `Date`), la transacción Prisma podía fallar silenciosamente y revertir los cambios de zonas.
+**Solución**: Se implementó un filtro explícito de campos permitidos (`allowedEventFields`) y conversión de `date` string → `Date` object antes de pasarlo a Prisma.
 
-7. ✅ **Botón "Mis Tickets"** en el Navbar — botón cyan que aparece solo cuando el usuario está autenticado
+#### 4.3. Método `update` Reescrito Completamente
 
-8. ✅ **Mejoras UI/UX en el Buscador (SearchBar)** — Integración perfecta en el Hero Section del web-client:
-   - Se reemplazó el texto descriptivo del hero por el componente `<SearchBar />` dándole más protagonismo.
-   - Reubicación estratégica entre el título principal y los botones de acción ("Explorar Eventos" y "Crear Cuenta").
-   - Ajustes de márgenes (`2.5rem` superior y `3rem` inferior) en `global.css` para optimizar el espacio (breathing room) y la experiencia de usuario.
+**Archivo**: `apps/api/src/app/events/events.service.ts`
+**Cambios clave**:
+- **Filtrado de campos**: Solo pasa a Prisma los campos que existen en el modelo `Event`
+- **Conversión de fecha**: `date` string → `Date` object
+- **Protección de capacidad**: No permite reducir la capacidad por debajo del número de entradas vendidas. Lanza error `400 Bad Request` con mensaje descriptivo.
+- **Gestión de asientos al cambiar capacidad**:
+  - Si la capacidad **aumenta**: Crea nuevos asientos automáticamente (numerados secuencialmente)
+  - Si la capacidad **disminuye**: Elimina solo asientos **no vendidos** (de mayor a menor número)
+- **Respuesta mejorada**: El PATCH ahora retorna el evento completo con zonas y asientos incluidos
+- **Eliminación de debug**: Removido el `import('fs')` de debug
 
-9. ✅ **Sistema de Estados de Eventos (Activo, Inactivo, Borrador)**:
-   - **Backend**: 
-     - Se actualizó el enum `EventStatus` en Prisma a `DRAFT`, `PUBLISHED`, e `INACTIVE`.
-     - Lógica automatizada en `events.service.ts` (`updatePastEventsStatus`) que detecta eventos `PUBLISHED` con fechas en el pasado y los cambia a `INACTIVE` automáticamente al ser consultados.
-     - Bloqueo de seguridad al intentar crear o modificar eventos asignándoles una fecha pasada (`BadRequestException`).
-   - **Frontend (Host)**: 
-     - Tabla del Dashboard ahora muestra visualmente los estados ("🔴 Inactivo", "🟢 Activo", "📝 Borrador").
-     - Formularios de Creación (`CreateEventForm`) y Edición (`EditEventForm`) actualizados con un menú desplegable al final de la página para definir si el evento nace como "Borrador" o "Activo".
-     - Bloqueo en el input de calendario (`datetime-local`) para que no permita elegir días u horas que ya pasaron (basado en la zona horaria local).
-   - **Frontend (Web Client)**: 
-     - Los eventos que caen en estado `INACTIVE` son excluidos automáticamente del Home y búsquedas.
-     - Si se navega directamente a la URL de un evento `INACTIVE`, se muestra un recuadro indicando "Evento Finalizado".
+#### 4.4. `findAll` Actualizado Para Incluir Asientos
 
-10. ✅ **Edición y Eliminación Condicional de Eventos**:
-    - **Backend**: Endpoint PATCH `/events/:id` para editar y DELETE `/events/:id` para borrar. El borrado verifica en BD (`hasSoldSeats`) que **no haya tickets vendidos**; caso contrario lanza error.
-    - **Frontend (Host)**: Formularios de Edición acoplados al nuevo endpoint. Botón de papelera en el Dashboard que solo aparece si los "Tickets Vendidos" son 0.
+**Archivo**: `apps/api/src/app/events/events.service.ts` (método `findAll`)
+**Cambio**: `include: { zones: true }` → `include: { zones: { include: { seats: true } } }`
+**Motivo**: El dashboard del Host necesita saber qué zonas tienen boletos vendidos para bloquear correctamente los campos nombre/precio en el formulario de edición.
 
-11. ✅ **Pestañas de Estado en Dashboard**:
-    - **Frontend (Host)**: Se añadieron 3 pestañas ("Activos", "Inactivos" y "Borrador") separando los eventos visualmente mediante filtros vinculados a `PUBLISHED`, `INACTIVE` y `DRAFT`. Integrado en `DashboardPage.tsx` con UI y animaciones adaptadas.
+#### 4.5. EditEventForm Mejorado
 
-12. ✅ **Integración Inteligente de Videos de YouTube**:
-    - **Frontend (Web Client)**: Función nativa `getVideoEmbedUrl` añadida en `EventDetailClient.tsx` que intercepta cualquier tipo de enlace (youtu.be, URL acortadas o /watch) pegado por el organizador y lo convierte al formato seguro `/embed/`, evitando bloqueos de permisos.
+**Archivo**: `apps/web-host/src/components/EditEventForm.tsx`
+**Cambios**:
+- **soldCount en ZoneInput**: Cada zona ahora calcula y almacena el número exacto de asientos vendidos
+- **Protección visual**:
+  - Campos `Nombre` y `Precio`: Deshabilitados (gris) si la zona tiene ventas activas. Muestra "Bloqueado (ventas activas)" en rojo.
+  - Campo `Descripción`: Siempre editable (incluso con ventas activas)
+  - Campo `Capacidad`: Siempre editable pero con `min` dinámico basado en asientos vendidos. Muestra "Mínimo: X (vendidos)" en amarillo.
+- **Validación pre-submit**: Antes de enviar al backend, verifica que ninguna zona tenga capacidad menor al número de vendidos
+- **Tipos flexibles**: `price` y `capacity` usan `number | string` en el estado de React para permitir edición fluida (sin que al borrar un número se fuerze a 0). Se convierten a `Number()` solo al momento del submit.
 
-13. ✅ **Corrección Flujo de Estado (Draft/Published)**:
-    - **Full-Stack**: Se corrigió un bug donde los nuevos eventos se creaban como borradores por defecto a pesar de que se escogiera "Activo". Se integró `status?: string` en el Validator global (`CreateEventDto`) que permite a NestJS leer y almacenar explícitamente el cambio eludiendo las restricciones de Prisma en `events.service.ts`.
+#### 4.6. Controlador Simplificado
 
-### Correcciones previas:
+**Archivo**: `apps/api/src/app/events/events.controller.ts`
+**Cambio**: El endpoint PATCH usa `@Request() req` y lee `req.body` directamente, evitando que el `ValidationPipe` global (`whitelist: true`) filtre campos de zona del payload.
 
-- 🔧 Bug en `orders.service.ts`: eliminado `if` anidado redundante en verificación de lock
-- 🔧 Roles de usuario: script `seed-roles.js` para asignar HOST y STAFF
-- 🔧 Documentación completa en `/docs`
+#### 4.7. DTOs Actualizados
+
+**Archivo**: `libs/shared/src/lib/dto/events.dto.ts`
+**Cambios**:
+- `CreateZoneDto`: Agregado campo opcional `id?: string` (necesario para identificar zonas existentes en updates)
+- `CreateEventDto`: Campo `zones` ahora es `@IsOptional()` (para permitir PATCH sin zonas)
+- Nuevo `UpdateEventDto`: Extiende `PartialType(CreateEventDto)` para validación más flexible
+
+### Validación de Fecha Removida en Update
+
+**Archivo**: `apps/api/src/app/events/events.service.ts`
+**Cambio**: Se removió la validación `if (date < now) throw 'fecha en el pasado'` del método `update`.
+**Motivo**: Bloqueaba la edición de metadatos (descripciones, capacidades) en eventos activos/pasados. La validación de fecha futura se mantiene solo en `create`.
 
 ---
 
-## 5. 📝 Notas Técnicas para el Desarrollador
+## 5. 📁 Archivos Modificados en Esta Sesión
 
-- **Persistencia**: Los datos (usuarios, eventos, tickets) se guardan en el volumen Docker `openticket_postgres_data`. No se pierden al reiniciar contenedores.
-- **Pagos Mock**: El sistema de pagos es una simulación (`PaymentsModule`). Para producción: configurar `STRIPE_SECRET_KEY` en `.env` e implementar la integración real.
-- **API URL en Móvil**: La app móvil detecta automáticamente tu IP local si usas Expo Go. Si falla: revisa `apps/mobile-app/src/app/services/api.ts`.
-- **Puertos no estándar**: PostgreSQL en **5435**, Redis en **6380** (para evitar conflictos con servicios locales).
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `apps/api/src/app/events/events.service.ts` | **Reescritura mayor** | Método `update` completamente nuevo con sanitización, protección de capacidad, gestión de asientos. `findAll` incluye seats. |
+| `apps/api/src/app/events/events.controller.ts` | Modificado | PATCH usa `@Request()` para evitar whitelist del ValidationPipe |
+| `apps/web-host/src/components/EditEventForm.tsx` | Mejorado | soldCount, validación de capacidad, protección visual de campos bloqueados |
+| `libs/shared/src/lib/dto/events.dto.ts` | Ampliado | `id` opcional en CreateZoneDto, `zones` opcional, nuevo `UpdateEventDto` |
+
+---
+
+## 6. 📝 Notas Técnicas Para el Desarrollador
+
+- **NX Daemon**: NO funciona en este proyecto. Siempre hacer `npx nx build api` y luego `node dist/apps/api/main.js` para ver cambios del backend.
+- **Puertos**: PostgreSQL en **5435**, Redis en **6380** (no estándar para evitar conflictos).
 - **Prisma**: Versión **5.22.0** (bloqueada — v7+ tiene incompatibilidades de CLI).
-- **Web Host**: Usar `npx next dev --port=4201` desde `apps/web-host/`, no el comando Nx.
-- **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento está codificada en el QR JWT y se decodifica en runtime.
-- **Lint warning**: `any` type en `orders.service.ts` línea 191 (cast de enum `TicketStatus`) — funcional, mejora cosmética pendiente.
+- **Web Host**: Usar `npx next dev --port=4201` desde `apps/web-host/`.
+- **Web Client**: Usar `npx next dev --port=4200` desde `apps/web-client/`.
+- **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento está codificada en el QR JWT.
+- **Pagos Mock**: El sistema de pagos es una simulación (`PaymentsModule`). Para producción: configurar `STRIPE_SECRET_KEY` en `.env`.
+- **API URL en Móvil**: La app detecta automáticamente tu IP local si usas Expo Go.
+- **ValidationPipe Global**: `main.ts` tiene `whitelist: true` y `transform: true`. Para el PATCH de eventos se usa `@Request()` para evitar que se filtren los campos de zona.
 
 ---
 
-## 6. 🗺️ Próximos Pasos de Desarrollo
+## 7. 🔐 Reglas de Negocio de Edición de Zonas
+
+| Campo       | ¿Editable si hay ventas? | Restricción                                     |
+| :---------- | :----------------------- | :---------------------------------------------- |
+| Nombre      | ❌ No                    | Bloqueado si `soldCount > 0`                    |
+| Descripción | ✅ Sí                    | Siempre editable                                |
+| Precio      | ❌ No                    | Bloqueado si `soldCount > 0`                    |
+| Capacidad   | ✅ Sí                    | No puede ser menor a `soldCount` (vendidos)     |
+| Nueva Zona  | ✅ Sí                    | Se puede agregar zonas nuevas siempre            |
+| Eliminar Zona | ❌ (con ventas)        | Solo si la zona no tiene tickets vendidos        |
+
+---
+
+## 8. 🗺️ Próximos Pasos de Desarrollo
 
 ### Prioridad Alta
 
-- [x] ~~Generar imagen QR real con librería `qrcode` en la página "Mis Tickets"~~ ✅
 - [ ] Integración real con Stripe (reemplazar el mock)
-- [x] ~~Búsqueda y filtrado de eventos (por fecha, ubicación, categoría)~~ ✅
-- [x] ~~Upload de imágenes para eventos (actualmente sin imagen)~~ ✅
 - [ ] Panel de Administración (dashboard de ventas, gestión de usuarios)
 - [ ] Emails transaccionales (confirmación de compra)
 - [ ] Reportes financieros para organizadores
+
+### Prioridad Media
+
 - [ ] Paginación en endpoints (eventos, órdenes)
+- [ ] Sistema de categorías de eventos
+- [ ] Optimizar queries de findAll (no traer todos los seats si no es necesario)
 
 ### Prioridad Baja
 
@@ -259,4 +278,24 @@ Puedes usar estos usuarios pre-creados o registrar nuevos:
 - [ ] CI/CD pipeline
 - [ ] Tests unitarios e integración
 - [ ] CDN para imágenes
-- [ ] Sistema de categorías de eventos
+
+### Completado ✅
+
+- [x] ~~Generar imagen QR real con librería `qrcode`~~ ✅
+- [x] ~~Búsqueda y filtrado de eventos~~ ✅
+- [x] ~~Upload de imágenes para eventos~~ ✅
+- [x] ~~Edición y eliminación de eventos~~ ✅
+- [x] ~~Gestión de estados (Draft/Published/Inactive)~~ ✅
+- [x] ~~Desactivación automática de eventos pasados~~ ✅
+- [x] ~~Edición de descripciones de zonas~~ ✅ (resuelto 31 Mar 2026)
+- [x] ~~Protección de capacidad (no reducir bajo vendidos)~~ ✅ (resuelto 31 Mar 2026)
+- [x] ~~Gestión dinámica de asientos al cambiar capacidad~~ ✅ (resuelto 31 Mar 2026)
+
+---
+
+## 9. 🐛 Bugs Conocidos / Deuda Técnica
+
+- **Lint warnings `any`**: Múltiples archivos usan `any` type (especialmente `events.service.ts` y `EditEventForm.tsx`). Funcional pero debería tiparse mejor.
+- **Console.log en create**: `events.service.ts` línea 10 tiene un `console.log` de debug que debería removerse.
+- **NX Daemon**: No funciona, requiere rebuild manual del backend. Investigar fix o migrar a otro método de serve.
+- **Galería de imágenes en edición**: Las imágenes de galería existentes se acumulan en vez de reemplazarse (al editar, se suman las nuevas a las anteriores).

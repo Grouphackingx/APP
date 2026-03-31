@@ -1,4 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const isBrowser = typeof window !== 'undefined';
+const defaultApiUrl = isBrowser ? `http://${window.location.hostname}:3000/api` : 'http://127.0.0.1:3000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || defaultApiUrl;
 
 interface FetchOptions extends RequestInit {
   token?: string;

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, Delete } from '@nestjs/common';
 import { EventsService } from './events.service';
-import { CreateEventDto } from '@open-ticket/shared';
+import { CreateEventDto, UpdateEventDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('events')
@@ -25,8 +25,10 @@ export class EventsController {
 
     @UseGuards(JwtAuthGuard)
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateData: any) {
-        return this.eventsService.update(id, updateData);
+    update(@Param('id') id: string, @Request() req: any) {
+        // Read strictly from the unvalidated raw body to prevent class-validator from dropping valid zones
+        const rawBody = req.body;
+        return this.eventsService.update(id, rawBody);
     }
 
     @UseGuards(JwtAuthGuard)
