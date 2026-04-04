@@ -14,6 +14,30 @@ export class EventsService {
             throw new BadRequestException('La fecha del evento no puede estar en el pasado');
         }
 
+        const user = await this.prisma.user.findUnique({
+            where: { id: organizerId },
+            include: { organizerProfile: true, _count: { select: { eventsOwned: true } } }
+        });
+
+        if (!user || !user.organizerProfile) {
+            throw new BadRequestException('Usuario no tiene configurado un perfil de organizador válido.');
+        }
+
+        const profile = user.organizerProfile;
+        
+        if (profile.status === 'PENDING') {
+            throw new BadRequestException('Tu cuenta de organizador está PENDIENTE de aprobación por el Administrador Global.');
+        } else if (profile.status === 'REJECTED') {
+            throw new BadRequestException('Tu cuenta de organizador fue rechazada.');
+        }
+
+        const currentEventsCount = user._count.eventsOwned;
+        if (profile.plan === 'FREE' && currentEventsCount >= 3) {
+            throw new BadRequestException('Has alcanzado el límite de 3 eventos para el plan Gratuito. Sube a PLUS para más.');
+        } else if (profile.plan === 'PLUS' && currentEventsCount >= 12) {
+            throw new BadRequestException('Has alcanzado el límite de 12 eventos para el plan PLUS. Usa ELITE para eventos ilimitados.');
+        }
+
         // Simplistic seat generation for demonstration
         // In production, this would be more complex based on layout
         return this.prisma.event.create({

@@ -38,13 +38,6 @@ export async function register(name: string, email: string, password: string) {
   });
 }
 
-export async function registerHost(data: any) {
-  return fetchAPI<{ access_token: string; user: any }>('/auth/register-host', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-
 export async function getEvents(token: string) {
   return fetchAPI<any[]>('/events', { token, cache: 'no-store' });
 }
@@ -93,6 +86,20 @@ export async function updateEvent(id: string, data: any, token: string) {
 export async function deleteEvent(id: string, token: string) {
   return fetchAPI<any>(`/events/${id}`, {
     method: 'DELETE',
+    token,
+  });
+}
+
+// Admin Integrations
+
+export async function getOrganizers(token: string) {
+  return fetchAPI<any[]>('/admin/organizers', { token, cache: 'no-store' });
+}
+
+export async function setOrganizerStatus(id: string, status: string, token: string) {
+  return fetchAPI<any>(`/admin/organizers/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
     token,
   });
 }

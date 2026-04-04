@@ -41,10 +41,10 @@ export default function LoginPage() {
         >
           🎫
         </div>
-        <h1>OpenTicket Host</h1>
-        <p className="auth-subtitle">Panel de Organizador de Eventos</p>
+        <h1 className="text-3xl font-black text-slate-800 mb-2">Global Admin</h1>
+        <p className="auth-subtitle mb-6 text-slate-500">Panel de Control General de la Plataforma OpenTicket</p>
 
-        {error && <div className="alert alert-error">⚠️ {error}</div>}
+        {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -77,9 +77,6 @@ export default function LoginPage() {
             {loading ? 'Ingresando...' : '🔐 Iniciar Sesión'}
           </button>
         </form>
-        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '14px' }}>
-            ¿Eres un organizador nuevo? <a href="/register" style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>Crea tu cuenta aquí</a>
-        </div>
       </div>
     </div>
   );

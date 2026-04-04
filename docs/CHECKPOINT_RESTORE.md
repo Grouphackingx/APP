@@ -79,7 +79,16 @@ npx next dev --port=4201
 
 _(Accesible en http://localhost:4201)_
 
-> **⚠️ Nota**: No uses `npx nx dev web-host` ni `npx nx dev web-client` ya que la TUI interactiva de Nx puede dar problemas. Usa `npx next dev --port=XXXX` directamente.
+**Terminal 4: Web Admin (Administrador Global)**
+
+```bash
+cd apps/web-admin
+npx next dev --port=4202
+```
+
+_(Accesible en http://localhost:4202)_
+
+> **⚠️ Nota**: No uses `npx nx dev ...` ya que la TUI interactiva de Nx puede dar problemas. Usa `npx next dev --port=XXXX` directamente.
 
 ### Paso 5: Iniciar App Móvil (Staff — Opcional)
 
@@ -94,10 +103,11 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 ## 2. 🧪 Datos de Prueba (Credenciales)
 
-Puedes usar estos usuarios pre-creados o registrar nuevos:
+Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `create-admin.ts` para el super usuario):
 
 | Rol                    | Email                    | Password     | Dónde usarlo                           |
 | :--------------------- | :----------------------- | :----------- | :------------------------------------- |
+| Administrador Global   | admin@admin.com          | admin123     | `http://localhost:4202` (web-admin)    |
 | **Organizador (Host)** | `admin@openticket.com`   | `admin123`   | http://localhost:4201 (Panel Host)     |
 | **Cliente (User)**     | `cliente@openticket.com` | `cliente123` | http://localhost:4200 (Portal Cliente) |
 | **Staff (Validator)**  | `staff@openticket.com`   | `staff123`   | Mobile App (Expo Go)                   |

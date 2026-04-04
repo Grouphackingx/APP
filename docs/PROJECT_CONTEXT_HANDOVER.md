@@ -1,4 +1,4 @@
-﻿# PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
+# PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
 **Ãšltima Actualización:** 31 de Marzo de 2026
 **Estado del Proyecto:** âœ… Fases 1, 2 y 3 Completadas y Verificadas
@@ -183,6 +183,19 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api
 - Stats cards (Eventos Creados, Tickets Vendidos, Asientos Totales, Ingresos)
 - Tabla de eventos con estado (Publicado/Borrador)
 
+### D. Frontend Web Admin (Next.js) - 3 Vistas
+
+| Vista                 | Componente                    | Estado      | Descripción                                                           |
+| :-------------------- | :---------------------------- | :---------- | :-------------------------------------------------------------------- |
+| Login                 | `login/page.tsx`              | Completado  | Inicia sesión como administrador del sistema global.                  |
+| Dashboard Inicio      | `dashboard/page.tsx`          | Completado  | Panel maestro principal con resumen operativo.                        |
+| Gestión Organizadores | `dashboard/page.tsx` (view)   | Completado  | Tabla con control maestro de los estados de organizadores.            |
+| Gestión Usuarios      | `dashboard/page.tsx` (view)   | Esqueleto   | Placeholder para lista de usuarios compradores.                       |
+
+**Características UI:**
+
+- Completamente diseñado en modo oscuro CSS nativo utilizando los mismos tokens del host.
+- Libre de dependencias dinámicas como Tailwind Utils para evitar overhead o bloqueos de Webpack Turbopack.
 ### D. Mobile App (React Native / Expo) â€” 2 pantallas
 
 | Pantalla | Archivo             | Estado | DescripciÃ³n                       |
@@ -488,3 +501,16 @@ cd apps/mobile-app && npx expo start
 | Eliminar zona |  (con ventas) | Solo si 0 tickets vendidos en esa zona |
 
 **ValidaciÃ³n de fecha pasada**: REMOVIDA del mÃ©todo `update` (se mantiene solo en `create`). Permite editar metadatos de eventos activos/pasados.
+
+
+## 14. Registro de Cambios Recientes (04 Abril 2026)
+
+### Global Admin Dashboard (NUEVO)
+- **Inicializacion:** Se creo la aplicacion web-admin corriendo en puerto 4202.
+- **UI/UX:** Diseno basado en CSS nativo (Dark Mode) sin dependencias de Tailwind, garantizando paridad visual con el panel de Organizadores.
+- **SideBar:** Opciones de Inicio (Comandos), Organizadores (Gestion de estados) y Usuarios (Placeholder).
+
+### Portal Organizadores (Host)
+- **Onboarding:** Integracion del formulario multi-paso en /register nativo. 
+- **Planes:** Incorporacion del selector visual de planes (Free, Plus, Elite).
+- **Autenticacion:** Fix critico al enrutador en Next.js para redirigir al /dashboard una vez logrado el log-in.

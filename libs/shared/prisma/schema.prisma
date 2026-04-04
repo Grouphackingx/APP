@@ -26,6 +26,18 @@ enum TicketStatus {
   REFUNDED
 }
 
+enum HostPlan {
+  FREE
+  PLUS
+  ELITE
+}
+
+enum HostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -36,6 +48,8 @@ model User {
   
   eventsOwned Event[]  @relation("EventOwner")
   orders      Order[]
+  
+  organizerProfile OrganizerProfile?
 }
 
 model Event {
@@ -101,4 +115,25 @@ model Ticket {
   qrCodeToken  String       @unique
   status       TicketStatus @default(VALID)
   scannedAt    DateTime?
+}
+
+model OrganizerProfile {
+  id                      String     @id @default(uuid())
+  userId                  String     @unique
+  user                    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  firstName               String
+  lastName                String
+  identificationNumber    String
+  phone                   String
+  
+  organizationName        String
+  organizationDescription String?
+  organizationLogo        String?
+  
+  plan                    HostPlan   @default(FREE)
+  status                  HostStatus @default(PENDING)
+  
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
 }

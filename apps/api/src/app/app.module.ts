@@ -13,6 +13,7 @@ import { RedisModule } from './redis/redis.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { PaymentsModule } from './payments/payments.module';
 import { UploadModule } from './upload/upload.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { UploadModule } from './upload/upload.module';
     TicketsModule,
     PaymentsModule,
     UploadModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
