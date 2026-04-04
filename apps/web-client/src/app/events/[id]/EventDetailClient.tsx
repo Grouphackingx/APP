@@ -417,26 +417,6 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                   </div>
                 )}
 
-                {!user && (
-                  <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-                    <p
-                      style={{
-                        fontSize: '0.85rem',
-                        color: 'var(--text-secondary)',
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      Inicia sesión para comprar/seleccionar asientos.
-                    </p>
-                    <Link
-                      href="/login"
-                      className="btn btn-primary btn-sm btn-full"
-                    >
-                      Iniciar Sesión
-                    </Link>
-                  </div>
-                )}
-
                 <div className="zones-list">
                   {event.zones.map((zone) => {
                     const availableCount = (zone.seats || []).filter(
@@ -670,10 +650,6 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                                         +
                                       </button>
                                     </div>
-                                  ) : !isSoldOut ? (
-                                    <span style={{ fontSize: '0.8rem' }}>
-                                      Inicia sesión para comprar
-                                    </span>
                                   ) : null}
                                 </div>
                               );
@@ -684,6 +660,26 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                     );
                   })}
                 </div>
+
+                {!user && (
+                  <div style={{ marginBottom: '0', textAlign: 'center' }}>
+                    <p
+                      style={{
+                        fontSize: '0.85rem',
+                        color: 'var(--text-primary)',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      Inicia sesión para comprar/seleccionar asientos.
+                    </p>
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(`/events/${event.id}`)}`}
+                      className="btn btn-primary btn-sm btn-full"
+                    >
+                      Iniciar Sesión
+                    </Link>
+                  </div>
+                )}
 
                 {/* Purchase Action */}
                 <div className="ticket-purchase-action">

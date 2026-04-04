@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { register, login } from '../../lib/api';
@@ -16,6 +16,15 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirectTo, setRedirectTo] = useState('/');
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect) {
+      setRedirectTo(redirect);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +42,7 @@ export default function RegisterPage() {
       // Auto-login after registration
       const result = await login(email, password);
       loginUser(result.access_token, result.user);
-      router.push('/');
+      router.push(redirectTo);
     } catch (err: any) {
       setError(err.message || 'Error al registrarse');
     } finally {
@@ -132,7 +141,7 @@ export default function RegisterPage() {
         </form>
 
         <div className="auth-link">
-          ¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link>
+          ¿Ya tienes cuenta? <Link href={redirectTo !== '/' ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login'}>Inicia sesión</Link>
         </div>
       </div>
     </div>

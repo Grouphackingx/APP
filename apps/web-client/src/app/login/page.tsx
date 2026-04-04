@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { login } from '../../lib/api';
@@ -14,6 +14,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirectTo, setRedirectTo] = useState('/');
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect) {
+      setRedirectTo(redirect);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +32,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       loginUser(result.access_token, result.user);
-      router.push('/');
+      router.push(redirectTo);
     } catch (err: any) {
       setError(err.message || 'Credenciales inválidas');
     } finally {
@@ -95,7 +104,7 @@ export default function LoginPage() {
         </form>
 
         <div className="auth-link">
-          ¿No tienes cuenta? <Link href="/register">Regístrate aquí</Link>
+          ¿No tienes cuenta? <Link href={redirectTo !== '/' ? `/register?redirect=${encodeURIComponent(redirectTo)}` : '/register'}>Regístrate aquí</Link>
         </div>
       </div>
     </div>
