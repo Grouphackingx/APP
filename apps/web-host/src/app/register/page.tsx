@@ -5,7 +5,34 @@ import { useRouter } from 'next/navigation';
 import { registerHost } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import Link from 'next/link';
-import '../login/auth.css'; // Make sure auth styles are applied
+
+
+const ECUADOR_LOCATIONS: Record<string, string[]> = {
+  "Azuay": ["Cuenca", "Gualaceo", "Paute"],
+  "Bolívar": ["Guaranda", "Chillanes"],
+  "Cañar": ["Azogues", "Cañar", "La Troncal"],
+  "Carchi": ["Tulcán", "San Gabriel"],
+  "Chimborazo": ["Riobamba", "Alausi"],
+  "Cotopaxi": ["Latacunga", "Pujilí", "Salcedo"],
+  "El Oro": ["Machala", "Pasaje", "Santa Rosa", "Huaquillas"],
+  "Esmeraldas": ["Esmeraldas", "Atacames", "Quinindé"],
+  "Galápagos": ["Puerto Ayora", "Puerto Baquerizo Moreno", "Puerto Villamil"],
+  "Guayas": ["Guayaquil", "Durán", "Samborondón", "Milagro", "Daule"],
+  "Imbabura": ["Ibarra", "Otavalo", "Cotacachi"],
+  "Loja": ["Loja", "Catamayo", "Macará"],
+  "Los Ríos": ["Babahoyo", "Quevedo", "Vinces"],
+  "Manabí": ["Portoviejo", "Manta", "Chone", "Bahía de Caráquez"],
+  "Morona Santiago": ["Macas", "Sucúa"],
+  "Napo": ["Tena", "Baeza"],
+  "Orellana": ["Puerto Francisco de Orellana", "Loreto"],
+  "Pastaza": ["Puyo", "Mera"],
+  "Pichincha": ["Quito", "Sangolquí", "Machachi", "Cayambe"],
+  "Santa Elena": ["Santa Elena", "La Libertad", "Salinas"],
+  "Santo Domingo de los Tsáchilas": ["Santo Domingo"],
+  "Sucumbíos": ["Nueva Loja", "Shushufindi"],
+  "Tungurahua": ["Ambato", "Baños", "Pelileo"],
+  "Zamora Chinchipe": ["Zamora", "Yantzaza"]
+};
 
 export default function RegisterHostPage() {
   const router = useRouter();
@@ -24,11 +51,19 @@ export default function RegisterHostPage() {
     phone: '',
     organizationName: '',
     organizationDescription: '',
+    address: '',
+    province: '',
+    city: '',
     plan: 'FREE' 
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (name === 'province') {
+      setFormData(prev => ({ ...prev, province: value, city: ECUADOR_LOCATIONS[value]?.[0] || '' }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSelectPlan = (plan: string) => {
@@ -136,12 +171,38 @@ export default function RegisterHostPage() {
                 <textarea name="organizationDescription" rows={3} value={formData.organizationDescription} onChange={handleChange} placeholder="Breve historia o rubro..." />
               </div>
 
+              <div className="form-group">
+                <label>Dirección Física</label>
+                <input required name="address" value={formData.address} onChange={handleChange} placeholder="Av. Principal y Calle Secundaria" />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Provincia</label>
+                  <select required name="province" value={formData.province} onChange={handleChange} style={{ padding: '0.8rem', borderRadius: 'var(--radius)', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                    <option value="" disabled>Seleccionar Provincia</option>
+                    {Object.keys(ECUADOR_LOCATIONS).map(prov => (
+                      <option key={prov} value={prov}>{prov}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Ciudad</label>
+                  <select required name="city" value={formData.city} onChange={handleChange} disabled={!formData.province} style={{ padding: '0.8rem', borderRadius: 'var(--radius)', background: 'var(--bg-glass)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
+                    <option value="" disabled>Seleccionar Ciudad</option>
+                    {formData.province && ECUADOR_LOCATIONS[formData.province]?.map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                 <button type="button" onClick={() => setStep(1)} className="btn btn-secondary" style={{ flex: 1 }}>← Atrás</button>
                 <button 
                   type="button"
                   onClick={() => setStep(3)}
-                  disabled={!formData.organizationName || !formData.phone}
+                  disabled={!formData.organizationName || !formData.phone || !formData.address || !formData.province || !formData.city}
                   className="btn btn-primary"
                   style={{ flex: 2 }}
                 >

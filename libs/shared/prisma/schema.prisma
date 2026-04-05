@@ -131,6 +131,10 @@ model OrganizerProfile {
   organizationDescription String?
   organizationLogo        String?
   
+  address                 String?
+  province                String?
+  city                    String?
+  
   plan                    HostPlan   @default(FREE)
   status                  HostStatus @default(PENDING)
   

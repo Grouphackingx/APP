@@ -67,6 +67,9 @@ export class AuthService {
                         organizationName: dto.organizationName,
                         organizationDescription: dto.organizationDescription,
                         organizationLogo: dto.organizationLogo,
+                        address: dto.address,
+                        province: dto.province,
+                        city: dto.city,
                         plan: dto.plan || 'FREE',
                         status: 'PENDING'
                     }

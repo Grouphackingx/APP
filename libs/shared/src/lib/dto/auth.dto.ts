@@ -59,6 +59,18 @@ export class RegisterHostDto extends RegisterDto {
   @IsOptional()
   organizationLogo?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  address!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  province!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city!: string;
+
   @IsEnum(HostPlanType)
   @IsOptional()
   plan?: HostPlanType;
