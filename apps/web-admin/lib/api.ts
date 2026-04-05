@@ -103,3 +103,18 @@ export async function setOrganizerStatus(id: string, status: string, token: stri
     token,
   });
 }
+
+export async function updateOrganizer(id: string, data: any, token: string) {
+  return fetchAPI<any>(`/admin/organizers/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function deleteOrganizer(id: string, token: string) {
+  return fetchAPI<any>(`/admin/organizers/${id}`, {
+    method: 'DELETE',
+    token,
+  });
+}

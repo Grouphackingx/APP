@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 31 de Marzo de 2026, 00:00
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2 y 3 Funcionando)
+**Fecha de Última Actualización:** 5 de Abril de 2026, 14:53
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2, 3 + Registro y Aprobación de Organizadores Funcionando)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -105,12 +105,16 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `create-admin.ts` para el super usuario):
 
-| Rol                    | Email                    | Password     | Dónde usarlo                           |
-| :--------------------- | :----------------------- | :----------- | :------------------------------------- |
-| Administrador Global   | admin@admin.com          | admin123     | `http://localhost:4202` (web-admin)    |
-| **Organizador (Host)** | `admin@openticket.com`   | `admin123`   | http://localhost:4201 (Panel Host)     |
-| **Cliente (User)**     | `cliente@openticket.com` | `cliente123` | http://localhost:4200 (Portal Cliente) |
-| **Staff (Validator)**  | `staff@openticket.com`   | `staff123`   | Mobile App (Expo Go)                   |
+| Rol                    | Email                      | Password       | Dónde usarlo                           |
+| :--------------------- | :------------------------- | :------------- | :------------------------------------- |
+| Administrador Global   | `admin@admin.com`          | `admin123`     | `http://localhost:4202` (web-admin)    |
+| **Organizador (Host)** | `admin@openticket.com`     | _(desconocida — restablecer si es necesario)_  | `http://localhost:4201` (Panel Host) |
+| **Organizador (Host)** | `grouphackingx@gmail.com`  | _(desconocida — restablecer si es necesario)_  | `http://localhost:4201` (Panel Host) |
+| **Cliente (User)**     | `dmxwilly@gmail.com`       | `willy2024`    | `http://localhost:4200` (Portal Cliente) |
+| **Cliente (User)**     | `cliente@openticket.com`   | `cliente123`   | `http://localhost:4200` (Portal Cliente) |
+| **Staff (Validator)**  | `staff@openticket.com`     | `staff123`     | Mobile App (Expo Go)                   |
+
+> ⚠️ **NOTA**: Los tokens JWT expiran después de **1 hora**. Si la API devuelve datos vacíos en el panel, cerrar sesión y volver a entrar.
 
 ---
 
@@ -153,6 +157,16 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | Crear Evento     | ✅     | Formulario completo con zonas, galería, mapa, video    |
 | Editar Evento    | ✅     | Edición de zonas con protección de ventas activas      |
 | Eliminar Evento  | ✅     | Solo visible si 0 tickets vendidos                     |
+
+### Web Admin - Global (Puerto 4202)
+
+| Sección              | Estado | Descripción                                                        |
+| :------------------- | :----- | :----------------------------------------------------------------- |
+| Login                | ✅     | Login para administrador global                                    |
+| Panel Inicio         | ✅     | Resumen del sistema con stats de organizaciones                    |
+| Gestión Organizadores| ✅     | Tabla completa con acciones: Aprobar, Editar, Eliminar             |
+| Modal Edición        | ✅     | Edición completa: email, org, representante, ubicación, plan, estado |
+| Registro de Hosts    | ✅     | Formulario completo en `/register` con provincia/ciudad de Ecuador |
 
 ---
 
@@ -228,11 +242,29 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 ---
 
-## 5. 📁 Archivos Modificados en Esta Sesión
+## 5. 📁 Archivos Modificados Esta Sesión (5 Abril 2026)
+
+### Sesión del 5 de Abril 2026 — Flujo de Aprobación de Organizadores
 
 | Archivo | Tipo de Cambio | Descripción |
 | :--- | :--- | :--- |
-| `apps/api/src/app/events/events.service.ts` | **Reescritura mayor** | Método `update` completamente nuevo con sanitización, protección de capacidad, gestión de asientos. `findAll` incluye seats. |
+| `apps/api/src/app/auth/auth.service.ts` | Modificado | `validateUser` incluye `organizerProfile` en la respuesta del login |
+| `apps/api/src/app/admin/admin.controller.ts` | Ampliado | Añadidos endpoints `PATCH /organizers/:id` y `DELETE /organizers/:id` |
+| `apps/api/src/app/admin/admin.service.ts` | Ampliado | Métodos `updateOrganizer` (actualiza email en User + datos en Profile) y `deleteOrganizer` con cascada |
+| `apps/web-admin/app/dashboard/page.tsx` | **Reescritura mayor** | Modal de edición completo (email, org, representante, ubicación, plan, estado), botón eliminar con confirmación, columna ubicación en tabla |
+| `apps/web-admin/lib/api.ts` | Ampliado | Añadidas funciones `updateOrganizer` y `deleteOrganizer` |
+| `apps/web-host/src/lib/AuthContext.tsx` | Modificado | Interfaz `User` incluye `organizerProfile`, `logout()` redirige a `/login` |
+| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Guard: si `organizerProfile.status !== 'APPROVED'` muestra pantalla "Cuenta en Revisión" |
+| `apps/web-host/src/app/layout.tsx` | Modificado | `AuthProvider` movido al layout raíz (arquitectura correcta en Next.js) |
+| `apps/web-host/src/app/page.tsx` | Reescrito | Redirige a `/dashboard` o `/login` según estado de auth |
+| `apps/web-host/src/app/login/LoginPage.tsx` | Renombrado | → `page.tsx` (requerido por Next.js App Router) |
+| `apps/web-host/src/app/dashboard/DashboardPage.tsx` | Renombrado | → `page.tsx` (requerido por Next.js App Router) |
+
+### Sesión del 31 de Marzo 2026 — Edición de Zonas
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `apps/api/src/app/events/events.service.ts` | **Reescritura mayor** | Método `update` con sanitización, protección de capacidad, gestión de asientos |
 | `apps/api/src/app/events/events.controller.ts` | Modificado | PATCH usa `@Request()` para evitar whitelist del ValidationPipe |
 | `apps/web-host/src/components/EditEventForm.tsx` | Mejorado | soldCount, validación de capacidad, protección visual de campos bloqueados |
 | `libs/shared/src/lib/dto/events.dto.ts` | Ampliado | `id` opcional en CreateZoneDto, `zones` opcional, nuevo `UpdateEventDto` |
@@ -300,6 +332,12 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [x] ~~Edición de descripciones de zonas~~ ✅ (resuelto 31 Mar 2026)
 - [x] ~~Protección de capacidad (no reducir bajo vendidos)~~ ✅ (resuelto 31 Mar 2026)
 - [x] ~~Gestión dinámica de asientos al cambiar capacidad~~ ✅ (resuelto 31 Mar 2026)
+- [x] ~~Registro de organizadores con campos Ecuador (provincia/ciudad)~~ ✅ (5 Abr 2026)
+- [x] ~~Panel Global Admin: aprobar, editar, eliminar organizadores~~ ✅ (5 Abr 2026)
+- [x] ~~Modal de edición completo en Global Admin~~ ✅ (5 Abr 2026)
+- [x] ~~Bloqueo de acceso en Host si cuenta no está APROBADA~~ ✅ (5 Abr 2026)
+- [x] ~~Arquitectura correcta de rutas Next.js (page.tsx) en web-host~~ ✅ (5 Abr 2026)
+- [x] ~~Logout con redirección automática al login~~ ✅ (5 Abr 2026)
 
 ---
 

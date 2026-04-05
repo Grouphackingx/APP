@@ -102,6 +102,23 @@ export default function DashboardPage() {
     }
   };
 
+  if (user && user.role === 'HOST' && user.organizerProfile?.status !== 'APPROVED') {
+    return (
+      <div className="dashboard-layout">
+        <Sidebar user={user} activeView="dashboard" onNavigate={()=>{}} onLogout={logout} />
+        <div className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="auth-card" style={{ textAlign: 'center', maxWidth: '500px' }}>
+            <div style={{ fontSize: '3rem', margin: '1rem 0' }}>⏳</div>
+            <h2>Cuenta en Revisión</h2>
+            <p style={{ color: 'var(--text-secondary)' }}>
+              Tu organización está siendo evaluada por el equipo de OpenTicket. Te notificaremos cuando tu acceso sea aprobado.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-layout">
       <Sidebar

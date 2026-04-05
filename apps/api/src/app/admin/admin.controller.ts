@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -22,5 +22,18 @@ export class AdminController {
     @Body('status') status: 'PENDING' | 'APPROVED' | 'REJECTED'
   ) {
     return this.adminService.setOrganizerStatus(userId, status as any); // cast safely using enums generated
+  }
+
+  @Patch('organizers/:id')
+  updateOrganizer(
+    @Param('id') userId: string,
+    @Body() updateData: any
+  ) {
+    return this.adminService.updateOrganizer(userId, updateData);
+  }
+
+  @Delete('organizers/:id')
+  deleteOrganizer(@Param('id') userId: string) {
+    return this.adminService.deleteOrganizer(userId);
   }
 }

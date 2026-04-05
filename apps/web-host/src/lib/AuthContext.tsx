@@ -13,6 +13,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  organizerProfile?: { status: string };
 }
 
 interface AuthContextType {
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     localStorage.removeItem('ot_host_token');
     localStorage.removeItem('ot_host_user');
+    window.location.href = '/login';
   };
 
   return (

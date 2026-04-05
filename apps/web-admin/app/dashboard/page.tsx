@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOrganizers, setOrganizerStatus } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
@@ -12,6 +12,8 @@ export default function AdminDashboard() {
   const [organizers, setOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'inicio' | 'dashboard' | 'users'>('inicio');
+  const [editingOrgData, setEditingOrgData] = useState<any>(null);
+  const [editFormData, setEditFormData] = useState<any>({});
 
   useEffect(() => {
     if (!token) return;
@@ -40,6 +42,35 @@ export default function AdminDashboard() {
       loadOrganizers();
     } catch (err) {
       alert('Error updating status');
+    }
+  };
+
+  const handleEditOrg = (org: any) => {
+    setEditingOrgData(org);
+    setEditFormData({ ...org.organizerProfile, email: org.email });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { id, userId, createdAt, updatedAt, ...cleanData } = editFormData;
+      await updateOrganizer(editingOrgData.id, cleanData, token as string);
+      setEditingOrgData(null);
+      loadOrganizers();
+    } catch (err) {
+      alert('Error actualizando organizador. Revisa los campos.');
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteOrg = async (id: string, name: string) => {
+    if (!confirm(`¿Estás completamente seguro de borrar de forma permanente a ${name}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await deleteOrganizer(id, token as string);
+      loadOrganizers();
+    } catch (err) {
+      alert('No se pudo borrar el organizador o posee eventos asociados.');
     }
   };
 
@@ -144,6 +175,7 @@ export default function AdminDashboard() {
                     <tr>
                       <th>Organización / Representante</th>
                       <th>Contacto</th>
+                      <th>Ubicación</th>
                       <th>Suscripción</th>
                       <th>Estado Actual</th>
                       <th>Acciones</th>
@@ -164,10 +196,10 @@ export default function AdminDashboard() {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontWeight: 'bold', color: '#a855f7'
                               }}>
-                                {prof.organizationName.charAt(0).toUpperCase()}
+                                {prof.organizationName ? prof.organizationName.charAt(0).toUpperCase() : '?'}
                               </div>
                               <div>
-                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{prof.organizationName}</div>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{prof.organizationName || 'Sin Nombre'}</div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                   {prof.firstName} {prof.lastName} • ID: {prof.identificationNumber}
                                 </div>
@@ -177,6 +209,14 @@ export default function AdminDashboard() {
                           <td>
                             <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{org.email}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tel: {prof.phone}</div>
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                              {prof.city ? `${prof.city}, ${prof.province}` : 'No especificada'}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              {prof.address || 'Sin dirección física'}
+                            </div>
                           </td>
                           <td>
                             <span style={{
@@ -197,12 +237,31 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td>
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => handleStatusChange(org.id, prof.status)}
-                            >
-                              Evaluar / Cambiar
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleStatusChange(org.id, prof.status)}
+                                title="Cambiar Estado"
+                              >
+                                {prof.status === 'PENDING' ? 'Aprobar' : 'Cambiar Estado'}
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleEditOrg(org)}
+                                title="Editar Organización"
+                                style={{ backgroundColor: 'var(--bg-glass)', borderColor: 'var(--border-color)' }}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleDeleteOrg(org.id, prof.organizationName)}
+                                title="Eliminar"
+                                style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444' }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -236,6 +295,90 @@ export default function AdminDashboard() {
           </>
         )}
       </div>
+
+      {/* Edit Modal Overlay */}
+      {editingOrgData && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
+          <div className="auth-card animate-fade-in-up" style={{ maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2>✏️ Editar Organización</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              Modifica los detalles de la organización y su representante.
+            </p>
+            <form onSubmit={handleSaveEdit}>
+              <div className="form-group">
+                <label>Correo Electrónico (Acceso)</label>
+                <input type="email" value={editFormData.email || ''} onChange={e => setEditFormData({...editFormData, email: e.target.value})} required />
+              </div>
+              <div className="form-group">
+                <label>Nombre de la Organización</label>
+                <input value={editFormData.organizationName || ''} onChange={e => setEditFormData({...editFormData, organizationName: e.target.value})} required />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Nombre Representante</label>
+                  <input value={editFormData.firstName || ''} onChange={e => setEditFormData({...editFormData, firstName: e.target.value})} required />
+                </div>
+                <div className="form-group">
+                  <label>Apellido Representante</label>
+                  <input value={editFormData.lastName || ''} onChange={e => setEditFormData({...editFormData, lastName: e.target.value})} required />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Teléfono</label>
+                  <input value={editFormData.phone || ''} onChange={e => setEditFormData({...editFormData, phone: e.target.value})} required />
+                </div>
+                <div className="form-group">
+                  <label>Cédula/RUC</label>
+                  <input value={editFormData.identificationNumber || ''} onChange={e => setEditFormData({...editFormData, identificationNumber: e.target.value})} required />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Provincia</label>
+                  <input value={editFormData.province || ''} onChange={e => setEditFormData({...editFormData, province: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Ciudad</label>
+                  <input value={editFormData.city || ''} onChange={e => setEditFormData({...editFormData, city: e.target.value})} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Dirección</label>
+                <input value={editFormData.address || ''} onChange={e => setEditFormData({...editFormData, address: e.target.value})} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                <div className="form-group">
+                  <label>Plan / Suscripción</label>
+                  <select value={editFormData.plan || 'FREE'} onChange={e => setEditFormData({...editFormData, plan: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
+                    <option value="FREE">FREE</option>
+                    <option value="PLUS">PLUS</option>
+                    <option value="ELITE">ELITE</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Estado Activo</label>
+                  <select value={editFormData.status || 'PENDING'} onChange={e => setEditFormData({...editFormData, status: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
+                    <option value="PENDING">Pendiente</option>
+                    <option value="APPROVED">Aprobado</option>
+                    <option value="REJECTED">Rechazado</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                  {loading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+                <button type="button" className="btn btn-secondary btn-full" onClick={() => setEditingOrgData(null)}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,7 @@
-import './global.css';
+'use client';
 
-export const metadata = {
-  title: 'OpenTicket Host — Panel de Organizador',
-  description:
-    'Crea y gestiona tus eventos con OpenTicket. Panel de administración para organizadores.',
-};
+import './global.css';
+import { AuthProvider } from '../lib/AuthContext';
 
 export default function RootLayout({
   children,
@@ -13,7 +10,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }
