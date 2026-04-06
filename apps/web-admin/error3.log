@@ -33,3 +33,4 @@
  GET /login 200 in 130ms (compile: 107ms, render: 22ms)
  GET /dashboard 200 in 16ms (compile: 3ms, render: 13ms)
  GET /dashboard 200 in 41ms (compile: 4ms, render: 37ms)
+^C
