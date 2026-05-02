@@ -1,24 +1,47 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
 
 export default function AdminDashboard() {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, isLoading } = useAuth();
   const router = useRouter();
   const [organizers, setOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'inicio' | 'dashboard' | 'users'>('inicio');
+  const [view, setView] = useState<'inicio' | 'dashboard' | 'users' | 'plans'>('inicio');
   const [editingOrgData, setEditingOrgData] = useState<any>(null);
   const [editFormData, setEditFormData] = useState<any>({});
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+  const [createFormData, setCreateFormData] = useState<any>({});
+  
+  const [plans, setPlans] = useState<any[]>([]);
+  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+  const [editingPlanData, setEditingPlanData] = useState<any>(null);
+  const [planFormData, setPlanFormData] = useState<any>({});
+
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== 'ADMIN')) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (!token) return;
     loadOrganizers();
+    loadPlans();
   }, [token]);
+
+  const loadPlans = async () => {
+    try {
+      const data = await getPlans(token as string);
+      setPlans(data);
+    } catch (error) {
+      console.error('Failed to load plans', error);
+    }
+  };
 
   const loadOrganizers = async () => {
     setLoading(true);
@@ -64,6 +87,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await createOrganizer(createFormData, token as string);
+      setIsCreatingOrg(false);
+      setCreateFormData({});
+      loadOrganizers();
+    } catch (err: any) {
+      alert(err.message || 'Error creando organizador.');
+      setLoading(false);
+    }
+  };
+
   const handleDeleteOrg = async (id: string, name: string) => {
     if (!confirm(`¿Estás completamente seguro de borrar de forma permanente a ${name}? Esta acción no se puede deshacer.`)) return;
     try {
@@ -73,6 +110,43 @@ export default function AdminDashboard() {
       alert('No se pudo borrar el organizador o posee eventos asociados.');
     }
   };
+
+  const handleSavePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (editingPlanData) {
+        await updatePlan(editingPlanData.id, planFormData, token as string);
+      } else {
+        await createPlan(planFormData, token as string);
+      }
+      setIsCreatingPlan(false);
+      setEditingPlanData(null);
+      loadPlans();
+    } catch (err: any) {
+      alert(err.message || 'Error guardando plan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletePlan = async (id: string, name: string) => {
+    if (!confirm(`¿Borrar permanentemente el plan ${name}?`)) return;
+    try {
+      await deletePlan(id, token as string);
+      loadPlans();
+    } catch (err) {
+      alert('Error eliminando plan');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
 
   if (!user || user.role !== 'ADMIN') return null;
 
@@ -132,6 +206,13 @@ export default function AdminDashboard() {
                 <h1>Gestión de Organizadores</h1>
                 <p>Bienvenido, {user?.name}. Habilita, restringe y supervisa las empresas en la red.</p>
               </div>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => { setCreateFormData({ status: 'APPROVED', plan: plans.length > 0 ? plans[0].name : '' }); setIsCreatingOrg(true); }}
+                style={{ alignSelf: 'center' }}
+              >
+                + Crear Organizador
+              </button>
             </div>
 
             {/* Stats */}
@@ -294,6 +375,84 @@ export default function AdminDashboard() {
             </div>
           </>
         )}
+
+        {view === 'plans' && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Gestión de Planes</h1>
+                <p>Configura los planes de suscripción para los organizadores, definiendo sus beneficios y precios.</p>
+              </div>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => { setPlanFormData({}); setEditingPlanData(null); setIsCreatingPlan(true); }}
+                style={{ alignSelf: 'center' }}
+              >
+                + Crear Plan
+              </button>
+            </div>
+
+            <div className="table-container">
+              <div className="table-header" style={{ borderBottom: 'none', paddingBottom: '0.5rem' }}>
+                <h2>💎 Planes Disponibles</h2>
+              </div>
+
+              {loading && plans.length === 0 ? (
+                <div className="loading-container">
+                  <div className="spinner" />
+                </div>
+              ) : plans.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">🏷️</div>
+                  <h3>No hay planes creados</h3>
+                  <p>Agrega un nuevo plan para empezar a ofrecerlo a los organizadores.</p>
+                </div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nombre del Plan</th>
+                      <th>Nro. Publicaciones Máximas</th>
+                      <th>Valor (Precio)</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {plans.map((plan) => (
+                      <tr key={plan.id}>
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{plan.name}</div>
+                        </td>
+                        <td>{plan.maxEvents === 0 ? '♾️ Ilimitados' : `${plan.maxEvents} eventos`}</td>
+                        <td>${plan.price}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => { setEditingPlanData(plan); setPlanFormData(plan); setIsCreatingPlan(true); }}
+                              title="Editar"
+                              style={{ backgroundColor: 'var(--bg-glass)', borderColor: 'var(--border-color)' }}
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleDeletePlan(plan.id, plan.name)}
+                              title="Eliminar"
+                              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444' }}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Edit Modal Overlay */}
@@ -351,10 +510,13 @@ export default function AdminDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
                 <div className="form-group">
                   <label>Plan / Suscripción</label>
-                  <select value={editFormData.plan || 'FREE'} onChange={e => setEditFormData({...editFormData, plan: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
-                    <option value="FREE">FREE</option>
-                    <option value="PLUS">PLUS</option>
-                    <option value="ELITE">ELITE</option>
+                  <select value={editFormData.plan || ''} onChange={e => setEditFormData({...editFormData, plan: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
+                    {plans.map(p => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                    {!plans.some(p => p.name === editFormData.plan) && editFormData.plan && (
+                      <option value={editFormData.plan}>{editFormData.plan} (Heredado)</option>
+                    )}
                   </select>
                 </div>
                 <div className="form-group">
@@ -372,6 +534,126 @@ export default function AdminDashboard() {
                   {loading ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
                 <button type="button" className="btn btn-secondary btn-full" onClick={() => setEditingOrgData(null)}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Modal Overlay */}
+      {isCreatingOrg && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
+          <div className="auth-card animate-fade-in-up" style={{ maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2>➕ Crear Nuevo Organizador</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              Registra manualmente una nueva empresa productora en la plataforma.
+            </p>
+            <form onSubmit={handleCreateSubmit}>
+              <div className="form-group">
+                <label>Correo Electrónico (Acceso)</label>
+                <input type="email" value={createFormData.email || ''} onChange={e => setCreateFormData({...createFormData, email: e.target.value})} required />
+              </div>
+              <div className="form-group">
+                <label>Contraseña Temporal</label>
+                <input type="text" placeholder="Si se deja vacío, será 'host123'" value={createFormData.password || ''} onChange={e => setCreateFormData({...createFormData, password: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>Nombre de la Organización</label>
+                <input value={createFormData.organizationName || ''} onChange={e => setCreateFormData({...createFormData, organizationName: e.target.value})} required />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Nombre Representante</label>
+                  <input value={createFormData.firstName || ''} onChange={e => setCreateFormData({...createFormData, firstName: e.target.value})} required />
+                </div>
+                <div className="form-group">
+                  <label>Apellido Representante</label>
+                  <input value={createFormData.lastName || ''} onChange={e => setCreateFormData({...createFormData, lastName: e.target.value})} required />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Teléfono</label>
+                  <input value={createFormData.phone || ''} onChange={e => setCreateFormData({...createFormData, phone: e.target.value})} required />
+                </div>
+                <div className="form-group">
+                  <label>Cédula/RUC</label>
+                  <input value={createFormData.identificationNumber || ''} onChange={e => setCreateFormData({...createFormData, identificationNumber: e.target.value})} required />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Provincia</label>
+                  <input value={createFormData.province || ''} onChange={e => setCreateFormData({...createFormData, province: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Ciudad</label>
+                  <input value={createFormData.city || ''} onChange={e => setCreateFormData({...createFormData, city: e.target.value})} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Dirección</label>
+                <input value={createFormData.address || ''} onChange={e => setCreateFormData({...createFormData, address: e.target.value})} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                <div className="form-group">
+                  <label>Plan Inicial</label>
+                  <select value={createFormData.plan || (plans.length > 0 ? plans[0].name : '')} onChange={e => setCreateFormData({...createFormData, plan: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
+                    {plans.map(p => (
+                      <option key={p.id} value={p.name}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Estado Inicial</label>
+                  <select value={createFormData.status || 'APPROVED'} onChange={e => setCreateFormData({...createFormData, status: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
+                    <option value="PENDING">Pendiente</option>
+                    <option value="APPROVED">Aprobado</option>
+                    <option value="REJECTED">Rechazado</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                  {loading ? 'Creando...' : 'Crear Organización'}
+                </button>
+                <button type="button" className="btn btn-secondary btn-full" onClick={() => setIsCreatingOrg(false)}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Plan Form Modal Overlay */}
+      {isCreatingPlan && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
+          <div className="auth-card animate-fade-in-up" style={{ maxWidth: '500px', width: '100%' }}>
+            <h2>{editingPlanData ? '✏️ Editar Plan' : '💎 Crear Nuevo Plan'}</h2>
+            <form onSubmit={handleSavePlan} style={{ marginTop: '1.5rem' }}>
+              <div className="form-group">
+                <label>Nombre del Plan</label>
+                <input value={planFormData.name || ''} onChange={e => setPlanFormData({...planFormData, name: e.target.value})} required placeholder="Ej: FREE, BASIC, ELITE..." />
+              </div>
+              <div className="form-group">
+                <label>Nro Publicaciones (Usa 0 para Ilimitado)</label>
+                <input type="number" min="0" value={planFormData.maxEvents !== undefined ? planFormData.maxEvents : ''} onChange={e => setPlanFormData({...planFormData, maxEvents: e.target.value})} required placeholder="Ej: 5" />
+              </div>
+              <div className="form-group">
+                <label>Valor ($)</label>
+                <input type="number" step="0.01" min="0" value={planFormData.price || ''} onChange={e => setPlanFormData({...planFormData, price: e.target.value})} required placeholder="Ej: 29.99" />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                  {loading ? 'Guardando...' : 'Guardar Plan'}
+                </button>
+                <button type="button" className="btn btn-secondary btn-full" onClick={() => { setIsCreatingPlan(false); setEditingPlanData(null); }}>
                   Cancelar
                 </button>
               </div>

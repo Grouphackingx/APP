@@ -71,7 +71,7 @@ export class RegisterHostDto extends RegisterDto {
   @IsNotEmpty()
   city!: string;
 
-  @IsEnum(HostPlanType)
+  @IsString()
   @IsOptional()
-  plan?: HostPlanType;
+  plan?: string;
 }

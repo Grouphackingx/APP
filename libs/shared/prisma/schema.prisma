@@ -26,11 +26,6 @@ enum TicketStatus {
   REFUNDED
 }
 
-enum HostPlan {
-  FREE
-  PLUS
-  ELITE
-}
 
 enum HostStatus {
   PENDING
@@ -135,9 +130,18 @@ model OrganizerProfile {
   province                String?
   city                    String?
   
-  plan                    HostPlan   @default(FREE)
+  plan                    String     @default("FREE")
   status                  HostStatus @default(PENDING)
   
   createdAt               DateTime   @default(now())
   updatedAt               DateTime   @updatedAt
+}
+
+model Plan {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  maxEvents   Int
+  price       Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

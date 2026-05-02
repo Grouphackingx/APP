@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -14,6 +14,11 @@ export class AdminController {
   @Get('organizers')
   getAllOrganizers() {
     return this.adminService.getAllOrganizers();
+  }
+
+  @Post('organizers')
+  createOrganizer(@Body() data: any) {
+    return this.adminService.createOrganizer(data);
   }
 
   @Patch('organizers/:id/status')
@@ -35,5 +40,27 @@ export class AdminController {
   @Delete('organizers/:id')
   deleteOrganizer(@Param('id') userId: string) {
     return this.adminService.deleteOrganizer(userId);
+  }
+
+  // --- PLANS ---
+
+  @Get('plans')
+  getAllPlans() {
+    return this.adminService.getAllPlans();
+  }
+
+  @Post('plans')
+  createPlan(@Body() data: any) {
+    return this.adminService.createPlan(data);
+  }
+
+  @Patch('plans/:id')
+  updatePlan(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updatePlan(id, data);
+  }
+
+  @Delete('plans/:id')
+  deletePlan(@Param('id') id: string) {
+    return this.adminService.deletePlan(id);
   }
 }

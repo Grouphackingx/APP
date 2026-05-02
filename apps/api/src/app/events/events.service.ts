@@ -1,13 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateEventDto } from '@open-ticket/shared';
+import { CreateEventDto, UpdateEventDto, CreateZoneDto } from '@open-ticket/shared';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventsService {
     constructor(private prisma: PrismaService) { }
 
     async create(organizerId: string, createEventDto: CreateEventDto) {
-        console.log('--- CREATE EVENT DTO ---', createEventDto);
         const { zones, ...eventData } = createEventDto;
 
         if (new Date(eventData.date) < new Date()) {
@@ -32,10 +32,24 @@ export class EventsService {
         }
 
         const currentEventsCount = user._count.eventsOwned;
-        if (profile.plan === 'FREE' && currentEventsCount >= 3) {
-            throw new BadRequestException('Has alcanzado el límite de 3 eventos para el plan Gratuito. Sube a PLUS para más.');
-        } else if (profile.plan === 'PLUS' && currentEventsCount >= 12) {
-            throw new BadRequestException('Has alcanzado el límite de 12 eventos para el plan PLUS. Usa ELITE para eventos ilimitados.');
+        
+        // Fetch plan limits
+        const planDetails = await this.prisma.plan.findUnique({
+            where: { name: profile.plan }
+        });
+
+        if (planDetails) {
+            // maxEvents === 0 means unlimited
+            if (planDetails.maxEvents > 0 && currentEventsCount >= planDetails.maxEvents) {
+                throw new BadRequestException(`Has alcanzado el límite de ${planDetails.maxEvents} eventos permitidos en tu plan (${planDetails.name}). Actualiza tu suscripción para seguir publicando.`);
+            }
+        } else {
+            // Fallback for missing plan configurations
+            if (profile.plan === 'FREE' && currentEventsCount >= 3) {
+                throw new BadRequestException('Has alcanzado el límite de 3 eventos para el plan Gratuito. Sube a PLUS para más.');
+            } else if (profile.plan === 'PLUS' && currentEventsCount >= 12) {
+                throw new BadRequestException('Has alcanzado el límite de 12 eventos para el plan PLUS. Usa ELITE para eventos ilimitados.');
+            }
         }
 
         // Simplistic seat generation for demonstration
@@ -76,7 +90,7 @@ export class EventsService {
 
     async findAll(query?: string) {
         await this.updatePastEventsStatus();
-        const where: any = {};
+        const where: Prisma.EventWhereInput = {};
         
         if (query) {
             where.OR = [
@@ -109,7 +123,7 @@ export class EventsService {
         });
     }
 
-    async update(id: string, updateData: any) {
+    async update(id: string, updateData: UpdateEventDto) {
         const { zones, ...rawBasicData } = updateData;
 
         // Clean basicData: only include fields that exist on the Event model
@@ -118,10 +132,10 @@ export class EventsService {
             'imageUrl', 'seatingMapImageUrl', 'hasSeatingChart', 'mapUrl',
             'videoUrl', 'galleryUrls', 'status'
         ];
-        const basicData: Record<string, any> = {};
+        const basicData: Record<string, unknown> = {};
         for (const key of allowedEventFields) {
-            if (rawBasicData[key] !== undefined) {
-                basicData[key] = rawBasicData[key];
+            if ((rawBasicData as Record<string, unknown>)[key] !== undefined) {
+                basicData[key] = (rawBasicData as Record<string, unknown>)[key];
             }
         }
         // Convert date string to Date object for Prisma
@@ -140,7 +154,7 @@ export class EventsService {
                     throw new BadRequestException('Evento no encontrado');
                 }
 
-                const incomingZoneIds = new Set(zones.filter((z: any) => z.id).map((z: any) => z.id));
+                const incomingZoneIds = new Set((zones || []).filter((z: CreateZoneDto) => z.id).map((z: CreateZoneDto) => z.id));
 
                 // Remove zones deleted from the form, only if they have no sold seats
                 for (const existingZone of existingEvent.zones) {
@@ -157,7 +171,7 @@ export class EventsService {
                 }
 
                 // Upsert zones
-                for (const zone of zones) {
+                for (const zone of zones || []) {
                     if (zone.id) {
                         // Find the existing zone to check sold seats for capacity protection
                         const existingZone = existingEvent.zones.find(ez => ez.id === zone.id);

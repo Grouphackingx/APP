@@ -96,6 +96,14 @@ export async function getOrganizers(token: string) {
   return fetchAPI<any[]>('/admin/organizers', { token, cache: 'no-store' });
 }
 
+export async function createOrganizer(data: any, token: string) {
+  return fetchAPI<any>('/admin/organizers', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
 export async function setOrganizerStatus(id: string, status: string, token: string) {
   return fetchAPI<any>(`/admin/organizers/${id}/status`, {
     method: 'PATCH',
@@ -114,6 +122,35 @@ export async function updateOrganizer(id: string, data: any, token: string) {
 
 export async function deleteOrganizer(id: string, token: string) {
   return fetchAPI<any>(`/admin/organizers/${id}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+// Plans Integration
+
+export async function getPlans(token: string) {
+  return fetchAPI<any[]>('/admin/plans', { token, cache: 'no-store' });
+}
+
+export async function createPlan(data: any, token: string) {
+  return fetchAPI<any>('/admin/plans', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function updatePlan(id: string, data: any, token: string) {
+  return fetchAPI<any>(`/admin/plans/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function deletePlan(id: string, token: string) {
+  return fetchAPI<any>(`/admin/plans/${id}`, {
     method: 'DELETE',
     token,
   });

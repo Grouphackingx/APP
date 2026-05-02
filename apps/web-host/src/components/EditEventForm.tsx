@@ -13,9 +13,34 @@ interface ZoneInput {
   soldCount?: number;
 }
 
+interface EventData {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;
+  location: string;
+  province?: string;
+  city?: string;
+  mapUrl?: string;
+  videoUrl?: string;
+  status: string;
+  galleryUrls?: string[];
+  imageUrl?: string;
+  seatingMapImageUrl?: string;
+  hasSeatingChart?: boolean;
+  zones?: {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    capacity: number;
+    seats?: { isSold: boolean }[];
+  }[];
+}
+
 interface EditEventFormProps {
   token: string;
-  initialData: any;
+  initialData: EventData;
   onSuccess: () => void;
 }
 
@@ -56,8 +81,9 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const [mapEmbedCode, setMapEmbedCode] = useState(initialData?.mapUrl || '');
   const [videoEmbedCode, setVideoEmbedCode] = useState(initialData?.videoUrl || '');
   const [status, setStatus] = useState(initialData?.status || 'DRAFT');
+  const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>(initialData?.galleryUrls || []);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>(initialData?.galleryUrls || []);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(initialData?.imageUrl || '');
   const [loading, setLoading] = useState(false);
@@ -67,8 +93,8 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   } | null>(null);
 
   const [zones, setZones] = useState<ZoneInput[]>(
-    initialData?.zones?.map((z: any) => {
-      const soldCount = z.seats?.filter((s: any) => s.isSold)?.length || 0;
+    initialData?.zones?.map((z) => {
+      const soldCount = z.seats?.filter((s) => s.isSold)?.length || 0;
       return {
         id: z.id,
         name: z.name,
@@ -140,7 +166,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      if (files.length + galleryFiles.length > 3) {
+      if (files.length + galleryFiles.length + existingGalleryUrls.length > 3) {
         setMessage({ text: 'Máximo 3 imágenes en la galería', type: 'error' });
         return;
       }
@@ -165,8 +191,13 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   };
 
   const removeGalleryImage = (index: number) => {
-    setGalleryFiles(galleryFiles.filter((_, i) => i !== index));
-    setGalleryPreviews(galleryPreviews.filter((_, i) => i !== index));
+    if (index < existingGalleryUrls.length) {
+      setExistingGalleryUrls(existingGalleryUrls.filter((_, i) => i !== index));
+    } else {
+      const fileIndex = index - existingGalleryUrls.length;
+      setGalleryFiles(galleryFiles.filter((_, i) => i !== fileIndex));
+      setGalleryPreviews(galleryPreviews.filter((_, i) => i !== fileIndex));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,9 +224,9 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       if (imageFile) {
         try {
           imageUrl = await uploadImage(imageFile, token);
-        } catch (uploadError: any) {
+        } catch (uploadError: unknown) {
           throw new Error(
-            `Error subiendo imagen portada: ${uploadError.message}`,
+            `Error subiendo imagen portada: ${(uploadError as Error).message}`,
           );
         }
       }
@@ -205,8 +236,8 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       if (seatingMapImageFile) {
         try {
           seatingMapImageUrl = await uploadImage(seatingMapImageFile, token);
-        } catch (uploadError: any) {
-          throw new Error(`Error subiendo croquis: ${uploadError.message}`);
+        } catch (uploadError: unknown) {
+          throw new Error(`Error subiendo croquis: ${(uploadError as Error).message}`);
         }
       }
 
@@ -217,8 +248,8 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
             const url = await uploadImage(file, token);
             galleryUrls.push(url);
           }
-        } catch (uploadError: any) {
-          throw new Error(`Error subiendo galería: ${uploadError.message}`);
+        } catch (uploadError: unknown) {
+          throw new Error(`Error subiendo galería: ${(uploadError as Error).message}`);
         }
       }
 
@@ -231,12 +262,12 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         city,
         mapUrl: mapEmbedCode.match(/src="([^"]+)"/)?.[1] || mapEmbedCode,
         videoUrl: videoEmbedCode.match(/src="([^"]+)"/)?.[1] || videoEmbedCode,
-        galleryUrls: [...(initialData?.galleryUrls || []), ...galleryUrls],
+        galleryUrls: [...existingGalleryUrls, ...galleryUrls],
         status: status,
         imageUrl: imageUrl || initialData?.imageUrl || '',
         seatingMapImageUrl,
         hasSeatingChart,
-        zones: zones.map((z: any) => ({
+        zones: zones.map((z: ZoneInput) => ({
           id: z.id,
           name: z.name,
           description: z.description,
@@ -248,9 +279,9 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       await updateEvent(initialData.id, eventData, token);
       setMessage({ text: '🎉 ¡Evento guardado exitosamente!', type: 'success' });
       setTimeout(() => onSuccess(), 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setMessage({
-        text: err.message || 'Error al crear evento',
+        text: (err as Error).message || 'Error al crear evento',
         type: 'error',
       });
     } finally {
@@ -428,7 +459,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
             className="gallery-upload-container"
             style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}
           >
-            {galleryPreviews.map((preview, i) => (
+            {[...existingGalleryUrls, ...galleryPreviews].map((preview, i) => (
               <div
                 key={i}
                 className="gallery-preview-item"
