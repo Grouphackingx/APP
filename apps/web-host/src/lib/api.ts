@@ -46,7 +46,7 @@ export async function registerHost(data: any) {
 }
 
 export async function getEvents(token: string) {
-  return fetchAPI<any[]>('/events', { token, cache: 'no-store' });
+  return fetchAPI<any[]>('/events/me', { token, cache: 'no-store' });
 }
 
 export async function getEventById(id: string, token: string) {

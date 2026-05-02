@@ -18,6 +18,12 @@ export class EventsController {
         return this.eventsService.findAll(query);
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Get('me')
+    findMyEvents(@Request() req: any) {
+        return this.eventsService.findMyEvents(req.user.userId);
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.eventsService.findOne(id);

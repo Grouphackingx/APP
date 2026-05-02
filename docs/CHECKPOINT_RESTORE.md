@@ -1,6 +1,6 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 5 de Abril de 2026, 14:53
+**Fecha de Última Actualización:** 1 de Mayo de 2026
 **Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2, 3 + Registro y Aprobación de Organizadores Funcionando)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
@@ -242,7 +242,17 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 ---
 
-## 5. 📁 Archivos Modificados Esta Sesión (5 Abril 2026)
+## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
+
+### Sesión del 1 de Mayo 2026 — Correcciones de Registro y Dashboard Host
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `apps/api/src/app/auth/auth.service.ts` | Corrección (Bugfix) | `registerHost` ahora retorna `access_token` y `user` para evitar error de parseo JSON en frontend. |
+| `apps/web-host/src/lib/AuthContext.tsx` | Corrección (Bugfix) | Añadido bloque `try-catch` para proteger `JSON.parse()` en `localStorage` y limpiar sesiones corruptas ("undefined"). |
+| `apps/api/src/app/events/events.controller.ts` | Arquitectura | Nuevo endpoint seguro `GET /events/me` exclusivo para Organizadores. |
+| `apps/api/src/app/events/events.service.ts` | Ampliado | Método `findMyEvents` que filtra por `organizerId`. |
+| `apps/web-host/src/lib/api.ts` | Modificado | `getEvents` ahora consume `/events/me` para evitar que hosts nuevos vean eventos de terceros. |
 
 ### Sesión del 5 de Abril 2026 — Flujo de Aprobación de Organizadores
 
@@ -338,6 +348,8 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [x] ~~Bloqueo de acceso en Host si cuenta no está APROBADA~~ ✅ (5 Abr 2026)
 - [x] ~~Arquitectura correcta de rutas Next.js (page.tsx) en web-host~~ ✅ (5 Abr 2026)
 - [x] ~~Logout con redirección automática al login~~ ✅ (5 Abr 2026)
+- [x] ~~Corrección de Login Automático tras Registro de Host~~ ✅ (1 May 2026)
+- [x] ~~Dashboard de Host aislado a sus propios eventos (/events/me)~~ ✅ (1 May 2026)
 
 ---
 

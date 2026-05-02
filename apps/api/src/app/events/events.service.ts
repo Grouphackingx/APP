@@ -92,6 +92,15 @@ export class EventsService {
         });
     }
 
+    async findMyEvents(organizerId: string) {
+        await this.updatePastEventsStatus();
+        return this.prisma.event.findMany({
+            where: { organizerId },
+            include: { zones: { include: { seats: true } } },
+            orderBy: { date: 'asc' },
+        });
+    }
+
     async findOne(id: string) {
         await this.updatePastEventsStatus();
         return this.prisma.event.findUnique({

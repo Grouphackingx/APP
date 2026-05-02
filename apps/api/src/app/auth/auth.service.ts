@@ -83,6 +83,10 @@ export class AuthService {
             }
         });
         const { password, ...result } = user;
-        return result;
+        const payload = { email: result.email, sub: result.id, role: result.role };
+        return {
+            access_token: this.jwtService.sign(payload),
+            user: result,
+        };
     }
 }

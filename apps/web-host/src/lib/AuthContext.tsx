@@ -40,9 +40,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const savedToken = localStorage.getItem('ot_host_token');
     const savedUser = localStorage.getItem('ot_host_user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    if (savedToken && savedUser && savedUser !== 'undefined') {
+      try {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('ot_host_token');
+        localStorage.removeItem('ot_host_user');
+      }
+    } else {
+      localStorage.removeItem('ot_host_token');
+      localStorage.removeItem('ot_host_user');
     }
     setIsLoading(false);
   }, []);
