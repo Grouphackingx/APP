@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 2 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Dashboard Global Admin con CRUD usuarios, reset de contraseña, planes dinámicos, logo de organizador y estructura de archivos organizada)
+**Fecha de Última Actualización:** 3 de Mayo de 2026
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil con foto de avatar, campos de identificación Ecuador, foto de perfil con directorio propio + Toast de login en selección de asientos)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -114,7 +114,7 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | **Cliente (User)**     | `cliente@openticket.com`   | `cliente123`   | `http://localhost:4200` (Portal Cliente) |
 | **Staff (Validator)**  | `staff@openticket.com`     | `staff123`     | Mobile App (Expo Go)                   |
 
-> ⚠️ **NOTA**: Los tokens JWT expiran después de **1 hora**. Si la API devuelve datos vacíos en el panel, cerrar sesión y volver a entrar.
+> ⚠️ **NOTA**: Los tokens JWT duran **24 horas** (aumentado para desarrollo). Si la API devuelve 401 cerrar sesión y volver a entrar.
 
 ---
 
@@ -136,7 +136,9 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | POST   | `/api/orders/purchase`          | JWT         | ✅ OK  | Comprar tickets (genera QR JWT)         |
 | GET    | `/api/orders`                   | JWT         | ✅ OK  | Obtener órdenes enriquecidos            |
 | POST   | `/api/tickets/validate`         | JWT         | ✅ OK  | Validar ticket QR (VALID → USED)        |
-| POST   | `/api/upload`                   | Opcional    | ✅ OK  | Subir imágenes (organiza por directorios: organizer/logo, organizer/events/id) |
+| GET    | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Obtener perfil completo del usuario autenticado |
+| PATCH  | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Actualizar perfil (nombre, email, password, ID, dirección, foto, etc.) |
+| POST   | `/api/upload`                   | Opcional    | ✅ OK  | Subir imágenes — tipos: `logo`, `event`, `user-avatar`. Directorios: `uploads/organizers/{id}/...` y `uploads/users/{id}/avatar/` |
 | GET    | `/api/plans`                    | No          | ✅ OK  | Planes públicos (para formulario de registro) |
 | GET    | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Listar |
 | POST   | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Crear |
@@ -156,6 +158,7 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | `/register`    | ✅     | Formulario de registro                                     |
 | `/events/[id]` | ✅     | Detalle del evento + mapa de asientos interactivo + compra |
 | `/my-tickets`  | ✅     | Lista de tickets comprados con QR y estado                 |
+| `/my-profile`  | ✅     | Perfil del usuario: foto de avatar, datos de acceso, identificación, dirección (provincia/ciudad Ecuador) |
 
 ### Web Host (Puerto 4201)
 
@@ -178,6 +181,18 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | Gestión de Planes    | ✅     | CRUD completo de planes (nombre, precio, límite de eventos)        |
 | Gestión de Usuarios  | ✅     | CRUD Admin/Editor; Editores sin acceso a Planes ni Usuarios        |
 | Analíticas           | ✅     | Métricas de eventos, tickets y revenue por organizador             |
+
+### Web Client (Puerto 4200) — Actualizaciones (3 Mayo 2026)
+
+| Sección              | Estado | Descripción                                                        |
+| :------------------- | :----- | :----------------------------------------------------------------- |
+| Navbar               | ✅     | Botón `👤 Mi Perfil` entre "Mis Tickets" y "Salir" (solo logueados) |
+| Mi Perfil - Header   | ✅     | Avatar circular 80px. Botón ✏️ para cambiar foto. Preview instantáneo al seleccionar. |
+| Mi Perfil - Acceso   | ✅     | Edición de nombre, email, teléfono, contraseña (con toggle visibilidad) |
+| Mi Perfil - ID       | ✅     | Tipo documento (Cédula/RUC/Pasaporte), número, fecha nacimiento, ciudadanía |
+| Mi Perfil - Dirección| ✅     | Provincia (24 provincias Ecuador), ciudad dependiente de provincia, dirección |
+| Foto de perfil       | ✅     | Upload a `uploads/users/{userId}/avatar/`. Directorio independiente de organizadores. |
+| Toast no-autenticado | ✅     | Al pulsar asiento/entrada sin login → toast 🔒 amarillo con link al login. Auto-cierre 4s. |
 
 ### Web Host (Puerto 4201) — Actualizaciones (2 Mayo 2026)
 
@@ -264,6 +279,22 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 ## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
 
+### Sesión del 3 de Mayo 2026 — Mi Perfil (usuarios), Foto de Avatar, Toast de Login en Localidades
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `libs/shared/prisma/schema.prisma` | Modificado | Nuevos campos en `User`: `avatarUrl`, `idType`, `idNumber`, `address`, `province`, `city`, `birthDate`, `citizenship` |
+| `libs/shared/src/lib/dto/auth.dto.ts` | Modificado | Nuevo `UpdateProfileDto` con todos los campos opcionales del perfil |
+| `apps/api/src/app/auth/auth.service.ts` | Modificado | Métodos `getProfile(userId)` y `updateProfile(userId, dto)` con bcrypt para password y select sin campo password |
+| `apps/api/src/app/auth/auth.controller.ts` | Modificado | Endpoints `GET /auth/me` y `PATCH /auth/me` protegidos con `JwtAuthGuard` |
+| `apps/api/src/app/upload/upload.controller.ts` | **Reescritura** | Nuevo tipo `user-avatar` → guarda en `uploads/users/{userId}/avatar/`. Separado completamente de directorio `organizers/`. |
+| `apps/web-client/src/lib/api.ts` | Modificado | Interfaces `UserProfile`, `UpdateProfileData`. Funciones `getProfile()`, `updateProfile()`, `uploadUserAvatar()` |
+| `apps/web-client/src/lib/AuthContext.tsx` | Modificado | Interfaz `User` extendida con campos de perfil. Nueva función `updateUser()` para sincronizar contexto sin re-login. |
+| `apps/web-client/src/components/Navbar.tsx` | Modificado | Botón `👤 Mi Perfil` entre "Mis Tickets" y "Salir" |
+| `apps/web-client/src/app/my-profile/page.tsx` | **Nuevo** | Página completa con 3 secciones: Datos de acceso, Identificación, Dirección. Avatar con upload inmediato. |
+| `apps/web-client/src/app/my-profile/my-profile.css` | **Nuevo** | Estilos de la página de perfil: avatar circular, overlay de edición, grid de formulario, secciones. |
+| `apps/web-client/src/app/events/[id]/EventDetailClient.tsx` | Modificado | Toast 🔒 amarillo cuando usuario no autenticado intenta seleccionar asiento. Auto-cierre 4s. Asientos numerados y botones GA ahora clicables para todos. |
+
 ### Sesión del 2 de Mayo 2026 — Logo, Planes Dinámicos, Bloqueo de Login, Reset Contraseña, CRUD Admin
 
 | Archivo | Tipo de Cambio | Descripción |
@@ -285,13 +316,16 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 - **NX Daemon**: NO funciona en este proyecto. Siempre hacer `npx nx build api` y luego `node dist/apps/api/main.js` para ver cambios del backend.
 - **Puertos**: PostgreSQL en **5435**, Redis en **6380** (no estándar para evitar conflictos).
-- **Prisma**: Versión **5.22.0** (bloqueada — v7+ tiene incompatibilidades de CLI).
+- **Prisma**: Versión **5.22.0** (bloqueada — v7+ tiene incompatibilidades de CLI). Al cambiar el schema correr `npx prisma db push --schema=libs/shared/prisma/schema.prisma` con la API **detenida** para poder regenerar el cliente.
+- **JWT**: Tokens duran **24 horas** (`auth.module.ts` → `expiresIn: '24h'`).
 - **Web Host**: Usar `npx next dev --port=4201` desde `apps/web-host/`.
 - **Web Client**: Usar `npx next dev --port=4200` desde `apps/web-client/`.
+- **Web Admin**: Usar `npx next dev --port=4202` desde `apps/web-admin/`.
 - **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento está codificada en el QR JWT.
 - **Pagos Mock**: El sistema de pagos es una simulación (`PaymentsModule`). Para producción: configurar `STRIPE_SECRET_KEY` en `.env`.
 - **API URL en Móvil**: La app detecta automáticamente tu IP local si usas Expo Go.
 - **ValidationPipe Global**: `main.ts` tiene `whitelist: true` y `transform: true`. Para el PATCH de eventos se usa `@Request()` para evitar que se filtren los campos de zona.
+- **Directorios de uploads**: `uploads/organizers/{id}/logo|events/` para organizadores. `uploads/users/{id}/avatar/` para fotos de perfil de clientes. Directorio raíz servido como estático por NestJS.
 
 ---
 
@@ -316,6 +350,7 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [ ] Emails transaccionales (confirmación de registro, aprobación y compra)
 - [ ] Reportes financieros para organizadores
 - [ ] Mover carpeta temporal del logo (se guarda en `uploads/organizers/{email_safe}/` en el registro, debería moverse a `uploads/organizers/{userId}/` tras crearse el usuario)
+- [ ] Reemplazar foto de perfil anterior al subir una nueva (actualmente se acumulan archivos en `uploads/users/{id}/avatar/`)
 
 ### Prioridad Media
 
@@ -367,7 +402,11 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [x] ~~Estructura de directorios organizada por organizador/evento~~ ✅ (2 May 2026)
 - [x] ~~Bloqueo de login para cuentas PENDING/REJECTED con mensaje descriptivo~~ ✅ (2 May 2026)
 - [x] ~~Botón "Cerrar Sesión" en pantalla de Cuenta en Revisión~~ ✅ (2 May 2026)
-- [x] ~~Endpoint público GET /api/plans para formulario de registro~~ ✅ (2 May 2026)
+- [x] ~~Página Mi Perfil para usuarios (Portal Cliente): foto avatar, datos personales, identificación, dirección~~ ✅ (3 May 2026)
+- [x] ~~Endpoints GET/PATCH /api/auth/me para perfil de usuario~~ ✅ (3 May 2026)
+- [x] ~~Upload de foto de perfil en directorio independiente uploads/users/{id}/avatar/~~ ✅ (3 May 2026)
+- [x] ~~Toast de login al intentar seleccionar asientos sin autenticación (auto-cierre 4s)~~ ✅ (3 May 2026)
+- [x] ~~Campos de perfil extendidos en User (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)~~ ✅ (3 May 2026)
 
 ---
 

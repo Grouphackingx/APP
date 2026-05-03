@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsDateString } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -49,7 +49,7 @@ export class RegisterHostDto extends RegisterDto {
 
   @IsString()
   @IsNotEmpty()
-  phone!: string;
+  override phone!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -78,4 +78,55 @@ export class RegisterHostDto extends RegisterDto {
   @IsString()
   @IsOptional()
   plan?: string;
+}
+
+export class UpdateProfileDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @MinLength(6)
+  @IsOptional()
+  password?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  idType?: string;
+
+  @IsString()
+  @IsOptional()
+  idNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  province?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsDateString()
+  @IsOptional()
+  birthDate?: string;
+
+  @IsString()
+  @IsOptional()
+  citizenship?: string;
+
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
 }

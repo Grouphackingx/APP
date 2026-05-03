@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { EventItem, Seat, PurchaseResponse } from '../../../lib/api';
 import { lockSeats, purchaseTickets } from '../../../lib/api';
@@ -75,9 +75,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
   const { user, token } = useAuth();
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeat[]>([]);
   const [purchasing, setPurchasing] = useState(false);
-  const [purchaseResult, setPurchaseResult] = useState<PurchaseResponse | null>(
-    null,
-  );
+  const [purchaseResult, setPurchaseResult] = useState<PurchaseResponse | null>(null);
   const [error, setError] = useState('');
   const [soldSeatIds, setSoldSeatIds] = useState<string[]>(
     event.zones.flatMap((z) =>
@@ -85,7 +83,21 @@ export function EventDetailClient({ event }: { event: EventItem }) {
     ),
   );
 
+  // ── Login toast ────────────────────────────────────────────────────────────
+  const [loginToast, setLoginToast] = useState(false);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showLoginToast = () => {
+    setLoginToast(true);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setLoginToast(false), 4000);
+  };
+
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+  // ──────────────────────────────────────────────────────────────────────────
+
   const toggleSeat = (seat: Seat, zoneName: string, price: number) => {
+    if (!user) { showLoginToast(); return; }
     if (seat.isSold || soldSeatIds.includes(seat.id)) return;
 
     setSelectedSeats((prev) => {
@@ -417,6 +429,40 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                   </div>
                 )}
 
+                {/* ── Login toast ── */}
+                {loginToast && (
+                  <div style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                    background: 'rgba(245,158,11,0.12)',
+                    border: '1px solid rgba(245,158,11,0.4)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.85rem 1rem',
+                    marginBottom: '1rem',
+                    animation: 'fadeIn 0.2s ease',
+                  }}>
+                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>🔒</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', color: 'var(--text-primary)' }}>
+                        Debes iniciar sesión para seleccionar entradas
+                      </p>
+                      <Link
+                        href={`/login?redirect=${encodeURIComponent(`/events/${event.id}`)}`}
+                        style={{
+                          fontSize: '0.8rem', fontWeight: 600,
+                          color: '#F59E0B', textDecoration: 'underline',
+                        }}
+                      >
+                        Iniciar sesión →
+                      </Link>
+                    </div>
+                    <button
+                      onClick={() => setLoginToast(false)}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0 }}
+                      aria-label="Cerrar"
+                    >✕</button>
+                  </div>
+                )}
+
                 <div className="zones-list">
                   {event.zones.map((zone) => {
                     const availableCount = (zone.seats || []).filter(
@@ -518,7 +564,6 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                                     key={seat.id}
                                     className={`seat ${isSold ? 'seat-sold' : isSelected ? 'seat-selected' : 'seat-available'}`}
                                     onClick={() =>
-                                      user &&
                                       !isSold &&
                                       toggleSeat(
                                         seat,
@@ -526,7 +571,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                                         Number(zone.price),
                                       )
                                     }
-                                    disabled={isSold || !user}
+                                    disabled={isSold}
                                     style={{
                                       width: 28,
                                       height: 28,
@@ -580,7 +625,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                                       ? '¡No quedan entradas! 😢'
                                       : `Disponibles: ${availableCount}`}
                                   </div>
-                                  {!isSoldOut && user ? (
+                                  {!isSoldOut && (
                                     <div
                                       style={{
                                         display: 'flex',
@@ -592,23 +637,11 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                                         className="btn btn-secondary btn-sm"
                                         disabled={currentQty === 0}
                                         onClick={() => {
-                                          // Remove last selected seat from this zone
-                                          const seatsInZone =
-                                            selectedSeats.filter(
-                                              (s) => s.zoneName === zone.name,
-                                            );
+                                          if (!user) { showLoginToast(); return; }
+                                          const seatsInZone = selectedSeats.filter((s) => s.zoneName === zone.name);
                                           if (seatsInZone.length > 0) {
-                                            const lastSeat =
-                                              seatsInZone[
-                                                seatsInZone.length - 1
-                                              ];
-                                            // Toggle off (remove)
-                                            setSelectedSeats((prev) =>
-                                              prev.filter(
-                                                (s) =>
-                                                  s.seatId !== lastSeat.seatId,
-                                              ),
-                                            );
+                                            const lastSeat = seatsInZone[seatsInZone.length - 1];
+                                            setSelectedSeats((prev) => prev.filter((s) => s.seatId !== lastSeat.seatId));
                                           }
                                         }}
                                       >
@@ -625,32 +658,21 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                                       </span>
                                       <button
                                         className="btn btn-secondary btn-sm"
-                                        disabled={availableCount <= currentQty}
+                                        disabled={user ? availableCount <= currentQty : false}
                                         onClick={() => {
-                                          const availableInZone = (
-                                            zone.seats || []
-                                          ).filter(
-                                            (s) =>
-                                              !s.isSold &&
-                                              !soldSeatIds.includes(s.id) &&
-                                              !selectedSeats.some(
-                                                (sel) => sel.seatId === s.id,
-                                              ),
+                                          if (!user) { showLoginToast(); return; }
+                                          const availableInZone = (zone.seats || []).filter(
+                                            (s) => !s.isSold && !soldSeatIds.includes(s.id) && !selectedSeats.some((sel) => sel.seatId === s.id),
                                           );
                                           if (availableInZone.length > 0) {
-                                            const nextSeat = availableInZone[0];
-                                            toggleSeat(
-                                              nextSeat,
-                                              zone.name,
-                                              Number(zone.price),
-                                            );
+                                            toggleSeat(availableInZone[0], zone.name, Number(zone.price));
                                           }
                                         }}
                                       >
                                         +
                                       </button>
                                     </div>
-                                  ) : null}
+                                  )}
                                 </div>
                               );
                             })()}

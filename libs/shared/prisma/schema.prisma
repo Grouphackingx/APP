@@ -35,17 +35,26 @@ enum HostStatus {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  phone     String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  
-  eventsOwned Event[]  @relation("EventOwner")
-  orders      Order[]
-  
+  id          String    @id @default(uuid())
+  email       String    @unique
+  password    String
+  name        String
+  phone       String?
+  role        Role      @default(USER)
+  createdAt   DateTime  @default(now())
+
+  // Profile fields
+  avatarUrl   String?
+  idType      String?   // "cedula" | "ruc" | "pasaporte"
+  idNumber    String?
+  address     String?
+  province    String?
+  city        String?
+  birthDate   DateTime?
+  citizenship String?
+
+  eventsOwned      Event[]           @relation("EventOwner")
+  orders           Order[]
   organizerProfile OrganizerProfile?
 }
 

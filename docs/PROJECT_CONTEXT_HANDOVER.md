@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
-**Última Actualización:** 2 de Mayo de 2026
-**Estado del Proyecto:** ✅ Fases 1, 2, 3 y 4 Completadas y Verificadas
+**Última Actualización:** 3 de Mayo de 2026
+**Estado del Proyecto:** ✅ Fases 1, 2, 3 y 4 Completadas y Verificadas + Perfil de Usuario (Mi Perfil) + Toast autenticación en localidades
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -157,8 +157,11 @@ enum EventStatus { DRAFT, PUBLISHED, CANCELLED, COMPLETED }
 enum TicketStatus { VALID, USED, REFUNDED }
 
 model User {
-  id, email (unique), password (bcrypt), name, role (default USER)
-  â†’ eventsOwned Event[], orders Order[]
+  id, email (unique), password (bcrypt), name, phone?, role (default USER)
+  // Perfil extendido (3 Mayo 2026):
+  avatarUrl?, idType? ("cedula"|"ruc"|"pasaporte"), idNumber?
+  address?, province?, city?, birthDate?, citizenship?
+  â†’ eventsOwned Event[], orders Order[], organizerProfile OrganizerProfile?
 }
 
 model Event {
@@ -487,4 +490,38 @@ cd apps/mobile-app && npx expo start
 - **Captura de Datos Críticos:** El campo **Teléfono** ahora es **obligatorio** en el formulario de registro de clientes.
 - **Internacionalización Local:** Se agregó el prefijo 🇪🇨 +593 visualmente en el campo de teléfono para guiar al usuario.
 - **Validación de Datos:** El `RegisterDto` en la librería shared ahora requiere estrictamente el campo `phone`, preparando el terreno para la futura integración de facturación electrónica.
+
+## 19. Registro de Cambios (03 Mayo 2026)
+
+### Página "Mi Perfil" — Portal de Clientes (web-client)
+
+**Contexto:** Los usuarios compradores no tenían forma de actualizar sus datos personales después del registro.
+
+#### Backend
+- **Schema Prisma `User`:** Agregados 8 nuevos campos opcionales: `avatarUrl`, `idType`, `idNumber`, `address`, `province`, `city`, `birthDate`, `citizenship`.
+- **`UpdateProfileDto`** (`libs/shared/src/lib/dto/auth.dto.ts`): DTO con todos los campos opcionales y validaciones `class-validator`.
+- **`AuthService`:** Métodos `getProfile(userId)` y `updateProfile(userId, dto)`. El update hashea el password con bcrypt si se provee, valida duplicado de email, convierte `birthDate` string → `Date`. Usa `select` de Prisma para nunca devolver el campo `password`.
+- **`AuthController`:** Endpoints `GET /api/auth/me` y `PATCH /api/auth/me`, protegidos con `JwtAuthGuard`.
+- **`UploadController`** (reescritura): Nuevo tipo `user-avatar` → directorio `uploads/users/{userId}/avatar/`. Completamente separado de `uploads/organizers/`. El `userId` se extrae del JWT si está autenticado, o del query param `userId` si no.
+
+#### Frontend
+- **`AuthContext.tsx`:** Interfaz `User` extendida con todos los campos de perfil. Nueva función `updateUser(user)` para sincronizar el contexto en memoria y localStorage sin necesidad de re-login.
+- **`lib/api.ts`:** Interfaces `UserProfile` y `UpdateProfileData`. Funciones `getProfile(token)`, `updateProfile(data, token)` y `uploadUserAvatar(file, userId, token?)`.
+- **Navbar:** Botón `👤 Mi Perfil` insertado entre "Mis Tickets" y "Salir".
+- **`/my-profile/page.tsx`** (nuevo): Página con 3 secciones:
+  - *Datos de acceso:* nombre, email, teléfono, nueva contraseña con toggle de visibilidad.
+  - *Identificación:* tipo documento (Cédula/RUC/Pasaporte), número, fecha de nacimiento, ciudadanía/nacionalidad.
+  - *Dirección:* provincia (24 provincias del Ecuador) + ciudad dependiente de la provincia, dirección completa.
+- **Avatar:** Circular 80px en el header. Botón ✏️ sobre la foto abre el selector de archivo. Preview local instantáneo antes de completar el upload. Upload guarda en `uploads/users/{id}/avatar/` y persiste la URL en BD con `PATCH /auth/me`. Sincroniza el `AuthContext` para que el avatar aparezca sin recargar.
+- **`/my-profile/my-profile.css`** (nuevo): Estilos de la página: grid responsive, avatar con overlay, secciones con título uppercase, selects personalizados con flecha, estados de hover/focus.
+
+### Toast de Login en Selección de Localidades
+
+**Contexto:** Los usuarios no logueados veían los asientos deshabilitados (grises) sin entender por qué no podían seleccionarlos.
+
+**Cambios en `EventDetailClient.tsx`:**
+- Asientos numerados: quitado `disabled={!user}` — ahora son clicables para todos.
+- Botones GA (`+`/`-`): ahora se muestran incluso para usuarios no autenticados.
+- Nueva función `showLoginToast()` llamada en `toggleSeat()` y en los handlers de GA cuando `!user`.
+- **Toast:** Banner amarillo 🔒 que aparece sobre la lista de zonas. Contiene mensaje descriptivo + link directo a `/login?redirect=/events/{id}` + botón ✕ para cerrar. Auto-cierre a los 4 segundos con `setTimeout` limpiado en el `useEffect` de desmontaje.
 

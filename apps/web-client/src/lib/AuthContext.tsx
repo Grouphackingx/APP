@@ -8,11 +8,20 @@ import {
   ReactNode,
 } from 'react';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
   role: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  idType?: string | null;
+  idNumber?: string | null;
+  address?: string | null;
+  province?: string | null;
+  city?: string | null;
+  birthDate?: string | null;
+  citizenship?: string | null;
 }
 
 interface AuthContextType {
@@ -20,15 +29,19 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   loginUser: (token: string, user: User) => void;
+  updateUser: (user: User) => void;
   logout: () => void;
 }
+
+const noop = () => undefined;
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   isLoading: true,
-  loginUser: () => {},
-  logout: () => {},
+  loginUser: noop,
+  updateUser: noop,
+  logout: noop,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -37,7 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load from localStorage on mount
     const savedToken = localStorage.getItem('ot_token');
     const savedUser = localStorage.getItem('ot_user');
     if (savedToken && savedUser) {
@@ -54,6 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('ot_user', JSON.stringify(newUser));
   };
 
+  const updateUser = (newUser: User) => {
+    setUser(newUser);
+    localStorage.setItem('ot_user', JSON.stringify(newUser));
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -62,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, loginUser, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, loginUser, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

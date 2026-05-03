@@ -14,25 +14,33 @@ export class UploadController {
       storage: diskStorage({
         destination: (req: any, file, cb) => {
           const user = req.user;
-          const organizerId = user ? user.sub : (req.query.organizerId || 'temp');
-          const type = req.query.type as string; // 'logo' or 'event'
+          const type = req.query.type as string;
           const eventId = req.query.eventId as string;
+          const organizerId = req.query.organizerId as string;
 
-          let dir = `./uploads/organizers/${organizerId}`;
-          if (type === 'logo') {
-             dir += `/logo`;
-          } else if (type === 'event' && eventId) {
-             dir += `/events/${eventId}`;
+          let dir: string;
+
+          if (type === 'user-avatar') {
+            // Separate "Usuarios" root — never mixed with organizer/event dirs
+            const userId = user ? user.sub : (req.query.userId || 'temp');
+            dir = `./uploads/users/${userId}/avatar`;
           } else {
-             dir += `/misc`;
+            const orgId = user ? user.sub : (organizerId || 'temp');
+            dir = `./uploads/organizers/${orgId}`;
+            if (type === 'logo') {
+              dir += '/logo';
+            } else if (type === 'event' && eventId) {
+              dir += `/events/${eventId}`;
+            } else {
+              dir += '/misc';
+            }
           }
-          
+
           fs.mkdirSync(dir, { recursive: true });
           cb(null, dir);
         },
         filename: (req, file, cb) => {
-          const randomName = uuidv4();
-          cb(null, `${randomName}${extname(file.originalname)}`);
+          cb(null, `${uuidv4()}${extname(file.originalname)}`);
         },
       }),
       fileFilter: (req, file, cb) => {
@@ -43,27 +51,38 @@ export class UploadController {
       },
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: any, @Query('type') type?: string, @Query('eventId') eventId?: string) {
-    if (!file) {
-      throw new BadRequestException('File is required');
-    }
+  uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+    @Query('type') type?: string,
+    @Query('eventId') eventId?: string,
+    @Query('organizerId') organizerId?: string,
+  ) {
+    if (!file) throw new BadRequestException('File is required');
+
     const serverUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    
     const user = req.user;
-    const organizerId = user ? user.sub : (req.query.organizerId || 'temp');
-    
-    let pathPart = `/organizers/${organizerId}`;
-    if (type === 'logo') {
-       pathPart += `/logo`;
-    } else if (type === 'event' && eventId) {
-       pathPart += `/events/${eventId}`;
+
+    let pathPart: string;
+
+    if (type === 'user-avatar') {
+      const userId = user ? user.sub : (req.query.userId || 'temp');
+      pathPart = `/users/${userId}/avatar`;
     } else {
-       pathPart += `/misc`;
+      const orgId = user ? user.sub : (organizerId || 'temp');
+      pathPart = `/organizers/${orgId}`;
+      if (type === 'logo') {
+        pathPart += '/logo';
+      } else if (type === 'event' && eventId) {
+        pathPart += `/events/${eventId}`;
+      } else {
+        pathPart += '/misc';
+      }
     }
 
-    return { 
+    return {
       url: `${serverUrl}/uploads${pathPart}/${file.filename}`,
-      filename: file.filename 
+      filename: file.filename,
     };
   }
 }

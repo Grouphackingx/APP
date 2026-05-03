@@ -36,6 +36,9 @@ export function Navbar() {
               <Link href="/my-tickets" id="nav-my-tickets">
                 <span className="btn btn-accent btn-sm">🎫 Mis Tickets</span>
               </Link>
+              <Link href="/my-profile" id="nav-my-profile">
+                <span className="btn btn-secondary btn-sm">👤 Mi Perfil</span>
+              </Link>
               <button
                 onClick={logout}
                 className="btn btn-secondary btn-sm"

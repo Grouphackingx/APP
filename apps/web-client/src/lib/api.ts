@@ -177,3 +177,68 @@ export async function getUserOrders(token: string) {
   return fetchAPI<any[]>('/orders', { token });
 }
 
+// ===== Profile API =====
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  phone: string | null;
+  role: string;
+  avatarUrl: string | null;
+  idType: string | null;
+  idNumber: string | null;
+  address: string | null;
+  province: string | null;
+  city: string | null;
+  birthDate: string | null;
+  citizenship: string | null;
+  createdAt: string;
+}
+
+export interface UpdateProfileData {
+  name?: string;
+  email?: string;
+  password?: string;
+  phone?: string;
+  avatarUrl?: string;
+  idType?: string;
+  idNumber?: string;
+  address?: string;
+  province?: string;
+  city?: string;
+  birthDate?: string;
+  citizenship?: string;
+}
+
+export async function getProfile(token: string): Promise<UserProfile> {
+  return fetchAPI<UserProfile>('/auth/me', { token });
+}
+
+export async function updateProfile(data: UpdateProfileData, token: string): Promise<UserProfile> {
+  return fetchAPI<UserProfile>('/auth/me', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function uploadUserAvatar(file: File, userId: string, token?: string): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/upload?type=user-avatar&userId=${userId}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: 'Error al subir la imagen' }));
+    throw new Error(err.message || `Error ${res.status}`);
+  }
+  return res.json();
+}
+

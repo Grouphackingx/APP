@@ -1,6 +1,7 @@
-import { Body, Controller, Post, HttpCode } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, HttpCode, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, RegisterHostDto } from '@open-ticket/shared';
+import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto } from '@open-ticket/shared';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -20,5 +21,17 @@ export class AuthController {
     @Post('register-host')
     registerHost(@Body() registerHostDto: RegisterHostDto) {
         return this.authService.registerHost(registerHostDto);
+    }
+
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    getProfile(@Request() req: any) {
+        return this.authService.getProfile(req.user.userId);
+    }
+
+    @Patch('me')
+    @UseGuards(JwtAuthGuard)
+    updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
+        return this.authService.updateProfile(req.user.userId, dto);
     }
 }

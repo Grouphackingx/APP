@@ -1,7 +1,7 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto, RegisterDto, RegisterHostDto } from '@open-ticket/shared';
+import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto } from '@open-ticket/shared';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class AuthService {
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
-        const user = await this.prisma.user.findUnique({ 
+        const user = await this.prisma.user.findUnique({
             where: { email },
             include: { organizerProfile: true }
         });
@@ -25,14 +25,12 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const user = await this.validateUser(loginDto.email, loginDto.password);
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
+        if (!user) throw new UnauthorizedException('Invalid credentials');
 
         if (user.role === 'HOST' && user.organizerProfile?.status === 'PENDING') {
             throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
         }
-        
+
         if (user.role === 'HOST' && user.organizerProfile?.status === 'REJECTED') {
             throw new UnauthorizedException('Tu solicitud de cuenta de organizador fue rechazada. Contacta a soporte para más detalles.');
         }
@@ -50,13 +48,52 @@ export class AuthService {
 
         const hashedPassword = await bcrypt.hash(registerDto.password, 10);
         const user = await this.prisma.user.create({
-            data: {
-                ...registerDto,
-                password: hashedPassword,
-            },
+            data: { ...registerDto, password: hashedPassword },
         });
         const { password, ...result } = user;
         return result;
+    }
+
+    async getProfile(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true, email: true, name: true, phone: true, role: true,
+                avatarUrl: true, idType: true, idNumber: true, address: true,
+                province: true, city: true, birthDate: true, citizenship: true, createdAt: true,
+            },
+        });
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+        return user;
+    }
+
+    async updateProfile(userId: string, dto: UpdateProfileDto) {
+        const { password, email, birthDate, ...rest } = dto;
+        const data: Record<string, unknown> = { ...rest };
+
+        if (email) {
+            const existing = await this.prisma.user.findUnique({ where: { email } });
+            if (existing && existing.id !== userId) throw new ConflictException('El email ya está en uso');
+            data['email'] = email;
+        }
+
+        if (password) {
+            data['password'] = await bcrypt.hash(password, 10);
+        }
+
+        if (birthDate) {
+            data['birthDate'] = new Date(birthDate);
+        }
+
+        return this.prisma.user.update({
+            where: { id: userId },
+            data,
+            select: {
+                id: true, email: true, name: true, phone: true, role: true,
+                avatarUrl: true, idType: true, idNumber: true, address: true,
+                province: true, city: true, birthDate: true, citizenship: true, createdAt: true,
+            },
+        });
     }
 
     async registerHost(dto: RegisterHostDto) {
@@ -83,13 +120,11 @@ export class AuthService {
                         province: dto.province,
                         city: dto.city,
                         plan: dto.plan || 'FREE',
-                        status: 'PENDING'
-                    }
-                }
+                        status: 'PENDING',
+                    },
+                },
             },
-            include: {
-                organizerProfile: true
-            }
+            include: { organizerProfile: true },
         });
         const { password, ...result } = user;
         const payload = { email: result.email, sub: result.id, role: result.role };
