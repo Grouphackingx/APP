@@ -13,7 +13,7 @@ interface User {
   email: string;
   name: string;
   role: string;
-  organizerProfile?: { status: string };
+  organizerProfile?: { status: string; organizationLogo?: string };
 }
 
 interface AuthContextType {

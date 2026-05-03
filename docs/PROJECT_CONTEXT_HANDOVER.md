@@ -467,3 +467,24 @@ cd apps/mobile-app && npx expo start
 - **Modelo Plan (CRUD):** Creado nuevo modelo `Plan` (Nombre, Límite de Publicaciones y Valor) con CRUD completo y vistas en el Dashboard Administrativo.
 - **Sincronización de Planes:** Al editar o crear organizadores desde el Admin Dashboard, los planes seleccionables se pueblan dinámicamente desde la base de datos.
 - **Eventos Ilimitados:** Lógica implementada en `EventsService`; si un organizador posee un plan con `maxEvents: 0`, se interpreta universalmente como "♾️ Ilimitados", eludiendo las barreras de bloqueo en la creación de eventos.
+
+## 18. Registro de Cambios Recientes (02 Mayo 2026 - Sesión Nocturna)
+
+### Mejoras de Arquitectura y Limpieza
+- **Unificación de API:** Eliminada duplicación de la función `uploadImage` en `web-admin/lib/api.ts` que causaba errores de compilación en Next.js.
+- **Sesiones Extendidas:** La duración del token JWT se aumentó de **1h a 24h** (`auth.module.ts`) para mejorar la experiencia de desarrollo y evitar errores de "Unauthorized" frecuentes.
+
+### Portal Organizadores (Web Host)
+- **Identidad de Marca:** El logo de la organización ahora se visualiza dinámicamente en el avatar del Sidebar (esquina inferior izquierda).
+- **Reorganización del Dashboard:**
+    - Renombrado "Dashboard" a **"Inicio"** (icono 🏠).
+    - Creada nueva vista **"Mis Eventos"** (icono 🎪) separada de las estadísticas, permitiendo una gestión de tabla más limpia.
+    - Nuevo orden de menú: Inicio ➔ Crear Evento ➔ Mis Eventos.
+    - Los botones "Volver" en los formularios de creación/edición ahora redirigen correctamente a "Mis Eventos".
+- **UI Polishing:** Reemplazados emojis de logout por **iconos SVG** profesionales con feedback visual (rojo suave) en todos los paneles.
+
+### Portal Compradores (Web Client)
+- **Captura de Datos Críticos:** El campo **Teléfono** ahora es **obligatorio** en el formulario de registro de clientes.
+- **Internacionalización Local:** Se agregó el prefijo 🇪🇨 +593 visualmente en el campo de teléfono para guiar al usuario.
+- **Validación de Datos:** El `RegisterDto` en la librería shared ahora requiere estrictamente el campo `phone`, preparando el terreno para la futura integración de facturación electrónica.
+

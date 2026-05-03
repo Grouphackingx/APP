@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const { loginUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -38,7 +39,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(name, email, password);
+      await register(name, email, password, phone);
       // Auto-login after registration
       const result = await login(email, password);
       loginUser(result.access_token, result.user);
@@ -87,6 +88,33 @@ export default function RegisterPage() {
               required
               autoComplete="email"
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="phone">Teléfono</label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <span style={{
+                padding: '0.65rem 0.75rem',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text-secondary)',
+                fontSize: '0.9rem',
+                whiteSpace: 'nowrap'
+              }}>
+                🇪🇨 +593
+              </span>
+              <input
+                id="phone"
+                type="tel"
+                placeholder="Ej: 0991234567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                autoComplete="tel"
+                style={{ flex: 1 }}
+              />
+            </div>
           </div>
 
           <div className="form-group">

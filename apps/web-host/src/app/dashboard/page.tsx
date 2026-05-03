@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const { user, token, logout } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'dashboard' | 'create' | 'edit'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'events' | 'create' | 'edit'>('dashboard');
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
 
@@ -81,7 +81,7 @@ export default function DashboardPage() {
   });
 
   const handleEventCreatedOrUpdated = () => {
-    setView('dashboard');
+    setView('events');
     fetchEvents();
   };
 
@@ -136,7 +136,7 @@ export default function DashboardPage() {
           <>
             <div className="page-header">
               <div>
-                <h1>Dashboard</h1>
+                <h1>Inicio</h1>
                 <p>
                   Bienvenido, {user?.name}. Aquí está el resumen de tus eventos.
                 </p>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
 
             {/* Stats */}
             <div className="stats-grid">
-              <div className="stat-card">
+              <div className="stat-card" style={{ cursor: 'pointer' }} onClick={() => setView('events')}>
                 <div className="stat-icon">📅</div>
                 <div className="stat-value">{events.length}</div>
                 <div className="stat-label">Eventos Creados</div>
@@ -175,12 +175,40 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Events Table */}
-            <div className="table-container">
+            {/* Quick Actions */}
+            <div className="table-container" style={{ marginTop: '1rem' }}>
               <div className="table-header" style={{ borderBottom: 'none', paddingBottom: '0.5rem' }}>
-                <h2>🎪 Mis Eventos</h2>
+                <h2>⚡ Accesos Rápidos</h2>
               </div>
-              <div className="tabs-container" style={{ padding: '0 1.5rem' }}>
+              <div style={{ padding: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" onClick={() => setView('create')}>
+                  ➕ Crear Nuevo Evento
+                </button>
+                <button className="btn btn-secondary" onClick={() => setView('events')}>
+                  🎪 Ver Mis Eventos
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {view === 'events' && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Mis Eventos</h1>
+                <p>Gestiona todos tus eventos publicados, borradores e inactivos.</p>
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={() => setView('create')}
+              >
+                ➕ Crear Evento
+              </button>
+            </div>
+
+            <div className="table-container">
+              <div className="tabs-container" style={{ padding: '0 1.5rem', paddingTop: '1rem' }}>
                 <button 
                   className={`tab-btn ${activeTab === 'ACTIVOS' ? 'active' : ''}`}
                   onClick={() => setActiveTab('ACTIVOS')}
@@ -322,9 +350,9 @@ export default function DashboardPage() {
               </div>
               <button
                 className="btn btn-secondary"
-                onClick={() => setView('dashboard')}
+                onClick={() => setView('events')}
               >
-                ← Volver al Dashboard
+                ← Volver a Mis Eventos
               </button>
             </div>
             <CreateEventForm token={token!} onSuccess={handleEventCreatedOrUpdated} />
@@ -342,9 +370,9 @@ export default function DashboardPage() {
               </div>
               <button
                 className="btn btn-secondary"
-                onClick={() => setView('dashboard')}
+                onClick={() => setView('events')}
               >
-                ← Volver al Dashboard
+                ← Volver a Mis Eventos
               </button>
             </div>
             <EditEventForm

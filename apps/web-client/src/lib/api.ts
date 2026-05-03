@@ -59,10 +59,10 @@ export async function login(email: string, password: string): Promise<LoginRespo
   });
 }
 
-export async function register(name: string, email: string, password: string): Promise<RegisterResponse> {
+export async function register(name: string, email: string, password: string, phone: string): Promise<RegisterResponse> {
   return fetchAPI<RegisterResponse>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, phone }),
   });
 }
 
