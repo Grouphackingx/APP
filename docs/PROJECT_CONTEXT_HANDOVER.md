@@ -1,8 +1,8 @@
 # PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
-**Ãšltima Actualización:** 31 de Marzo de 2026
-**Estado del Proyecto:** âœ… Fases 1, 2 y 3 Completadas y Verificadas
-**PropÃ³sito:** Carga instantÃ¡nea de contexto para modelos de IA o desarrolladores.
+**Última Actualización:** 2 de Mayo de 2026
+**Estado del Proyecto:** ✅ Fases 1, 2, 3 y 4 Completadas y Verificadas
+**Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
 
@@ -17,7 +17,7 @@
 | **Host (Organizador)** | Crea eventos, gestiona zonas/asientos, ve reportes financieros                              | Web Host (:4201)   |
 | **User (Asistente)**   | Descubre eventos, compra tickets (selecciona asientos), recibe QR dinÃ¡micos, ve sus tickets | Web Client (:4200) |
 | **Staff (Validador)**  | Escanea cÃ³digos QR en la puerta usando la App MÃ³vil                                         | Mobile App (Expo)  |
-| **Admin**              | GestiÃ³n global de la plataforma                                                             | (Pendiente)        |
+| **Admin**              | GestiÃ³n global de la plataforma                                                             | Web Admin (:4202)  |
 
 ---
 
@@ -30,6 +30,7 @@
 | **Backend**         | NestJS (Node.js)                   | API RESTful en puerto 3000                   |
 | **Frontend (User)** | Next.js 16 (App Router, Turbopack) | Portal de usuario en puerto 4200             |
 | **Frontend (Host)** | Next.js 16 (App Router, Turbopack) | Dashboard de organizador en puerto 4201      |
+| **Frontend (Admin)**| Next.js 16 (App Router, Turbopack) | Dashboard de administrador en puerto 4202    |
 | **Mobile**          | React Native (Expo)                | App de validaciÃ³n QR para staff              |
 | **Base de Datos**   | PostgreSQL 15                      | Containerizado en puerto 5435                |
 | **Cache/Locks**     | Redis 7                            | Containerizado en puerto 6380                |
@@ -39,7 +40,7 @@
 
 ---
 
-## 3. Arquitectura Actual (Fases 1-3 Completas)
+## 3. Arquitectura Actual (Fases 1-4 Completas)
 
 ### Estructura de Carpetas
 
@@ -57,51 +58,16 @@
 â”‚   â”‚       â””â”€â”€ redis/           # RedisService (ioredis)
 â”‚   â”‚
 â”‚   â”œâ”€â”€ web-client/              # âœ… Port 4200. Next.js Portal de Usuario.
-â”‚   â”‚   â””â”€â”€ src/
-â”‚   â”‚       â”œâ”€â”€ app/
-â”‚   â”‚       â”‚   â”œâ”€â”€ page.tsx             # Home: Hero + CatÃ¡logo de eventos + Buscador
-â”‚   â”‚       â”‚   â”œâ”€â”€ login/page.tsx       # Formulario de login
-â”‚   â”‚       â”‚   â”œâ”€â”€ register/page.tsx    # Formulario de registro
-â”‚   â”‚       â”‚   â”œâ”€â”€ events/[id]/page.tsx # Detalle + Mapa de asientos interactivo
-â”‚   â”‚       â”‚   â””â”€â”€ my-tickets/page.tsx  # âœ¨ NUEVO: Mis Tickets comprados
-â”‚   â”‚       â”œâ”€â”€ components/
-â”‚   â”‚       â”‚   â”œâ”€â”€ Navbar.tsx           # Nav con link "Mis Tickets" (autenticado)
-â”‚   â”‚       â”‚   â”œâ”€â”€ EventCard.tsx        # Card de evento para el catÃ¡logo
-â”‚   â”‚       â”‚   â”œâ”€â”€ QRCode.tsx           # âœ¨ NUEVO: Generador QR real (qrcode lib)
-â”‚   â”‚       â”‚   â”œâ”€â”€ SearchBar.tsx        # âœ¨ NUEVO: Barra de bÃºsqueda con debounce
-â”‚   â”‚       â”‚   â”œâ”€â”€ Footer.tsx           # Footer global
-â”‚   â”‚       â”‚   â””â”€â”€ Providers.tsx        # AuthProvider wrapper
-â”‚   â”‚       â””â”€â”€ lib/
-â”‚   â”‚           â”œâ”€â”€ AuthContext.tsx       # Context de JWT + localStorage
-â”‚   â”‚           â””â”€â”€ api.ts               # Funciones fetch para todos los endpoints
 â”‚   â”‚
 â”‚   â”œâ”€â”€ web-host/                # âœ… Port 4201. Next.js Dashboard Organizador.
-â”‚   â”‚   â””â”€â”€ src/
-â”‚   â”‚       â”œâ”€â”€ app/
-â”‚   â”‚       â”‚   â”œâ”€â”€ page.tsx             # AuthGate â†’ Login o Dashboard
-â”‚   â”‚       â”‚   â”œâ”€â”€ login/LoginPage.tsx  # Login para organizadores
-â”‚   â”‚       â”‚   â””â”€â”€ dashboard/           # Dashboard con stats y tabla de eventos
-â”‚   â”‚       â”œâ”€â”€ components/
-â”‚   â”‚       â”‚   â”œâ”€â”€ Sidebar.tsx          # NavegaciÃ³n lateral
-â”‚   â”‚       â”‚   â””â”€â”€ CreateEventForm.tsx  # Formulario de creaciÃ³n de eventos
-â”‚   â”‚       â””â”€â”€ lib/
-â”‚   â”‚           â”œâ”€â”€ AuthContext.tsx       # Context separado (ot_host_token)
-â”‚   â”‚           â””â”€â”€ api.ts               # API client para host
+â”‚   â”‚
+â”‚   â”œâ”€â”€ web-admin/               # âœ… Port 4202. Next.js Dashboard Admin.
 â”‚   â”‚
 â”‚   â””â”€â”€ mobile-app/              # âœ… Expo App. Validador de QR para Staff.
-â”‚       â””â”€â”€ src/app/
-â”‚           â”œâ”€â”€ App.tsx                  # Auth state + Navigation
-â”‚           â”œâ”€â”€ screens/
-â”‚           â”‚   â”œâ”€â”€ LoginScreen.tsx      # Login para staff
-â”‚           â”‚   â””â”€â”€ ScannerScreen.tsx    # CÃ¡mara + QR Scanner
-â”‚           â””â”€â”€ services/
-â”‚               â””â”€â”€ api.ts               # API client para mobile
 â”‚
 â”œâ”€â”€ libs/
 â”‚   â”œâ”€â”€ shared/                  # âœ… LibrerÃ­a compartida
-â”‚   â”‚   â”œâ”€â”€ prisma/schema.prisma # Schema de BD (FUENTE DE VERDAD)
-â”‚   â”‚   â””â”€â”€ src/lib/dto/         # DTOs: LoginDto, RegisterDto, CreateEventDto, etc.
-â”‚   â””â”€â”€ ui-kit/                  # ðŸ“ Scaffolded (sin uso aÃºn)
+â”‚   â””â”€â”€ ui-kit/                  # ðŸ“  Scaffolded (sin uso aÃºn)
 â”‚
 â”œâ”€â”€ scripts/
 â”‚   â””â”€â”€ seed-roles.js            # Script para asignar roles HOST/STAFF
@@ -157,28 +123,6 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api
 | `/login`       | `login/page.tsx`       | âœ…           | Formulario de login con JWT                                |
 | `/register`    | `register/page.tsx`    | âœ…           | Formulario de registro                                     |
 | `/events/[id]` | `events/[id]/page.tsx` | âœ…           | Detalle del evento + mapa de asientos interactivo + compra |
-| `/my-tickets`  | `my-tickets/page.tsx`  | âœ… **NUEVO** | Mis Ã³rdenes y tickets con zona, asiento, estado, QR        |
-
-**CaracterÃ­sticas UI:**
-
-- Tema oscuro premium con glassmorphism y gradientes
-- TipografÃ­a: Inter + Space Grotesk (Google Fonts)
-- Animaciones CSS staggered (fadeInUp)
-- Navbar con autenticaciÃ³n (muestra nombre, botÃ³n "Mis Tickets", logout)
-- Mapa de asientos interactivo con estados: disponible (verde), seleccionado (morado), vendido (gris)
-- Barra inferior de compra con total y cuenta de asientos
-- PÃ¡gina "Mis Tickets" con stats, Ã³rdenes expandibles, tarjetas de ticket con tear-line, badges de estado
-
-### C. Frontend Web Host (Next.js) â€” 2 vistas
-
-| Vista        | Componente                    | Estado | DescripciÃ³n                                                    |
-| :----------- | :---------------------------- | :----- | :------------------------------------------------------------- |
-| Login        | `login/LoginPage.tsx`         | âœ…     | Login exclusivo para organizadores                             |
-| Dashboard    | `dashboard/DashboardPage.tsx` | âœ…     | Stats (eventos, tickets vendidos, ingresos) + tabla de eventos |
-| Crear Evento | `CreateEventForm.tsx`         | âœ…     | Formulario con zonas dinÃ¡micas (nombre, precio, capacidad)     |
-
-**CaracterÃ­sticas UI:**
-
 - Tema oscuro con sidebar lateral
 - Stats cards (Eventos Creados, Tickets Vendidos, Asientos Totales, Ingresos)
 - Tabla de eventos con estado (Publicado/Borrador)
@@ -514,3 +458,12 @@ cd apps/mobile-app && npx expo start
 - **Onboarding:** Integracion del formulario multi-paso en /register nativo. 
 - **Planes:** Incorporacion del selector visual de planes (Free, Plus, Elite).
 - **Autenticacion:** Fix critico al enrutador en Next.js para redirigir al /dashboard una vez logrado el log-in.
+
+## 17. Registro de Cambios Recientes (02 Mayo 2026)
+
+### Gestión Global de Organizadores y Planes (Admin)
+- **Creación Manual de Organizadores:** Implementado el flujo completo en el Global Admin Dashboard (`web-admin`) para registrar organizaciones y establecer su plan y estado inicial sin intervención externa.
+- **Planes Dinámicos en Base de Datos:** Eliminado el Enum estático de planes (`FREE`, `PLUS`, `ELITE`) en `schema.prisma`.
+- **Modelo Plan (CRUD):** Creado nuevo modelo `Plan` (Nombre, Límite de Publicaciones y Valor) con CRUD completo y vistas en el Dashboard Administrativo.
+- **Sincronización de Planes:** Al editar o crear organizadores desde el Admin Dashboard, los planes seleccionables se pueblan dinámicamente desde la base de datos.
+- **Eventos Ilimitados:** Lógica implementada en `EventsService`; si un organizador posee un plan con `maxEvents: 0`, se interpreta universalmente como "♾️ Ilimitados", eludiendo las barreras de bloqueo en la creación de eventos.

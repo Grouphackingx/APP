@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 1 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1, 2, 3 + Registro y Aprobación de Organizadores Funcionando)
+**Fecha de Última Actualización:** 2 de Mayo de 2026
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Dashboard Global Admin con CRUD usuarios, reset de contraseña, planes dinámicos, logo de organizador y estructura de archivos organizada)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -136,7 +136,16 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | POST   | `/api/orders/purchase`          | JWT         | ✅ OK  | Comprar tickets (genera QR JWT)         |
 | GET    | `/api/orders`                   | JWT         | ✅ OK  | Obtener órdenes enriquecidos            |
 | POST   | `/api/tickets/validate`         | JWT         | ✅ OK  | Validar ticket QR (VALID → USED)        |
-| POST   | `/api/upload`                   | JWT         | ✅ OK  | Subir imágenes                          |
+| POST   | `/api/upload`                   | Opcional    | ✅ OK  | Subir imágenes (organiza por directorios: organizer/logo, organizer/events/id) |
+| GET    | `/api/plans`                    | No          | ✅ OK  | Planes públicos (para formulario de registro) |
+| GET    | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Listar |
+| POST   | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Crear |
+| PATCH  | `/api/admin/plans/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Planes - Editar |
+| DELETE | `/api/admin/plans/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Planes - Eliminar |
+| GET    | `/api/admin/users`              | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Listar |
+| POST   | `/api/admin/users`              | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Crear |
+| PATCH  | `/api/admin/users/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Editar |
+| DELETE | `/api/admin/users/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Eliminar |
 
 ### Web Client (Puerto 4200)
 
@@ -164,9 +173,20 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | :------------------- | :----- | :----------------------------------------------------------------- |
 | Login                | ✅     | Login para administrador global                                    |
 | Panel Inicio         | ✅     | Resumen del sistema con stats de organizaciones                    |
-| Gestión Organizadores| ✅     | Tabla completa con acciones: Aprobar, Editar, Eliminar             |
-| Modal Edición        | ✅     | Edición completa: email, org, representante, ubicación, plan, estado |
-| Registro de Hosts    | ✅     | Formulario completo en `/register` con provincia/ciudad de Ecuador |
+| Gestión Organizadores| ✅     | Tabla + avatar/logo, acciones: Aprobar, Editar, Eliminar           |
+| Modal Edición Org    | ✅     | Edición: email, org, representante, ubicación, plan, estado, **contraseña** y **logo** |
+| Gestión de Planes    | ✅     | CRUD completo de planes (nombre, precio, límite de eventos)        |
+| Gestión de Usuarios  | ✅     | CRUD Admin/Editor; Editores sin acceso a Planes ni Usuarios        |
+| Analíticas           | ✅     | Métricas de eventos, tickets y revenue por organizador             |
+
+### Web Host (Puerto 4201) — Actualizaciones (2 Mayo 2026)
+
+| Sección              | Estado | Descripción                                                        |
+| :------------------- | :----- | :----------------------------------------------------------------- |
+| Registro - Paso 2    | ✅     | Nuevo campo Logo de Organización con preview circular y botón subir|
+| Registro - Paso 3    | ✅     | Planes cargados dinámicamente desde la BD (no hardcoded)           |
+| Cuenta en Revisión   | ✅     | Pantalla con botón "Cerrar Sesión y Volver" para cuenta PENDING    |
+| Login bloqueado      | ✅     | Cuentas PENDING/REJECTED reciben mensaje de error descriptivo       |
 
 ---
 
@@ -244,40 +264,20 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 ## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
 
-### Sesión del 1 de Mayo 2026 — Correcciones de Registro y Dashboard Host
+### Sesión del 2 de Mayo 2026 — Logo, Planes Dinámicos, Bloqueo de Login, Reset Contraseña, CRUD Admin
 
 | Archivo | Tipo de Cambio | Descripción |
 | :--- | :--- | :--- |
-| `apps/api/src/app/auth/auth.service.ts` | Corrección (Bugfix) | `registerHost` ahora retorna `access_token` y `user` para evitar error de parseo JSON en frontend. |
-| `apps/web-host/src/lib/AuthContext.tsx` | Corrección (Bugfix) | Añadido bloque `try-catch` para proteger `JSON.parse()` en `localStorage` y limpiar sesiones corruptas ("undefined"). |
-| `apps/api/src/app/events/events.controller.ts` | Arquitectura | Nuevo endpoint seguro `GET /events/me` exclusivo para Organizadores. |
-| `apps/api/src/app/events/events.service.ts` | Ampliado | Método `findMyEvents` que filtra por `organizerId`. |
-| `apps/web-host/src/lib/api.ts` | Modificado | `getEvents` ahora consume `/events/me` para evitar que hosts nuevos vean eventos de terceros. |
-
-### Sesión del 5 de Abril 2026 — Flujo de Aprobación de Organizadores
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `apps/api/src/app/auth/auth.service.ts` | Modificado | `validateUser` incluye `organizerProfile` en la respuesta del login |
-| `apps/api/src/app/admin/admin.controller.ts` | Ampliado | Añadidos endpoints `PATCH /organizers/:id` y `DELETE /organizers/:id` |
-| `apps/api/src/app/admin/admin.service.ts` | Ampliado | Métodos `updateOrganizer` (actualiza email en User + datos en Profile) y `deleteOrganizer` con cascada |
-| `apps/web-admin/app/dashboard/page.tsx` | **Reescritura mayor** | Modal de edición completo (email, org, representante, ubicación, plan, estado), botón eliminar con confirmación, columna ubicación en tabla |
-| `apps/web-admin/lib/api.ts` | Ampliado | Añadidas funciones `updateOrganizer` y `deleteOrganizer` |
-| `apps/web-host/src/lib/AuthContext.tsx` | Modificado | Interfaz `User` incluye `organizerProfile`, `logout()` redirige a `/login` |
-| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Guard: si `organizerProfile.status !== 'APPROVED'` muestra pantalla "Cuenta en Revisión" |
-| `apps/web-host/src/app/layout.tsx` | Modificado | `AuthProvider` movido al layout raíz (arquitectura correcta en Next.js) |
-| `apps/web-host/src/app/page.tsx` | Reescrito | Redirige a `/dashboard` o `/login` según estado de auth |
-| `apps/web-host/src/app/login/LoginPage.tsx` | Renombrado | → `page.tsx` (requerido por Next.js App Router) |
-| `apps/web-host/src/app/dashboard/DashboardPage.tsx` | Renombrado | → `page.tsx` (requerido por Next.js App Router) |
-
-### Sesión del 31 de Marzo 2026 — Edición de Zonas
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `apps/api/src/app/events/events.service.ts` | **Reescritura mayor** | Método `update` con sanitización, protección de capacidad, gestión de asientos |
-| `apps/api/src/app/events/events.controller.ts` | Modificado | PATCH usa `@Request()` para evitar whitelist del ValidationPipe |
-| `apps/web-host/src/components/EditEventForm.tsx` | Mejorado | soldCount, validación de capacidad, protección visual de campos bloqueados |
-| `libs/shared/src/lib/dto/events.dto.ts` | Ampliado | `id` opcional en CreateZoneDto, `zones` opcional, nuevo `UpdateEventDto` |
+| `apps/api/src/app/auth/auth.service.ts` | Modificado | Login bloquea organizadores PENDING/REJECTED con mensaje descriptivo |
+| `apps/api/src/app/app.service.ts` | Nuevo método | `getPlans()` expone planes públicos consultando Prisma |
+| `apps/api/src/app/app.controller.ts` | Modificado | Endpoint público `GET /api/plans` sin autenticación |
+| `apps/api/src/app/upload/upload.controller.ts` | **Reescritura** | Crea directorios dinámicos: `uploads/organizers/{id}/logo/` y `.../events/{eventId}/`. Sin auth obligatoria (soporta registro sin token). |
+| `apps/api/src/app/admin/admin.service.ts` | Modificado | `updateOrganizer` hashea contraseña con bcrypt si se provee |
+| `apps/web-host/src/app/register/page.tsx` | Modificado | Paso 2: campo logo con preview. Paso 3: planes dinámicos desde API. |
+| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Pantalla "Cuenta en Revisión" con botón "Cerrar Sesión y Volver" |
+| `apps/web-host/src/lib/api.ts` | Modificado | `uploadImage()` acepta `type/eventId/organizerId`. Auth header condicional. `getPublicPlans()` añadido. |
+| `apps/web-admin/app/dashboard/page.tsx` | Modificado | Logo en modales edición/creación org. Avatar en tabla muestra logo si existe. `useRef` para file inputs. |
+| `apps/web-admin/lib/api.ts` | Modificado | Función `uploadImage()` añadida para subir logos desde el admin. |
 
 ---
 
@@ -313,15 +313,16 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 ### Prioridad Alta
 
 - [ ] Integración real con Stripe (reemplazar el mock)
-- [ ] Panel de Administración (dashboard de ventas, gestión de usuarios)
-- [ ] Emails transaccionales (confirmación de compra)
+- [ ] Emails transaccionales (confirmación de registro, aprobación y compra)
 - [ ] Reportes financieros para organizadores
+- [ ] Mover carpeta temporal del logo (se guarda en `uploads/organizers/{email_safe}/` en el registro, debería moverse a `uploads/organizers/{userId}/` tras crearse el usuario)
 
 ### Prioridad Media
 
-- [ ] Paginación en endpoints (eventos, órdenes)
+- [ ] Paginación en endpoints (eventos, órdenes, organizadores)
 - [ ] Sistema de categorías de eventos
 - [ ] Optimizar queries de findAll (no traer todos los seats si no es necesario)
+- [ ] CDN para imágenes (actualmente servidas estáticamente desde el servidor NestJS)
 
 ### Prioridad Baja
 
@@ -329,7 +330,6 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [ ] Rate limiting en API
 - [ ] CI/CD pipeline
 - [ ] Tests unitarios e integración
-- [ ] CDN para imágenes
 
 ### Completado ✅
 
@@ -339,9 +339,9 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [x] ~~Edición y eliminación de eventos~~ ✅
 - [x] ~~Gestión de estados (Draft/Published/Inactive)~~ ✅
 - [x] ~~Desactivación automática de eventos pasados~~ ✅
-- [x] ~~Edición de descripciones de zonas~~ ✅ (resuelto 31 Mar 2026)
-- [x] ~~Protección de capacidad (no reducir bajo vendidos)~~ ✅ (resuelto 31 Mar 2026)
-- [x] ~~Gestión dinámica de asientos al cambiar capacidad~~ ✅ (resuelto 31 Mar 2026)
+- [x] ~~Edición de descripciones de zonas~~ ✅ (31 Mar 2026)
+- [x] ~~Protección de capacidad (no reducir bajo vendidos)~~ ✅ (31 Mar 2026)
+- [x] ~~Gestión dinámica de asientos al cambiar capacidad~~ ✅ (31 Mar 2026)
 - [x] ~~Registro de organizadores con campos Ecuador (provincia/ciudad)~~ ✅ (5 Abr 2026)
 - [x] ~~Panel Global Admin: aprobar, editar, eliminar organizadores~~ ✅ (5 Abr 2026)
 - [x] ~~Modal de edición completo en Global Admin~~ ✅ (5 Abr 2026)
@@ -350,6 +350,24 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [x] ~~Logout con redirección automática al login~~ ✅ (5 Abr 2026)
 - [x] ~~Corrección de Login Automático tras Registro de Host~~ ✅ (1 May 2026)
 - [x] ~~Dashboard de Host aislado a sus propios eventos (/events/me)~~ ✅ (1 May 2026)
+- [x] ~~Gestión de Planes en Global Admin (CRUD completo)~~ ✅ (2 May 2026)
+- [x] ~~Planes dinámicos en registro de Host (cargados desde BD)~~ ✅ (2 May 2026)
+- [x] ~~Gestión de Usuarios del Dashboard (Admins y Editores)~~ ✅ (2 May 2026)
+- [x] ~~Reset de contraseña de organizadores desde Global Admin~~ ✅ (2 May 2026)
+- [x] ~~Logo de organización: subida en registro + edición admin + avatar en tabla~~ ✅ (2 May 2026)
+- [x] ~~Estructura de directorios organizada por organizador y evento~~ ✅ (2 May 2026)
+- [x] ~~Bloqueo de login para PENDING/REJECTED con mensaje descriptivo~~ ✅ (2 May 2026)
+- [x] ~~Botón "Cerrar Sesión" en pantalla Cuenta en Revisión~~ ✅ (2 May 2026)
+- [x] ~~Endpoint público GET /api/plans para formulario de registro~~ ✅ (2 May 2026)
+- [x] ~~Gestión de Planes en Global Admin (CRUD completo)~~ ✅ (2 May 2026)
+- [x] ~~Planes dinámicos en registro de Host (cargados desde BD)~~ ✅ (2 May 2026)
+- [x] ~~Gestión de Usuarios del Dashboard (Admins y Editores con roles)~~ ✅ (2 May 2026)
+- [x] ~~Reset de contraseña de organizadores desde Global Admin~~ ✅ (2 May 2026)
+- [x] ~~Logo de organización: subida en registro, edición admin y tabla con avatar~~ ✅ (2 May 2026)
+- [x] ~~Estructura de directorios organizada por organizador/evento~~ ✅ (2 May 2026)
+- [x] ~~Bloqueo de login para cuentas PENDING/REJECTED con mensaje descriptivo~~ ✅ (2 May 2026)
+- [x] ~~Botón "Cerrar Sesión" en pantalla de Cuenta en Revisión~~ ✅ (2 May 2026)
+- [x] ~~Endpoint público GET /api/plans para formulario de registro~~ ✅ (2 May 2026)
 
 ---
 

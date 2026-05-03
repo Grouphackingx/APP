@@ -11,6 +11,7 @@ enum Role {
   USER
   HOST
   ADMIN
+  EDITOR
   STAFF
 }
 
@@ -38,6 +39,7 @@ model User {
   email     String   @unique
   password  String
   name      String
+  phone     String?
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   

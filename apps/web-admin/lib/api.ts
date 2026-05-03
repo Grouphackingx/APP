@@ -96,6 +96,10 @@ export async function getOrganizers(token: string) {
   return fetchAPI<any[]>('/admin/organizers', { token, cache: 'no-store' });
 }
 
+export async function getOrganizersAnalytics(token: string) {
+  return fetchAPI<any[]>('/admin/analytics/organizers', { token, cache: 'no-store' });
+}
+
 export async function createOrganizer(data: any, token: string) {
   return fetchAPI<any>('/admin/organizers', {
     method: 'POST',
@@ -151,6 +155,66 @@ export async function updatePlan(id: string, data: any, token: string) {
 
 export async function deletePlan(id: string, token: string) {
   return fetchAPI<any>(`/admin/plans/${id}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function uploadImage(file: File, token: string, type?: 'logo' | 'event', eventId?: string, organizerId?: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  let url = `${API_BASE}/upload`;
+  const params = new URLSearchParams();
+  if (type) params.append('type', type);
+  if (eventId) params.append('eventId', eventId);
+  if (organizerId) params.append('organizerId', organizerId);
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`;
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Error uploading image' }));
+    throw new Error(error.message || 'Error uploading image');
+  }
+
+  const data = await res.json();
+  return data.url;
+}
+
+// Admin Users Integration
+
+export async function getAdminUsers(token: string) {
+  return fetchAPI<any[]>('/admin/users', { token, cache: 'no-store' });
+}
+
+export async function createAdminUser(data: any, token: string) {
+  return fetchAPI<any>('/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function updateAdminUser(id: string, data: any, token: string) {
+  return fetchAPI<any>(`/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function deleteAdminUser(id: string, token: string) {
+  return fetchAPI<any>(`/admin/users/${id}`, {
     method: 'DELETE',
     token,
   });

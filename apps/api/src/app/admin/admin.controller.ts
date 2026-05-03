@@ -12,8 +12,15 @@ export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('organizers')
+  @Roles(Role.ADMIN, Role.EDITOR)
   getAllOrganizers() {
     return this.adminService.getAllOrganizers();
+  }
+
+  @Get('analytics/organizers')
+  @Roles(Role.ADMIN, Role.EDITOR)
+  getOrganizersAnalytics() {
+    return this.adminService.getOrganizersAnalytics();
   }
 
   @Post('organizers')
@@ -22,6 +29,7 @@ export class AdminController {
   }
 
   @Patch('organizers/:id/status')
+  @Roles(Role.ADMIN, Role.EDITOR)
   setOrganizerStatus(
     @Param('id') userId: string,
     @Body('status') status: 'PENDING' | 'APPROVED' | 'REJECTED'
@@ -62,5 +70,27 @@ export class AdminController {
   @Delete('plans/:id')
   deletePlan(@Param('id') id: string) {
     return this.adminService.deletePlan(id);
+  }
+
+  // --- ADMIN USERS ---
+
+  @Get('users')
+  getAdminUsers() {
+    return this.adminService.getAdminUsers();
+  }
+
+  @Post('users')
+  createAdminUser(@Body() data: any) {
+    return this.adminService.createAdminUser(data);
+  }
+
+  @Patch('users/:id')
+  updateAdminUser(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updateAdminUser(id, data);
+  }
+
+  @Delete('users/:id')
+  deleteAdminUser(@Param('id') id: string) {
+    return this.adminService.deleteAdminUser(id);
   }
 }

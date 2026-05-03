@@ -28,6 +28,15 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
         }
+
+        if (user.role === 'HOST' && user.organizerProfile?.status === 'PENDING') {
+            throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
+        }
+        
+        if (user.role === 'HOST' && user.organizerProfile?.status === 'REJECTED') {
+            throw new UnauthorizedException('Tu solicitud de cuenta de organizador fue rechazada. Contacta a soporte para más detalles.');
+        }
+
         const payload = { email: user.email, sub: user.id, role: user.role };
         return {
             access_token: this.jwtService.sign(payload),

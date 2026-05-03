@@ -110,9 +110,12 @@ export default function DashboardPage() {
           <div className="auth-card" style={{ textAlign: 'center', maxWidth: '500px' }}>
             <div style={{ fontSize: '3rem', margin: '1rem 0' }}>⏳</div>
             <h2>Cuenta en Revisión</h2>
-            <p style={{ color: 'var(--text-secondary)' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
               Tu organización está siendo evaluada por el equipo de OpenTicket. Te notificaremos cuando tu acceso sea aprobado.
             </p>
+            <button className="btn btn-secondary" onClick={logout} style={{ width: '100%' }}>
+              ← Cerrar Sesión y Volver
+            </button>
           </div>
         </div>
       </div>

@@ -61,15 +61,26 @@ export async function createEvent(data: any, token: string) {
   });
 }
 
-export async function uploadImage(file: File, token: string): Promise<string> {
+export async function uploadImage(file: File, token: string, type?: 'logo' | 'event', eventId?: string, organizerId?: string): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch(`${API_BASE}/upload`, {
+  let url = `${API_BASE}/upload`;
+  const params = new URLSearchParams();
+  if (type) params.append('type', type);
+  if (eventId) params.append('eventId', eventId);
+  if (organizerId) params.append('organizerId', organizerId);
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`;
+  }
+
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     body: formData,
   });
 
@@ -95,4 +106,8 @@ export async function deleteEvent(id: string, token: string) {
     method: 'DELETE',
     token,
   });
+}
+
+export async function getPublicPlans() {
+  return fetchAPI<any[]>('/plans', { cache: 'no-store' });
 }

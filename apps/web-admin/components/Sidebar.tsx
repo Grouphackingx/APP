@@ -48,28 +48,44 @@ export function Sidebar({
         </a>
         <a
           href="#"
-          className={activeView === 'plans' ? 'active' : ''}
+          className={activeView === 'analytics' ? 'active' : ''}
           onClick={(e) => {
             e.preventDefault();
-            onNavigate('plans');
+            onNavigate('analytics');
           }}
-          style={activeView === 'plans' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+          style={activeView === 'analytics' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
         >
-          <span className="nav-icon">💎</span>
-          Planes
+          <span className="nav-icon">📊</span>
+          Analíticas
         </a>
-        <a
-          href="#"
-          className={activeView === 'users' ? 'active' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate('users');
-          }}
-          style={activeView === 'users' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
-        >
-          <span className="nav-icon">👥</span>
-          Usuarios
-        </a>
+        {user?.role === 'ADMIN' && (
+          <a
+            href="#"
+            className={activeView === 'plans' ? 'active' : ''}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('plans');
+            }}
+            style={activeView === 'plans' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+          >
+            <span className="nav-icon">💎</span>
+            Planes
+          </a>
+        )}
+        {user?.role === 'ADMIN' && (
+          <a
+            href="#"
+            className={activeView === 'users' ? 'active' : ''}
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('users');
+            }}
+            style={activeView === 'users' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+          >
+            <span className="nav-icon">👥</span>
+            Usuarios
+          </a>
+        )}
       </nav>
 
       {user && (

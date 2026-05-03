@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { registerHost } from '../../lib/api';
+import { registerHost, getPublicPlans, uploadImage } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import Link from 'next/link';
 
@@ -40,6 +40,13 @@ export default function RegisterHostPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dbPlans, setDbPlans] = useState<any[]>([]);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  useEffect(() => {
+    getPublicPlans().then(setDbPlans).catch(console.error);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '', // alias for firstName internally
@@ -51,11 +58,28 @@ export default function RegisterHostPage() {
     phone: '',
     organizationName: '',
     organizationDescription: '',
+    organizationLogo: '',
     address: '',
     province: '',
     city: '',
     plan: 'FREE' 
   });
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    try {
+      const emailSafe = formData.email ? formData.email.replace(/[^a-zA-Z0-9]/g, '_') : 'temp';
+      const url = await uploadImage(file, '', 'logo', undefined, emailSafe);
+      setFormData(prev => ({ ...prev, organizationLogo: url }));
+    } catch (err: any) {
+      alert(err.message || 'Error al subir el logo');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -156,6 +180,26 @@ export default function RegisterHostPage() {
             <div className="animate-fade-in">
               <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>2. Perfil de la Organización</h3>
               
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{
+                  width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--bg-glass)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px dashed var(--border-color)'
+                }}>
+                  {formData.organizationLogo ? (
+                    <img src={formData.organizationLogo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '2rem', color: 'var(--text-muted)' }}>🏢</span>
+                  )}
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem' }}>Logo de la Organización (Opcional)</label>
+                  <input type="file" accept="image/*" ref={logoInputRef} style={{ display: 'none' }} onChange={handleLogoUpload} />
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}>
+                    {uploadingLogo ? 'Subiendo...' : 'Subir Imagen'}
+                  </button>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label>Nombre de la Productora / Organización</label>
                 <input required name="organizationName" value={formData.organizationName} onChange={handleChange} placeholder="Ej. Massive Events Corp" />
@@ -218,29 +262,24 @@ export default function RegisterHostPage() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                 
-                <div onClick={() => handleSelectPlan('FREE')} style={{ padding: '1.5rem', border: `2px solid ${formData.plan === 'FREE' ? 'var(--color-primary)' : 'var(--border-color)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', background: formData.plan === 'FREE' ? 'var(--bg-glass-light)' : 'transparent' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Plan Gratuito 🧊</h4>
-                    <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>$0</span>
-                  </div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Crea y gestiona hasta 3 eventos simultáneos.</p>
-                </div>
-
-                <div onClick={() => handleSelectPlan('PLUS')} style={{ padding: '1.5rem', border: `2px solid ${formData.plan === 'PLUS' ? 'var(--color-primary)' : 'var(--border-color)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', background: formData.plan === 'PLUS' ? 'var(--bg-glass-light)' : 'transparent' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Plan Plus ⭐</h4>
-                    <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>$49 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/año</span></span>
-                  </div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Hasta 12 eventos premium.</p>
-                </div>
-
-                <div onClick={() => handleSelectPlan('ELITE')} style={{ padding: '1.5rem', border: `2px solid ${formData.plan === 'ELITE' ? '#a855f7' : 'var(--border-color)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', background: formData.plan === 'ELITE' ? 'rgba(168, 85, 247, 0.1)' : 'transparent' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#a855f7' }}>Plan Elite 💎</h4>
-                    <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>$99 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/año</span></span>
-                  </div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Eventos ilimitados.</p>
-                </div>
+                {dbPlans.length > 0 ? dbPlans.map(p => {
+                  const isSelected = formData.plan === p.name;
+                  const isPremium = p.price > 0;
+                  const icon = p.name.toLowerCase().includes('elite') ? '💎' : p.name.toLowerCase().includes('plus') ? '⭐' : '🧊';
+                  return (
+                    <div key={p.id} onClick={() => handleSelectPlan(p.name)} style={{ padding: '1.5rem', border: `2px solid ${isSelected ? (isPremium ? '#a855f7' : 'var(--color-primary)') : 'var(--border-color)'}`, borderRadius: 'var(--radius-lg)', cursor: 'pointer', background: isSelected ? (isPremium ? 'rgba(168, 85, 247, 0.1)' : 'var(--bg-glass-light)') : 'transparent' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: isSelected && isPremium ? '#a855f7' : 'inherit' }}>Plan {p.name} {icon}</h4>
+                        <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>${p.price} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.price > 0 ? '/año' : ''}</span></span>
+                      </div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        {p.maxEvents === 0 ? 'Eventos ilimitados.' : `Crea y gestiona hasta ${p.maxEvents} evento${p.maxEvents === 1 ? '' : 's'}.`}
+                      </p>
+                    </div>
+                  );
+                }) : (
+                  <div className="spinner" style={{ alignSelf: 'center' }} />
+                )}
 
               </div>
 
