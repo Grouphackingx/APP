@@ -6,6 +6,8 @@ import { getEvents, deleteEvent } from '../../lib/api';
 import { Sidebar } from '../../components/Sidebar';
 import { CreateEventForm } from '../../components/CreateEventForm';
 import { EditEventForm } from '../../components/EditEventForm';
+import { AttendeesList } from '../../components/AttendeesList';
+import { TicketScanner } from '../../components/TicketScanner';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-EC', {
@@ -19,7 +21,7 @@ export default function DashboardPage() {
   const { user, token, logout } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'dashboard' | 'events' | 'create' | 'edit'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'events' | 'create' | 'edit' | 'attendees' | 'scanner'>('dashboard');
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
 
@@ -105,7 +107,7 @@ export default function DashboardPage() {
   if (user && user.role === 'HOST' && user.organizerProfile?.status !== 'APPROVED') {
     return (
       <div className="dashboard-layout">
-        <Sidebar user={user} activeView="dashboard" onNavigate={()=>{}} onLogout={logout} />
+        <Sidebar user={user} activeView="dashboard" onNavigate={() => undefined} onLogout={logout} />
         <div className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="auth-card" style={{ textAlign: 'center', maxWidth: '500px' }}>
             <div style={{ fontSize: '3rem', margin: '1rem 0' }}>⏳</div>
@@ -356,6 +358,30 @@ export default function DashboardPage() {
               </button>
             </div>
             <CreateEventForm token={token!} onSuccess={handleEventCreatedOrUpdated} />
+          </>
+        )}
+
+        {view === 'scanner' && token && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Escáner de Tickets</h1>
+                <p>Valida el acceso de los asistentes escaneando su código QR.</p>
+              </div>
+            </div>
+            <TicketScanner token={token} />
+          </>
+        )}
+
+        {view === 'attendees' && token && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Asistentes</h1>
+                <p>Compradores de entradas y registro de asistencia a tus eventos.</p>
+              </div>
+            </div>
+            <AttendeesList token={token} />
           </>
         )}
 

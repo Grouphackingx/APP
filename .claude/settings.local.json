@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx nx *)"
+      "Bash(npx nx *)",
+      "Bash(node dist/apps/api/main.js)",
+      "Bash(echo \"API PID: $!\")",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(curl -s http://localhost:3000/api)"
     ]
   }
 }

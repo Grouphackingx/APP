@@ -111,3 +111,29 @@ export async function deleteEvent(id: string, token: string) {
 export async function getPublicPlans() {
   return fetchAPI<any[]>('/plans', { cache: 'no-store' });
 }
+
+export async function getAttendees(token: string) {
+  return fetchAPI<any[]>('/orders/attendees/me', { token, cache: 'no-store' });
+}
+
+type TicketValidationResult = {
+  valid: boolean;
+  message: string;
+  ticket: { id: string; zone: string; seat: string | number | null; holderName: string; scannedAt: string };
+};
+
+export async function validateTicket(qrToken: string, authToken: string) {
+  return fetchAPI<TicketValidationResult>('/tickets/validate', {
+    method: 'POST',
+    body: JSON.stringify({ token: qrToken }),
+    token: authToken,
+  });
+}
+
+export async function validateTicketById(ticketId: string, authToken: string) {
+  return fetchAPI<TicketValidationResult>('/tickets/validate-by-id', {
+    method: 'POST',
+    body: JSON.stringify({ ticketId }),
+    token: authToken,
+  });
+}

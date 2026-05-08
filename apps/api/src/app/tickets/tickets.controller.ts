@@ -8,9 +8,12 @@ export class TicketsController {
     constructor(private readonly ticketsService: TicketsService) {}
 
     @Post('validate')
-    validate(@Request() req: any, @Body('token') token: string) {
-        // En un sistema real, verificaríamos si el usuario (req.user) tiene rol STAFF/ADMIN
-        // req.user viene del JwtAuthGuard
+    validate(@Request() req: { user: { userId: string } }, @Body('token') token: string) {
         return this.ticketsService.validateTicket(token, req.user.userId);
+    }
+
+    @Post('validate-by-id')
+    validateById(@Request() req: { user: { userId: string } }, @Body('ticketId') ticketId: string) {
+        return this.ticketsService.validateByTicketId(ticketId, req.user.userId);
     }
 }

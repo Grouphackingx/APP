@@ -414,7 +414,7 @@ export default function MyTicketsPage() {
                                   {ticket.status === 'VALID'
                                     ? '✅ Válido'
                                     : ticket.status === 'USED'
-                                      ? '✔️ Usado'
+                                      ? '🔒 Usado'
                                       : ticket.status}
                                 </span>
                                 <div

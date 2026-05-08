@@ -623,7 +623,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
             <div key={i} className="zone-form-item">
               <div className="zone-header">
                 <h4>Zona {i + 1}</h4>
-                {zones.length > 1 && (
+                {zones.length > 1 && !zone.hasSold && (
                   <button
                     type="button"
                     className="btn btn-danger btn-sm"

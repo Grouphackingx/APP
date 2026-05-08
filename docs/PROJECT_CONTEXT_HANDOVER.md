@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
-**Última Actualización:** 3 de Mayo de 2026
-**Estado del Proyecto:** ✅ Fases 1, 2, 3 y 4 Completadas y Verificadas + Perfil de Usuario (Mi Perfil) + Toast autenticación en localidades
+**Última Actualización:** 8 de Mayo de 2026
+**Estado del Proyecto:** ✅ Fases 1, 2, 3 y 4 Completadas y Verificadas + Perfil de Usuario + Toast autenticación + Asistentes y Escáner de Tickets (Host) + Tickets USED en rojo (Client)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -490,6 +490,42 @@ cd apps/mobile-app && npx expo start
 - **Captura de Datos Críticos:** El campo **Teléfono** ahora es **obligatorio** en el formulario de registro de clientes.
 - **Internacionalización Local:** Se agregó el prefijo 🇪🇨 +593 visualmente en el campo de teléfono para guiar al usuario.
 - **Validación de Datos:** El `RegisterDto` en la librería shared ahora requiere estrictamente el campo `phone`, preparando el terreno para la futura integración de facturación electrónica.
+
+## 20. Registro de Cambios (08 Mayo 2026)
+
+### Panel Host (web-host :4201) — Asistentes y Escáner de Tickets
+
+**Contexto:** Los organizadores no tenían visibilidad de quién compró entradas ni si asistió al evento. Tampoco tenían herramienta de validación QR integrada en su panel web.
+
+#### Backend
+- **`orders.service.ts`:** Nuevo método `getMyEventAttendees(organizerId)`. Obtiene todos los eventos del organizador → busca todos los tickets → decodifica cada QR JWT → filtra los que pertenecen al organizador → agrupa por `{userId}-{eventId}` → retorna `{ user, eventId, eventTitle, ticketsBought, ticketsUsed, tickets[] }`.
+- **`orders.controller.ts`:** `GET /orders/attendees/me` — requiere JWT de HOST.
+- **`tickets.service.ts`:** Nuevo método `validateByTicketId(partialId, staffId)` — busca ticket por `id startsWith partialId` (insensible a mayúsculas, ignora `#`), luego delega a `validateTicket`.
+- **`tickets.controller.ts`:** `POST /tickets/validate-by-id` — permite validar con el ID corto mostrado bajo el QR (ej: `#c288f2ae`).
+
+#### Frontend — Panel Host
+- **`AttendeesList.tsx`** (nuevo): Stats cards (Compradores únicos, Entradas vendidas, Asistencias, Sin asistir). Dropdown de filtro por evento. Búsqueda local por nombre/email. Tabla expandible: al hacer click en una fila se muestran los tickets individuales con zona, asiento, estado y hora de escaneo. Iconos de asistencia: ✅ Completa / 🔶 Parcial / 🔴 Sin asistir.
+- **`TicketScanner.tsx`** (nuevo): 3 tabs:
+  - **📷 Cámara**: `getUserMedia` → canvas → `jsQR` (cacheado al nivel de módulo). Botones **"▶ Escanear"** / **"⏹ Detener"** con overlay de pausa. Marco animado con esquinas verdes al escanear. Mensajes de error de cámara específicos por `DOMException.name`. Deduplicación de tokens con `lastTokenRef`.
+  - **🔍 Buscar por ID**: Input del ID corto → `POST /tickets/validate-by-id`.
+  - **⌨️ Token manual**: Textarea para pegar el JWT completo → `POST /tickets/validate`.
+- **`EditEventForm.tsx`:** Botón "Eliminar zona" oculto cuando `zone.hasSold === true` (ya calculado en `soldCount`).
+- **`Sidebar.tsx`:** Entradas "👥 Asistentes" y "📷 Escáner de Tickets" en el menú de navegación.
+- **`dashboard/page.tsx`:** Vistas `'attendees'` y `'scanner'` añadidas al tipo union, imports y bloques de render correspondientes.
+
+### Portal Cliente (web-client :4200) — Tickets Usados en Rojo
+
+**Contexto:** Los tickets ya escaneados (USED) eran visualmente indistinguibles de los válidos a primera vista.
+
+**Cambios en `my-tickets.css`:**
+- `.badge-used`: Fondo rojo semitransparente + borde rojo. Emoji cambiado a 🔒.
+- `.ticket-used`: Tinte rojo sutil en la tarjeta + borde rojo.
+- `.ticket-scanned` (nuevo): Franja izquierda roja + fondo rojo tenue + texto en rojo negrita. Muestra la fecha/hora del escaneo.
+- `.qr-used .qr-label-text`: Color rojo + negrita para "Ticket ya utilizado".
+
+**Color unificado:** `#ef4444` en todos los elementos del ticket USED para coherencia visual.
+
+---
 
 ## 19. Registro de Cambios (03 Mayo 2026)
 

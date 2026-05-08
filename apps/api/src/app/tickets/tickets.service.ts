@@ -9,6 +9,16 @@ export class TicketsService {
         private jwtService: JwtService
     ) { }
 
+    async validateByTicketId(partialId: string, staffId: string) {
+        const ticket = await this.prisma.ticket.findFirst({
+            where: { id: { startsWith: partialId.toLowerCase().replace(/^#/, '') } },
+        });
+        if (!ticket) {
+            throw new NotFoundException(`No se encontró ningún ticket con ID que empiece por "${partialId}"`);
+        }
+        return this.validateTicket(ticket.qrCodeToken, staffId);
+    }
+
     async validateTicket(token: string, staffId: string) {
         try {
             // 1. Verify JWT signature

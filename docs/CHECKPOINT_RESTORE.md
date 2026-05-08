@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 3 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil con foto de avatar, campos de identificación Ecuador, foto de perfil con directorio propio + Toast de login en selección de asientos)
+**Fecha de Última Actualización:** 8 de Mayo de 2026
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Panel Host: Asistentes + Escáner de tickets con cámara QR y búsqueda por ID)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -136,6 +136,8 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | POST   | `/api/orders/purchase`          | JWT         | ✅ OK  | Comprar tickets (genera QR JWT)         |
 | GET    | `/api/orders`                   | JWT         | ✅ OK  | Obtener órdenes enriquecidos            |
 | POST   | `/api/tickets/validate`         | JWT         | ✅ OK  | Validar ticket QR (VALID → USED)        |
+| POST   | `/api/tickets/validate-by-id`   | JWT         | ✅ OK  | Validar ticket por ID corto (startsWith)|
+| GET    | `/api/orders/attendees/me`      | JWT (HOST)  | ✅ OK  | Lista de asistentes de eventos del organizador (decodifica JWT de tickets) |
 | GET    | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Obtener perfil completo del usuario autenticado |
 | PATCH  | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Actualizar perfil (nombre, email, password, ID, dirección, foto, etc.) |
 | POST   | `/api/upload`                   | Opcional    | ✅ OK  | Subir imágenes — tipos: `logo`, `event`, `user-avatar`. Directorios: `uploads/organizers/{id}/...` y `uploads/users/{id}/avatar/` |
@@ -162,13 +164,16 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 ### Web Host (Puerto 4201)
 
-| Sección          | Estado | Descripción                                            |
-| :--------------- | :----- | :----------------------------------------------------- |
-| Login            | ✅     | Login para organizadores                               |
-| Dashboard        | ✅     | Stats + tabla de eventos con pestañas (Activos/Inactivos/Borrador) |
-| Crear Evento     | ✅     | Formulario completo con zonas, galería, mapa, video    |
-| Editar Evento    | ✅     | Edición de zonas con protección de ventas activas      |
-| Eliminar Evento  | ✅     | Solo visible si 0 tickets vendidos                     |
+| Sección              | Estado | Descripción                                                         |
+| :------------------- | :----- | :------------------------------------------------------------------ |
+| Login                | ✅     | Login para organizadores                                            |
+| Dashboard            | ✅     | Stats + tabla de eventos con pestañas (Activos/Inactivos/Borrador)  |
+| Crear Evento         | ✅     | Formulario completo con zonas, galería, mapa, video                 |
+| Editar Evento        | ✅     | Edición de zonas con protección de ventas activas                   |
+| Eliminar Evento      | ✅     | Solo visible si 0 tickets vendidos                                  |
+| Eliminar Zona        | ✅     | Botón oculto si la zona tiene tickets vendidos (`hasSold`)          |
+| Asistentes           | ✅     | Lista de compradores por evento con tickets comprados/usados y estado de asistencia. Filtro por evento + búsqueda por nombre/email + filas expandibles |
+| Escáner de Tickets   | ✅     | 3 tabs: Cámara QR (con botones Escanear/Detener), Buscar por ID corto (`#c288f2ae`), Token JWT manual. Validación en tiempo real contra API. |
 
 ### Web Admin - Global (Puerto 4202)
 
@@ -181,6 +186,12 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | Gestión de Planes    | ✅     | CRUD completo de planes (nombre, precio, límite de eventos)        |
 | Gestión de Usuarios  | ✅     | CRUD Admin/Editor; Editores sin acceso a Planes ni Usuarios        |
 | Analíticas           | ✅     | Métricas de eventos, tickets y revenue por organizador             |
+
+### Web Client (Puerto 4200) — Actualizaciones (8 Mayo 2026)
+
+| Sección              | Estado | Descripción                                                        |
+| :------------------- | :----- | :----------------------------------------------------------------- |
+| Mis Tickets — Usados | ✅     | Tickets escaneados (USED) se muestran en rojo: badge "🔒 Usado", borde de tarjeta, franja "Escaneado: fecha", y texto "Ticket ya utilizado" bajo el QR |
 
 ### Web Client (Puerto 4200) — Actualizaciones (3 Mayo 2026)
 
@@ -278,6 +289,23 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 ---
 
 ## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
+
+### Sesión del 8 de Mayo 2026 — Asistentes y Escáner (Host) + Tickets Usados en Rojo (Client)
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `apps/api/src/app/orders/orders.service.ts` | Modificado | Nuevo método `getMyEventAttendees(organizerId)`: obtiene todos los tickets del organizador decodificando JWTs, agrupa por usuario+evento, retorna ticketsBought/ticketsUsed |
+| `apps/api/src/app/orders/orders.controller.ts` | Modificado | Nuevo endpoint `GET /orders/attendees/me` protegido con JwtAuthGuard |
+| `apps/api/src/app/tickets/tickets.service.ts` | Modificado | Nuevo método `validateByTicketId(partialId, staffId)`: busca ticket por `id startsWith` y valida su QR |
+| `apps/api/src/app/tickets/tickets.controller.ts` | Modificado | Nuevo endpoint `POST /tickets/validate-by-id` |
+| `apps/web-host/src/lib/api.ts` | Modificado | Nuevas funciones: `getAttendees(token)`, `validateTicket(qrToken, authToken)`, `validateTicketById(ticketId, authToken)` |
+| `apps/web-host/src/components/Sidebar.tsx` | Modificado | Nuevas entradas en el menú: "👥 Asistentes" y "📷 Escáner de Tickets" |
+| `apps/web-host/src/components/AttendeesList.tsx` | **Nuevo** | Vista de asistentes: stats (compradores/entradas/asistencias/sin asistir), filtro por evento, búsqueda por nombre/email, filas expandibles con detalle de tickets |
+| `apps/web-host/src/components/TicketScanner.tsx` | **Nuevo** | Escáner con 3 tabs: Cámara (jsQR + getUserMedia + botones Escanear/Detener + overlay pausado), Buscar por ID corto, Token JWT manual. Mensajes de error de cámara detallados por tipo de DOMException |
+| `apps/web-host/src/components/EditEventForm.tsx` | Modificado | Botón "Eliminar zona" oculto cuando `zone.hasSold === true` |
+| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Vistas `'attendees'` y `'scanner'` agregadas al tipo de `view`. Imports y renderizado de `AttendeesList` y `TicketScanner` |
+| `apps/web-client/src/app/my-tickets/my-tickets.css` | Modificado | Tickets USED en rojo: `.badge-used` (rojo con borde), `.ticket-used` (tinte rojo + borde), `.ticket-scanned` (franja roja izquierda), `.qr-used .qr-label-text` (rojo) |
+| `apps/web-client/src/app/my-tickets/page.tsx` | Modificado | Emoji badge "✔️ Usado" → "🔒 Usado" |
 
 ### Sesión del 3 de Mayo 2026 — Mi Perfil (usuarios), Foto de Avatar, Toast de Login en Localidades
 
@@ -403,6 +431,12 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [x] ~~Bloqueo de login para cuentas PENDING/REJECTED con mensaje descriptivo~~ ✅ (2 May 2026)
 - [x] ~~Botón "Cerrar Sesión" en pantalla de Cuenta en Revisión~~ ✅ (2 May 2026)
 - [x] ~~Página Mi Perfil para usuarios (Portal Cliente): foto avatar, datos personales, identificación, dirección~~ ✅ (3 May 2026)
+- [x] ~~Página Asistentes en Panel Host: compradores por evento, tickets comprados/usados, estado de asistencia, expandible~~ ✅ (8 May 2026)
+- [x] ~~Escáner de Tickets en Panel Host: cámara QR (jsQR), búsqueda por ID corto, token manual, Escanear/Detener~~ ✅ (8 May 2026)
+- [x] ~~Endpoint GET /orders/attendees/me para lista de asistentes del organizador~~ ✅ (8 May 2026)
+- [x] ~~Endpoint POST /tickets/validate-by-id para validar por ID corto~~ ✅ (8 May 2026)
+- [x] ~~Botón "Eliminar zona" oculto cuando la zona tiene ventas activas~~ ✅ (8 May 2026)
+- [x] ~~Tickets USED en rojo en Portal Cliente: badge, borde, timestamp escaneado, "Ticket ya utilizado"~~ ✅ (8 May 2026)
 - [x] ~~Endpoints GET/PATCH /api/auth/me para perfil de usuario~~ ✅ (3 May 2026)
 - [x] ~~Upload de foto de perfil en directorio independiente uploads/users/{id}/avatar/~~ ✅ (3 May 2026)
 - [x] ~~Toast de login al intentar seleccionar asientos sin autenticación (auto-cierre 4s)~~ ✅ (3 May 2026)

@@ -43,4 +43,13 @@ export class OrdersController {
     getUserOrders(@Request() req: any) {
         return this.ordersService.getUserOrders(req.user.userId);
     }
+
+    /**
+     * GET /api/orders/attendees/me
+     * Get all attendees for events owned by the authenticated organizer.
+     */
+    @Get('attendees/me')
+    getMyEventAttendees(@Request() req: { user: { userId: string } }) {
+        return this.ordersService.getMyEventAttendees(req.user.userId);
+    }
 }

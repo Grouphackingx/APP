@@ -55,6 +55,28 @@ export function Sidebar({
           <span className="nav-icon">🎪</span>
           Mis Eventos
         </a>
+        <a
+          href="#"
+          className={activeView === 'attendees' ? 'active' : ''}
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('attendees');
+          }}
+        >
+          <span className="nav-icon">👥</span>
+          Asistentes
+        </a>
+        <a
+          href="#"
+          className={activeView === 'scanner' ? 'active' : ''}
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('scanner');
+          }}
+        >
+          <span className="nav-icon">📷</span>
+          Escáner de Tickets
+        </a>
       </nav>
 
       {user && (

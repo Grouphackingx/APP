@@ -208,6 +208,88 @@ export class OrdersService {
     }
 
     /**
+     * Get all attendees for events owned by the organizer.
+     */
+    async getMyEventAttendees(organizerId: string) {
+        const myEvents = await this.prisma.event.findMany({
+            where: { organizerId },
+            select: { id: true, title: true },
+        });
+
+        if (!myEvents.length) return [];
+
+        const myEventIds = new Set(myEvents.map((e) => e.id));
+        const eventTitles = Object.fromEntries(myEvents.map((e) => [e.id, e.title]));
+
+        const allTickets = await this.prisma.ticket.findMany({
+            include: {
+                order: {
+                    include: {
+                        user: { select: { id: true, name: true, email: true, phone: true, avatarUrl: true } },
+                    },
+                },
+            },
+        });
+
+        type TicketEntry = {
+            ticketId: string;
+            status: string;
+            scannedAt: Date | null;
+            zoneName: string;
+            seatNumber: string | number | null;
+        };
+
+        type AttendeeEntry = {
+            user: { id: string; name: string; email: string; phone: string | null; avatarUrl: string | null };
+            eventId: string;
+            eventTitle: string;
+            ticketsBought: number;
+            ticketsUsed: number;
+            tickets: TicketEntry[];
+        };
+
+        const grouped = new Map<string, AttendeeEntry>();
+
+        for (const ticket of allTickets) {
+            try {
+                const decoded = this.jwtService.verify(ticket.qrCodeToken) as {
+                    eventId: string; zoneName: string; seatNumber: string | number | null;
+                };
+                if (!myEventIds.has(decoded.eventId)) continue;
+
+                const key = `${ticket.order.userId}-${decoded.eventId}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        user: ticket.order.user,
+                        eventId: decoded.eventId,
+                        eventTitle: eventTitles[decoded.eventId] || 'Evento',
+                        ticketsBought: 0,
+                        ticketsUsed: 0,
+                        tickets: [],
+                    });
+                }
+                const entry = grouped.get(key);
+                if (!entry) continue;
+                entry.ticketsBought++;
+                if (ticket.status === 'USED') entry.ticketsUsed++;
+                entry.tickets.push({
+                    ticketId: ticket.id,
+                    status: ticket.status,
+                    scannedAt: ticket.scannedAt,
+                    zoneName: decoded.zoneName || 'General',
+                    seatNumber: decoded.seatNumber ?? null,
+                });
+            } catch {
+                // token inválido, ignorar
+            }
+        }
+
+        return Array.from(grouped.values()).sort((a, b) =>
+            a.eventTitle.localeCompare(b.eventTitle),
+        );
+    }
+
+    /**
      * Get orders for a user.
      */
     async getUserOrders(userId: string) {

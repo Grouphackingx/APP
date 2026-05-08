@@ -169,6 +169,11 @@
   position: relative;
 }
 
+.ticket-used {
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.28) !important;
+}
+
 .ticket-top {
   padding: 1rem; /* Reduced padding */
 }
@@ -185,7 +190,11 @@
 }
 
 .badge-valid { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-.badge-used { background: var(--bg-input); color: var(--text-muted); }
+.badge-used {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
 
 .ticket-info-grid {
   display: grid;
@@ -219,6 +228,21 @@
   border-radius: var(--radius-md);
 }
 
+.ticket-scanned {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #ef4444;
+  border-radius: 0 4px 4px 0;
+  line-height: 1.4;
+}
+
 .qr-code-wrapper {
   display: flex;
   flex-direction: column;
@@ -241,6 +265,7 @@
 .qr-code-label { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
 .qr-label-text { font-size: 0.78rem; color: var(--text-muted); text-align: center; letter-spacing: 0.3px; }
 .qr-valid .qr-label-text { color: var(--color-success); animation: qrPulse 2.5s ease-in-out infinite; }
+.qr-used .qr-label-text { color: #ef4444 !important; font-weight: 600; }
 .qr-ticket-id { font-family: var(--font-heading); font-weight: 600; font-size: 0.72rem; color: var(--text-accent); letter-spacing: 0.5px; }
 .qr-code-error { width: 100%; padding: 2rem 1.25rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.2); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
 .qr-error-icon { font-size: 1.5rem; }
