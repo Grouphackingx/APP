@@ -1,17 +1,21 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
+import { EditEventForm } from '../../components/EditEventForm';
 
 export default function AdminDashboard() {
   const { user, token, logout, isLoading } = useAuth();
   const router = useRouter();
   const [organizers, setOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics'>('inicio');
+  const [view, setView] = useState<'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event'>('inicio');
+  const [events, setEvents] = useState<any[]>([]);
+  const [activeEventTab, setActiveEventTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
+  const [editingEvent, setEditingEvent] = useState<any>(null);
   const [editingOrgData, setEditingOrgData] = useState<any>(null);
   const [editFormData, setEditFormData] = useState<any>({});
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
@@ -78,8 +82,67 @@ export default function AdminDashboard() {
     if (user.role === 'ADMIN') {
       loadPlans();
       loadAdminUsers();
+      loadEvents();
+    } else if (user.role === 'EDITOR') {
+      loadEvents();
     }
   }, [token, user]);
+
+  const loadEvents = async () => {
+    try {
+      const data = await getAllEventsAdmin(token as string);
+      setEvents(data);
+    } catch (error) {
+      console.error('Failed to load events', error);
+    }
+  };
+
+  const handleToggleFeatured = async (id: string, currentStatus: boolean) => {
+    let duration = null;
+    if (!currentStatus) {
+      const promptRes = window.prompt('¿Por cuántos días quieres destacar este evento? (Ej: 7, 30)');
+      if (promptRes === null) return;
+      duration = parseInt(promptRes);
+      if (isNaN(duration) || duration <= 0) {
+        alert('Por favor ingresa un número de días válido.');
+        return;
+      }
+    } else {
+      if (!confirm('¿Deseas quitar este evento de destacados?')) return;
+    }
+
+    try {
+      await setEventFeatured(id, !currentStatus, duration, token as string);
+      loadEvents();
+    } catch (err) {
+      alert('Error al actualizar el estado de destacado.');
+    }
+  };
+
+  const handleEditEvent = (event: any) => {
+    setEditingEvent(event);
+    setView('edit-event');
+  };
+
+  const handleEventUpdated = () => {
+    setView('events');
+    loadEvents();
+  };
+
+  const handleDeleteEvent = async (ev: any) => {
+    const hasSoldSeats = (ev.zones || []).some((z: any) => (z.seats || []).some((s: any) => s.isSold));
+    if (hasSoldSeats) {
+      alert('No se puede eliminar este evento porque tiene tickets vendidos.');
+      return;
+    }
+    if (!confirm(`¿Estás seguro de eliminar el evento "${ev.title}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await deleteEvent(ev.id, token as string);
+      loadEvents();
+    } catch (err: any) {
+      alert(err.message || 'Error al eliminar el evento.');
+    }
+  };
 
   const loadAnalytics = async () => {
     setLoadingAnalytics(true);
@@ -255,7 +318,11 @@ export default function AdminDashboard() {
 
   const totalOrgs = organizers.length;
   const approvedOrgs = organizers.filter(o => o.organizerProfile?.status === 'APPROVED').length;
-  const pendingOrgs = organizers.filter(o => o.organizerProfile?.status === 'PENDING').length;
+  const filteredEvents = events.filter((e) => {
+    if (activeEventTab === 'ACTIVOS') return e.status === 'PUBLISHED';
+    if (activeEventTab === 'INACTIVOS') return e.status === 'INACTIVE';
+    return e.status === 'DRAFT' || !e.status;
+  });
 
   return (
     <div className="dashboard-layout">
@@ -458,6 +525,158 @@ export default function AdminDashboard() {
                 </table>
               )}
             </div>
+          </>
+        )}
+
+        {view === 'events' && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Gestión Global de Eventos</h1>
+                <p>Explora y administra todos los eventos de la plataforma. Destaca los mejores para la página principal.</p>
+              </div>
+            </div>
+
+            <div className="table-container">
+              <div className="tabs-container" style={{ padding: '0 1.5rem', paddingTop: '1rem' }}>
+                <button 
+                  className={`tab-btn ${activeEventTab === 'ACTIVOS' ? 'active' : ''}`}
+                  onClick={() => setActiveEventTab('ACTIVOS')}
+                >
+                  Activos ({events.filter(e => e.status === 'PUBLISHED').length})
+                </button>
+                <button 
+                  className={`tab-btn ${activeEventTab === 'INACTIVOS' ? 'active' : ''}`}
+                  onClick={() => setActiveEventTab('INACTIVOS')}
+                >
+                  Inactivos ({events.filter(e => e.status === 'INACTIVE').length})
+                </button>
+                <button 
+                  className={`tab-btn ${activeEventTab === 'BORRADOR' ? 'active' : ''}`}
+                  onClick={() => setActiveEventTab('BORRADOR')}
+                >
+                  Borrador ({events.filter(e => e.status === 'DRAFT' || !e.status).length})
+                </button>
+              </div>
+
+
+
+              {loading && events.length === 0 ? (
+                <div className="loading-container">
+                  <div className="spinner" />
+                </div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">🎟️</div>
+                  <h3>No hay eventos en esta categoría</h3>
+                </div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Evento</th>
+                      <th>Organizador</th>
+                      <th>Fecha</th>
+                      <th>Estado</th>
+                      <th>Destacado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEvents.map((ev) => (
+                      <tr key={ev.id}>
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ev.title}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {ev.city ? `${ev.city}, ${ev.province}` : 'Sin ubicación'}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            {ev.organizer?.organizerProfile?.organizationName || 'Sin Nombre'}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            {new Date(ev.date).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${ev.status === 'PUBLISHED' ? 'status-published' : ev.status === 'INACTIVE' ? 'status-inactive' : 'status-draft'}`}>
+                            {ev.status === 'PUBLISHED' ? '🟢 Activo' : ev.status === 'INACTIVE' ? '🔴 Inactivo' : '⏳ Borrador'}
+                          </span>
+                        </td>
+                        <td>
+                          {ev.isFeatured ? (
+                            <span style={{ padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
+                              ⭐ Destacado {ev.featuredUntil ? `(hasta ${new Date(ev.featuredUntil).toLocaleDateString()})` : ''}
+                            </span>
+                          ) : (
+                            <span style={{ padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, backgroundColor: 'var(--bg-card-hover)', color: 'var(--text-muted)' }}>
+                              Normal
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleToggleFeatured(ev.id, ev.isFeatured)}
+                              title={ev.isFeatured ? "Quitar Destacado" : "Destacar Evento"}
+                              style={{ 
+                                backgroundColor: ev.isFeatured ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)', 
+                                borderColor: ev.isFeatured ? 'rgba(239, 68, 68, 0.3)' : 'rgba(234, 179, 8, 0.3)', 
+                                color: ev.isFeatured ? '#ef4444' : '#eab308' 
+                              }}
+                            >
+                              {ev.isFeatured ? 'Quitar Destacado' : '⭐ Destacar'}
+                            </button>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleEditEvent(ev)}
+                              title="Editar Evento"
+                            >
+                              ✏️
+                            </button>
+                            {!(ev.zones || []).some((z: any) => (z.seats || []).some((s: any) => s.isSold)) && (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDeleteEvent(ev)}
+                                title="Eliminar Evento"
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
+
+        {view === 'edit-event' && editingEvent && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Editar Evento (Admin)</h1>
+                <p>Modifica el estado o cualquier detalle del evento.</p>
+              </div>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setView('events')}
+              >
+                ← Volver a Eventos
+              </button>
+            </div>
+            <EditEventForm
+              token={token!}
+              initialData={editingEvent}
+              onSuccess={handleEventUpdated}
+            />
           </>
         )}
 

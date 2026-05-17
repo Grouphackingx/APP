@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 8 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Panel Host: Asistentes + Escáner de tickets con cámara QR y búsqueda por ID)
+**Fecha de Última Actualización:** 17 de Mayo de 2026
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Panel Host: Asistentes + Escáner de tickets con cámara QR y búsqueda por ID + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -150,12 +150,14 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | POST   | `/api/admin/users`              | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Crear |
 | PATCH  | `/api/admin/users/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Editar |
 | DELETE | `/api/admin/users/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Eliminar |
+| GET    | `/api/admin/events`             | JWT (ADMIN) | ✅ OK  | Listar todos los eventos globalmente (con zonas, seats y organizador) |
+| PATCH  | `/api/admin/events/:id/featured`| JWT (ADMIN) | ✅ OK  | Activar/desactivar destacado de evento con duración en días |
 
 ### Web Client (Puerto 4200)
 
 | Ruta           | Estado | Descripción                                                |
 | :------------- | :----- | :--------------------------------------------------------- |
-| `/`            | ✅     | Home: Hero + catálogo de eventos en grid + buscador        |
+| `/`            | ✅     | Home: Catálogo de eventos en grid + buscador colapsable en header |
 | `/login`       | ✅     | Formulario de login con JWT y localStorage                 |
 | `/register`    | ✅     | Formulario de registro                                     |
 | `/events/[id]` | ✅     | Detalle del evento + mapa de asientos interactivo + compra |
@@ -186,6 +188,10 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | Gestión de Planes    | ✅     | CRUD completo de planes (nombre, precio, límite de eventos)        |
 | Gestión de Usuarios  | ✅     | CRUD Admin/Editor; Editores sin acceso a Planes ni Usuarios        |
 | Analíticas           | ✅     | Métricas de eventos, tickets y revenue por organizador             |
+| Gestión de Eventos   | ✅     | Directorio global de eventos con pestañas (Activos/Inactivos/Borrador), contadores por categoría |
+| Destacar Evento      | ✅     | Botón ⭐ Destacar con duración en días. Botón rojo para quitar. Badge amarillo con fecha de expiración |
+| Editar Evento (Admin)| ✅     | Formulario completo idéntico al de organizadores (nombre, imágenes, zonas, estado, etc.) |
+| Eliminar Evento      | ✅     | Botón 🗑️ solo visible si el evento no tiene tickets vendidos |
 
 ### Web Client (Puerto 4200) — Actualizaciones (8 Mayo 2026)
 
@@ -216,7 +222,50 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 ---
 
-## 4. 🔧 Cambios Realizados en Esta Sesión (30-31 Marzo 2026)
+## 4. 🔧 Cambios Realizados en Sesiones Anteriores
+
+### Sesión del 17 de Mayo 2026 — Eventos Destacados, Gestión Global de Eventos, Limpieza de UI
+
+#### 4.1. Sistema de Eventos Destacados (Featured Events)
+
+**Modelo de datos**: Se agregaron los campos `isFeatured` (Boolean, default false) y `featuredUntil` (DateTime?, nullable) al modelo `Event` en `schema.prisma`. Sincronizado con `npx prisma db push`.
+
+**Backend**:
+- `AdminService.getAllEvents()`: Retorna todos los eventos con relaciones `organizer.organizerProfile` y `zones.seats` para poder validar tickets vendidos.
+- `AdminService.toggleEventFeatured(id, isFeatured, durationDays?)`: Calcula `featuredUntil` sumando `durationDays` a la fecha actual. Al desactivar, pone ambos campos en `false`/`null`.
+- `AdminController`: Endpoints `GET /api/admin/events` y `PATCH /api/admin/events/:id/featured` protegidos con `@Roles(Role.ADMIN)`.
+
+**Frontend Admin**:
+- Navegación "🌟 Eventos" en el Sidebar.
+- Vista con pestañas Activos/Inactivos/Borrador (contadores dinámicos).
+- Botón ⭐ Destacar: al presionar, solicita duración en días vía `window.prompt`.
+- Botón rojo "Quitar Destacado" con confirmación.
+- Badge amarillo "⭐ Destacado (hasta DD/MM/YYYY)" en la columna de estado.
+
+#### 4.2. Edición de Eventos desde Admin Global
+
+Se copió `EditEventForm.tsx` del `web-host` al `web-admin/components/`. El admin puede editar cualquier campo del evento (título, imágenes, zonas, estado, etc.) con las mismas validaciones de protección de ventas.
+
+#### 4.3. Eliminación de Eventos desde Admin Global
+
+Se agregó botón 🗑️ que solo aparece si el evento no tiene tickets vendidos (misma lógica que en el panel de organizadores). Pide confirmación antes de eliminar.
+
+#### 4.4. Limpieza de UI en Web Client (Página Principal)
+
+- **Eliminados**: Hero section ("La nueva era de eventos digitales"), botones "Explorar eventos" y "Crear cuenta", textos estadísticos ("Eventos encontrados", "Digital y seguro", "Entrada dinámica", "2", "100%", "QR"), botón "Eventos" del header, texto "Descubre eventos que te inspiran".
+- **Buscador colapsable**: Movido a la cabecera (Navbar), junto al botón "Iniciar Sesión". Se muestra solo como icono de lupa (🔍); al presionarlo se expande un campo de texto funcional para buscar eventos.
+- **Padding mejorado**: Espaciado estratégico en títulos/subtítulos de sección "Próximos Eventos".
+- **Tarjetas de evento**: Eliminado botón "Ver Detalles" para reducir altura vertical.
+
+#### 4.5. Campo de Imagen Simplificado
+
+Se eliminó el campo "Imagen del evento (General)" del formulario de creación/edición de eventos. Ahora las imágenes principales son:
+- **Banner Panorámico** (2000x576) — para cabecera del detalle
+- **Imagen Cuadrada** (1:1) — como imagen general/tarjeta
+
+---
+
+### Sesión del 30-31 Marzo 2026 — Edición de Zonas en Eventos
 
 ### Problema Principal Resuelto: Edición de Zonas en Eventos
 
@@ -289,6 +338,25 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 ---
 
 ## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
+
+### Sesión del 17 de Mayo 2026 — Eventos Destacados, Admin Event CRUD, UI Cleanup
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `libs/shared/prisma/schema.prisma` | Modificado | Campos `isFeatured` (Boolean) y `featuredUntil` (DateTime?) en modelo `Event` |
+| `apps/api/src/app/admin/admin.service.ts` | Modificado | Métodos `getAllEvents()` (con zones/seats) y `toggleEventFeatured()` |
+| `apps/api/src/app/admin/admin.controller.ts` | Modificado | Endpoints `GET /admin/events` y `PATCH /admin/events/:id/featured` |
+| `apps/web-admin/components/Sidebar.tsx` | Modificado | Nueva entrada "🌟 Eventos" en navegación lateral |
+| `apps/web-admin/components/EditEventForm.tsx` | **Nuevo** | Copia del formulario de edición de eventos del web-host |
+| `apps/web-admin/lib/api.ts` | Modificado | Funciones `getAllEventsAdmin()`, `setEventFeatured()`, `deleteEvent()` |
+| `apps/web-admin/app/dashboard/page.tsx` | Modificado | Vista de eventos con tabs (Activos/Inactivos/Borrador), destacar, editar y eliminar |
+| `apps/web-client/src/app/page.tsx` | Modificado | Eliminación de hero, stats, botones innecesarios. Limpieza general de UI |
+| `apps/web-client/src/components/Navbar.tsx` | Modificado | Buscador colapsable integrado como icono lupa en el header |
+| `apps/web-client/src/components/SearchBar.tsx` | Modificado | Componente de búsqueda adaptado para funcionar dentro del Navbar |
+| `apps/web-client/src/components/EventCard.tsx` | Modificado | Eliminado botón "Ver Detalles" para reducir altura de tarjetas |
+| `apps/web-host/src/components/CreateEventForm.tsx` | Modificado | Eliminado campo "Imagen del evento (General)" |
+| `apps/web-host/src/components/EditEventForm.tsx` | Modificado | Eliminado campo "Imagen del evento (General)" |
+| `start-all.bat` | **Nuevo** | Script batch para iniciar los 4 servicios en ventanas separadas |
 
 ### Sesión del 8 de Mayo 2026 — Asistentes y Escáner (Host) + Tickets Usados en Rojo (Client)
 
@@ -377,6 +445,8 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [ ] Integración real con Stripe (reemplazar el mock)
 - [ ] Emails transaccionales (confirmación de registro, aprobación y compra)
 - [ ] Reportes financieros para organizadores
+- [ ] Sección de "Eventos Destacados" en la página principal del web-client (carrusel/banner que muestre los eventos con `isFeatured: true`)
+- [ ] Automatización de expiración de destacados (cron job o middleware que desactive `isFeatured` cuando `featuredUntil < now`)
 - [ ] Mover carpeta temporal del logo (se guarda en `uploads/organizers/{email_safe}/` en el registro, debería moverse a `uploads/organizers/{userId}/` tras crearse el usuario)
 - [ ] Reemplazar foto de perfil anterior al subir una nueva (actualmente se acumulan archivos en `uploads/users/{id}/avatar/`)
 
@@ -441,6 +511,13 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 - [x] ~~Upload de foto de perfil en directorio independiente uploads/users/{id}/avatar/~~ ✅ (3 May 2026)
 - [x] ~~Toast de login al intentar seleccionar asientos sin autenticación (auto-cierre 4s)~~ ✅ (3 May 2026)
 - [x] ~~Campos de perfil extendidos en User (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)~~ ✅ (3 May 2026)
+- [x] ~~Sistema de Eventos Destacados: modelo BD (isFeatured/featuredUntil), endpoints API, UI admin con toggle~~ ✅ (17 May 2026)
+- [x] ~~Gestión Global de Eventos en Admin: vista con tabs Activos/Inactivos/Borrador~~ ✅ (17 May 2026)
+- [x] ~~Edición de eventos por Admin Global (formulario completo idéntico al de organizadores)~~ ✅ (17 May 2026)
+- [x] ~~Eliminación de eventos por Admin (con protección de tickets vendidos)~~ ✅ (17 May 2026)
+- [x] ~~Limpieza de página principal web-client: eliminación de hero, stats, botones redundantes~~ ✅ (17 May 2026)
+- [x] ~~Buscador colapsable integrado en Navbar (icono lupa → campo de texto)~~ ✅ (17 May 2026)
+- [x] ~~Eliminación de campo "Imagen General" en formularios de evento (reemplazado por Imagen Cuadrada 1:1)~~ ✅ (17 May 2026)
 
 ---
 

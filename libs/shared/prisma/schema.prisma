@@ -67,12 +67,18 @@ model Event {
   province    String?
   city        String?
   imageUrl    String?
+  bannerImageUrl String?
+  squareImageUrl String?
   seatingMapImageUrl String?
   hasSeatingChart Boolean @default(true)
   mapUrl      String?
   videoUrl    String?
   galleryUrls String[]
+  category    String      @default("Fiestas y Bailes")
   status      EventStatus @default(DRAFT)
+  
+  isFeatured  Boolean     @default(false)
+  featuredUntil DateTime?
   
   organizerId String
   organizer   User        @relation("EventOwner", fields: [organizerId], references: [id])

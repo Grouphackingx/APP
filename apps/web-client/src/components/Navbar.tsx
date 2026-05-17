@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '../lib/AuthContext';
+import SearchBar from './SearchBar';
 
 export function Navbar() {
   const { user, logout, isLoading } = useAuth();
@@ -15,9 +16,7 @@ export function Navbar() {
         </Link>
 
         <div className="navbar-links">
-          <Link href="/" id="nav-home">
-            Eventos
-          </Link>
+          <SearchBar />
 
           {isLoading ? null : user ? (
             <>

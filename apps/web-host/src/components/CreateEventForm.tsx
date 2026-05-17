@@ -52,13 +52,17 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   const [mapEmbedCode, setMapEmbedCode] = useState('');
   const [videoEmbedCode, setVideoEmbedCode] = useState('');
   const [status, setStatus] = useState('DRAFT');
+  const [category, setCategory] = useState('Fiestas y Bailes');
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [zones, setZones] = useState<ZoneInput[]>([
     { name: 'General', price: 25, capacity: 50 },
   ]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
+
+  const [bannerImageFile, setBannerImageFile] = useState<File | null>(null);
+  const [bannerImagePreview, setBannerImagePreview] = useState<string>('');
+  const [squareImageFile, setSquareImageFile] = useState<File | null>(null);
+  const [squareImagePreview, setSquareImagePreview] = useState<string>('');
   const [seatingMapImageFile, setSeatingMapImageFile] = useState<File | null>(
     null,
   );
@@ -94,18 +98,6 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
     setZones(updated);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 1 * 1024 * 1024) {
-        setMessage({ text: 'La imagen no debe superar 1MB', type: 'error' });
-        return;
-      }
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setMessage(null);
-    }
-  };
 
   const handleSeatingMapImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -164,15 +156,25 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
 
     try {
       let imageUrl = '';
+      let bannerImageUrl = '';
+      let squareImageUrl = '';
       let seatingMapImageUrl = '';
 
-      if (imageFile) {
+
+
+      if (bannerImageFile) {
         try {
-          imageUrl = await uploadImage(imageFile, token);
+          bannerImageUrl = await uploadImage(bannerImageFile, token);
         } catch (uploadError: any) {
-          throw new Error(
-            `Error subiendo imagen portada: ${uploadError.message}`,
-          );
+          throw new Error(`Error subiendo banner: ${uploadError.message}`);
+        }
+      }
+
+      if (squareImageFile) {
+        try {
+          squareImageUrl = await uploadImage(squareImageFile, token);
+        } catch (uploadError: any) {
+          throw new Error(`Error subiendo imagen cuadrada: ${uploadError.message}`);
         }
       }
 
@@ -207,7 +209,10 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         videoUrl: videoEmbedCode.match(/src="([^"]+)"/)?.[1] || videoEmbedCode,
         galleryUrls,
         status: status,
+        category,
         imageUrl,
+        bannerImageUrl,
+        squareImageUrl,
         seatingMapImageUrl,
         hasSeatingChart,
         zones: zones.map((z) => ({
@@ -255,28 +260,71 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
           />
         </div>
 
+
+
         <div className="form-group">
-          <label>Imagen del Evento</label>
+          <label>Banner Panorámico (Recomendado: 2000x576)</label>
           <div className="image-upload-container">
             <input
               type="file"
-              id="imageUpload"
+              id="bannerUpload"
               accept="image/*"
-              onChange={handleImageChange}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setBannerImageFile(file);
+                  setBannerImagePreview(URL.createObjectURL(file));
+                }
+              }}
               className="file-input"
               hidden
             />
-            <label htmlFor="imageUpload" className="file-label">
-              {imagePreview ? (
+            <label htmlFor="bannerUpload" className="file-label">
+              {bannerImagePreview ? (
                 <div
                   className="image-preview"
-                  style={{ backgroundImage: `url(${imagePreview})` }}
+                  style={{ backgroundImage: `url(${bannerImagePreview})` }}
+                >
+                  <div className="image-overlay">Cambiar Banner</div>
+                </div>
+              ) : (
+                <div className="upload-placeholder">
+                  <span>🖼️ Cargar Banner</span>
+                  <small>(Max 5MB)</small>
+                </div>
+              )}
+            </label>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Imagen Cuadrada (Relación 1:1)</label>
+          <div className="image-upload-container">
+            <input
+              type="file"
+              id="squareUpload"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setSquareImageFile(file);
+                  setSquareImagePreview(URL.createObjectURL(file));
+                }
+              }}
+              className="file-input"
+              hidden
+            />
+            <label htmlFor="squareUpload" className="file-label">
+              {squareImagePreview ? (
+                <div
+                  className="image-preview"
+                  style={{ backgroundImage: `url(${squareImagePreview})` }}
                 >
                   <div className="image-overlay">Cambiar Imagen</div>
                 </div>
               ) : (
                 <div className="upload-placeholder">
-                  <span>📸 Cargar Imagen</span>
+                  <span>🖼️ Cargar Imagen</span>
                   <small>(Max 5MB)</small>
                 </div>
               )}
@@ -293,6 +341,28 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="category">Categoría del Evento *</label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            required
+            style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+          >
+            <option value="Fiestas y Bailes">Fiestas y Bailes</option>
+            <option value="Conciertos">Conciertos</option>
+            <option value="Festivales musicales">Festivales musicales</option>
+            <option value="Discotecas">Discotecas</option>
+            <option value="DJ Sessions">DJ Sessions</option>
+            <option value="Eventos Culturales">Eventos Culturales</option>
+            <option value="Eventos Comunitarios">Eventos Comunitarios</option>
+            <option value="Deportes">Deportes</option>
+            <option value="Gastronomía">Gastronomía</option>
+            <option value="Emprendimientos">Emprendimientos</option>
+          </select>
         </div>
 
         <div className="form-row">

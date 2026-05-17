@@ -54,6 +54,14 @@ export class CreateEventDto {
 
     @IsString()
     @IsOptional()
+    bannerImageUrl?: string;
+
+    @IsString()
+    @IsOptional()
+    squareImageUrl?: string;
+
+    @IsString()
+    @IsOptional()
     seatingMapImageUrl?: string;
 
     @IsBoolean()
@@ -71,6 +79,10 @@ export class CreateEventDto {
     @IsString()
     @IsOptional()
     status?: string;
+
+    @IsString()
+    @IsOptional()
+    category?: string;
 
     @IsArray()
     @IsString({ each: true })

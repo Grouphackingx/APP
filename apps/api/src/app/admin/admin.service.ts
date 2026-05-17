@@ -63,14 +63,14 @@ export class AdminService {
   }
 
   async createOrganizer(data: any) {
-    const { email, password, firstName, lastName, identificationNumber, phone, organizationName, organizationDescription, address, province, city, plan, status } = data;
+    const { email, password, firstName, lastName, identificationNumber, phone, organizationName, organizationDescription, organizationLogo, address, province, city, plan, status } = data;
     
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException('Ya existe un usuario con este correo');
 
     const hashedPassword = await bcrypt.hash(password || 'host123', 10);
     
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email,
         name: `${firstName} ${lastName}`,
@@ -84,6 +84,7 @@ export class AdminService {
             phone,
             organizationName,
             organizationDescription: organizationDescription || null,
+            organizationLogo: organizationLogo || null,
             address,
             province,
             city,
@@ -94,6 +95,35 @@ export class AdminService {
       },
       include: { organizerProfile: true }
     });
+
+    if (organizationLogo) {
+      const tempIdMatch = organizationLogo.match(/\/uploads\/organizers\/([^\/]+)\//);
+      const tempId = tempIdMatch ? tempIdMatch[1] : null;
+      
+      if (tempId && tempId !== user.id) {
+          const fs = require('fs');
+          const tempDir = `./uploads/organizers/${tempId}`;
+          const newDir = `./uploads/organizers/${user.id}`;
+          
+          if (fs.existsSync(tempDir)) {
+              try {
+                  fs.renameSync(tempDir, newDir);
+                  const newLogoUrl = organizationLogo.replace(`/organizers/${tempId}/`, `/organizers/${user.id}/`);
+                  await this.prisma.organizerProfile.update({
+                      where: { userId: user.id },
+                      data: { organizationLogo: newLogoUrl }
+                  });
+                  if (user.organizerProfile) {
+                      user.organizerProfile.organizationLogo = newLogoUrl;
+                  }
+              } catch (e) {
+                  console.error('Failed to move logo directory', e);
+              }
+          }
+      }
+    }
+
+    return user;
   }
 
   async setOrganizerStatus(userId: string, status: any) {
@@ -224,5 +254,43 @@ export class AdminService {
 
   async deleteAdminUser(id: string) {
     return this.prisma.user.delete({ where: { id } });
+  }
+
+  // --- EVENTS MANAGEMENT ---
+
+  async getAllEvents() {
+    return this.prisma.event.findMany({
+      include: {
+        organizer: {
+          include: {
+            organizerProfile: true
+          }
+        },
+        zones: {
+          include: {
+            seats: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async toggleEventFeatured(id: string, isFeatured: boolean, durationDays?: number) {
+    let featuredUntil = null;
+    
+    if (isFeatured && durationDays) {
+      const date = new Date();
+      date.setDate(date.getDate() + durationDays);
+      featuredUntil = date;
+    }
+
+    return this.prisma.event.update({
+      where: { id },
+      data: {
+        isFeatured,
+        featuredUntil
+      }
+    });
   }
 }

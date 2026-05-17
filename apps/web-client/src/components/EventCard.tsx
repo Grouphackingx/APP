@@ -16,13 +16,6 @@ function formatTime(dateStr: string): string {
   return d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
 }
 
-function getMinPrice(zones: EventItem['zones']): string {
-  if (!zones || zones.length === 0) return '—';
-  const prices = zones.map((z) => Number(z.price));
-  const min = Math.min(...prices);
-  return `$${min.toFixed(2)}`;
-}
-
 export function EventCard({
   event,
   index,
@@ -37,11 +30,7 @@ export function EventCard({
       id={`event-card-${event.id}`}
     >
       <div className="event-card-image">
-        {event.imageUrl ? (
-          <img src={event.imageUrl} alt={event.title} />
-        ) : (
-          <span className="placeholder-icon">🎶</span>
-        )}
+        <img src={event.squareImageUrl || event.imageUrl || '/default-square.jpg'} alt={event.title} />
         <div className="event-card-badge">
           {event.status === 'PUBLISHED'
             ? '🔥 En Venta'
@@ -66,12 +55,6 @@ export function EventCard({
             {event.location}
             {event.city ? `, ${event.city}` : ''}
           </span>
-        </div>
-        <div className="event-card-footer">
-          <div className="event-card-price">
-            {getMinPrice(event.zones)} <span>desde</span>
-          </div>
-          <span className="btn btn-accent btn-sm">Ver Detalles</span>
         </div>
       </div>
     </Link>

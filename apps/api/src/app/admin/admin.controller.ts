@@ -93,4 +93,22 @@ export class AdminController {
   deleteAdminUser(@Param('id') id: string) {
     return this.adminService.deleteAdminUser(id);
   }
+
+  // --- EVENTS ---
+
+  @Get('events')
+  @Roles(Role.ADMIN, Role.EDITOR)
+  getAllEvents() {
+    return this.adminService.getAllEvents();
+  }
+
+  @Patch('events/:id/featured')
+  @Roles(Role.ADMIN)
+  toggleEventFeatured(
+    @Param('id') id: string,
+    @Body('isFeatured') isFeatured: boolean,
+    @Body('durationDays') durationDays?: number
+  ) {
+    return this.adminService.toggleEventFeatured(id, isFeatured, durationDays);
+  }
 }

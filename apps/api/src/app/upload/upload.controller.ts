@@ -24,6 +24,18 @@ export class UploadController {
             // Separate "Usuarios" root — never mixed with organizer/event dirs
             const userId = user ? user.sub : (req.query.userId || 'temp');
             dir = `./uploads/users/${userId}/avatar`;
+            
+            // Clean up old avatars to prevent accumulating files
+            if (fs.existsSync(dir)) {
+              const files = fs.readdirSync(dir);
+              for (const file of files) {
+                try {
+                  fs.unlinkSync(`${dir}/${file}`);
+                } catch (err) {
+                  // Ignore errors if the file cannot be deleted
+                }
+              }
+            }
           } else {
             const orgId = user ? user.sub : (organizerId || 'temp');
             dir = `./uploads/organizers/${orgId}`;

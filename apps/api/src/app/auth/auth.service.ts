@@ -126,6 +126,34 @@ export class AuthService {
             },
             include: { organizerProfile: true },
         });
+
+        if (dto.organizationLogo) {
+            const tempIdMatch = dto.organizationLogo.match(/\/uploads\/organizers\/([^\/]+)\//);
+            const tempId = tempIdMatch ? tempIdMatch[1] : null;
+            
+            if (tempId && tempId !== user.id) {
+                const fs = require('fs');
+                const tempDir = `./uploads/organizers/${tempId}`;
+                const newDir = `./uploads/organizers/${user.id}`;
+                
+                if (fs.existsSync(tempDir)) {
+                    try {
+                        fs.renameSync(tempDir, newDir);
+                        const newLogoUrl = dto.organizationLogo.replace(`/organizers/${tempId}/`, `/organizers/${user.id}/`);
+                        await this.prisma.organizerProfile.update({
+                            where: { userId: user.id },
+                            data: { organizationLogo: newLogoUrl }
+                        });
+                        if (user.organizerProfile) {
+                            user.organizerProfile.organizationLogo = newLogoUrl;
+                        }
+                    } catch (e) {
+                        console.error('Failed to move logo directory', e);
+                    }
+                }
+            }
+        }
+
         const { password, ...result } = user;
         const payload = { email: result.email, sub: result.id, role: result.role };
         return {

@@ -150,11 +150,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
         <div className="event-detail animate-fade-in">
           {/* Hero Image */}
           <div className="event-detail-hero">
-            {event.imageUrl ? (
-              <img src={event.imageUrl} alt={event.title} />
-            ) : (
-              <span className="placeholder-icon">🎶</span>
-            )}
+            <img src={event.bannerImageUrl || event.imageUrl || '/default-banner.jpg'} alt={event.title} />
           </div>
 
           <div className="event-content-grid">

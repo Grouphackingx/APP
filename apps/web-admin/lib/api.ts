@@ -200,3 +200,18 @@ export async function deleteAdminUser(id: string, token: string) {
     token,
   });
 }
+
+// Admin Events Integration
+
+
+export async function getAllEventsAdmin(token: string) {
+  return fetchAPI<any[]>('/admin/events', { token, cache: 'no-store' });
+}
+
+export async function setEventFeatured(id: string, isFeatured: boolean, durationDays: number | null, token: string) {
+  return fetchAPI<any>(`/admin/events/${id}/featured`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isFeatured, durationDays }),
+    token,
+  });
+}

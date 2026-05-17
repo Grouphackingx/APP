@@ -98,6 +98,8 @@ export interface EventItem {
   province?: string | null;
   city?: string | null;
   imageUrl: string | null;
+  bannerImageUrl?: string | null;
+  squareImageUrl?: string | null;
   seatingMapImageUrl?: string | null;
   hasSeatingChart?: boolean;
   mapUrl?: string | null;

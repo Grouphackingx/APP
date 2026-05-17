@@ -1,6 +1,6 @@
 import { getEvents } from '../lib/api';
 import { EventCard } from '../components/EventCard';
-import SearchBar from '../components/SearchBar';
+
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -23,46 +23,6 @@ export default async function HomePage(props: {
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="hero" id="hero-section">
-        <div className="hero-inner">
-          <div className="hero-badge">🚀 La nueva era de eventos digitales</div>
-
-          <h1>
-            Descubre Eventos
-            <br />
-            <span className="gradient-text">Que Te Inspiran</span>
-          </h1>
-
-          <div className="hero-search">
-            <SearchBar />
-          </div>
-
-          <div className="hero-actions">
-            <a href="#eventos" className="btn btn-primary btn-lg">
-              🎫 Explorar Eventos
-            </a>
-            <Link href="/register" className="btn btn-secondary btn-lg">
-              Crear Cuenta
-            </Link>
-          </div>
-
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <div className="stat-number">{events.length || '0'}</div>
-              <div className="stat-label">Eventos Encontrados</div>
-            </div>
-            <div className="hero-stat">
-              <div className="stat-number">100%</div>
-              <div className="stat-label">Digital & Seguro</div>
-            </div>
-            <div className="hero-stat">
-              <div className="stat-number">QR</div>
-              <div className="stat-label">Entrada Dinámica</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Events Section */}
       <section className="section" id="eventos">
