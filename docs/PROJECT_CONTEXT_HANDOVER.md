@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
-**Última Actualización:** 8 de Mayo de 2026
-**Estado del Proyecto:** ✅ Fases 1, 2, 3 y 4 Completadas y Verificadas + Perfil de Usuario + Toast autenticación + Asistentes y Escáner de Tickets (Host) + Tickets USED en rojo (Client)
+**Última Actualización:** 18 de Mayo de 2026
+**Estado del Proyecto:** ✅ Fases 1-4 Completas + Perfil Usuario + Toast autenticación + Asistentes y Escáner (Host) + Tickets USED rojo (Client) + Eventos Destacados (Admin) + Gestión Global Eventos (Admin) + Usuarios OrganizerMembers (Host) + Página Perfil Host + Hero Section Web Client
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -560,4 +560,89 @@ cd apps/mobile-app && npx expo start
 - Botones GA (`+`/`-`): ahora se muestran incluso para usuarios no autenticados.
 - Nueva función `showLoginToast()` llamada en `toggleSeat()` y en los handlers de GA cuando `!user`.
 - **Toast:** Banner amarillo 🔒 que aparece sobre la lista de zonas. Contiene mensaje descriptivo + link directo a `/login?redirect=/events/{id}` + botón ✕ para cerrar. Auto-cierre a los 4 segundos con `setTimeout` limpiado en el `useEffect` de desmontaje.
+
+---
+
+## 21. Registro de Cambios (17-18 Mayo 2026)
+
+### Página Usuarios — Panel Host (web-host :4201)
+
+**Contexto:** Los organizadores necesitaban poder gestionar los miembros de su equipo (staff de validación y administradores adicionales) sin intervención del Admin Global.
+
+**Funcionalidades:**
+- Listado de `OrganizerMember` del organizador con nombre, email, rol (ADMIN/STAFF), estado y avatar.
+- Crear nuevo miembro con generación de contraseña inicial.
+- Editar miembro: nombre, email, rol, contraseña, estado activo/inactivo.
+- Eliminar miembro con confirmación.
+- Upload de avatar por miembro desde el panel web.
+- Solo visible para el HOST principal (`isMainHost = !user?.isMember` → `navLink('users', '👤', 'Usuarios')`).
+
+### Ruta de Almacenamiento de Avatares de Miembros Corregida
+
+**Archivo:** `apps/api/src/app/upload/upload.controller.ts`
+
+El tipo `member-avatar` cambia su destino de un directorio plano (`uploads/members/{id}/avatar/`) a una ruta jerárquica bajo el organizador:
+```
+uploads/organizers/{orgUserId}/members/{memberId}/avatar/
+```
+donde `orgUserId` se extrae del JWT del HOST autenticado (`req.user.sub`). La URL retornada al frontend también refleja la nueva ruta.
+
+### Página Perfil — Panel Host (web-host :4201)
+
+**Contexto:** Los organizadores y sus miembros (ADMIN) necesitaban una forma de actualizar su información personal y cambiar su contraseña sin intervención del Admin Global.
+
+#### Backend — Nuevos DTOs (`libs/shared/src/lib/dto/auth.dto.ts`)
+
+- `UpdateBasicInfoDto`: `name?`, `email?`, `phone?`, `avatarUrl?`
+- `ChangePasswordDto`: `currentPassword` (required), `newPassword` (min 6)
+- `UpdateOrganizerProfileInfoDto`: `organizationName?`, `organizationDescription?`, `organizationLogo?`, `address?`, `province?`, `city?`
+
+#### Backend — Nuevos Métodos (`apps/api/src/app/auth/auth.service.ts`)
+
+| Método | Descripción |
+| :--- | :--- |
+| `getOrganizerFullProfile(userId, isMember)` | Retorna `{ type: 'host', user }` o `{ type: 'member', member }` sin campo `password` |
+| `updateBasicInfo(userId, isMember, dto)` | Actualiza User o OrganizerMember según `isMember` |
+| `changePassword(userId, isMember, current, new)` | bcrypt.compare → bcrypt.hash → update |
+| `updateOrganizerProfileInfo(userId, dto)` | Solo para HOST: actualiza `OrganizerProfile` del userId |
+
+#### Backend — Nuevos Endpoints (`apps/api/src/app/auth/auth.controller.ts`)
+
+| Método | Ruta | Descripción |
+| :--- | :--- | :--- |
+| GET | `/auth/me/organizer` | Perfil completo HOST o MEMBER autenticado |
+| PATCH | `/auth/me/basic` | Nombre, email, teléfono, avatarUrl |
+| PATCH | `/auth/me/password` | Cambio de contraseña con verificación |
+| PATCH | `/auth/me/organizer-profile` | Datos de organización (403 si es miembro) |
+
+#### Frontend (`apps/web-host/`)
+
+- **`AuthContext.tsx`:** Nueva función `updateUser(updates: Partial<User>)` que sincroniza el contexto en memoria y en `localStorage` (`ot_host_user`) para que el Sidebar refleje cambios sin re-login.
+- **`lib/api.ts`:** Cuatro funciones nuevas que wrappean los endpoints anteriores.
+- **`OrganizerProfile.tsx`** (nuevo componente): Tres secciones en tarjetas:
+  1. *Información Personal* — nombre, email, teléfono + avatar circular con preview y upload.
+  2. *Datos de Organización* — solo visible para HOST: nombre org, descripción, logo (upload circular), dirección, provincia, ciudad.
+  3. *Cambiar Contraseña* — campos actual/nueva/confirmar con toggle de visibilidad individual. Valida coincidencia antes de llamar al API.
+- **`Sidebar.tsx`:** Orden final del menú: Inicio → Crear Evento → Mis Eventos → Asistentes → Usuarios (solo HOST) → Escáner de Tickets → Perfil.
+- **`dashboard/page.tsx`:** Vista `'profile'` añadida al tipo, import y bloque de render de `OrganizerProfile`.
+
+### Hero Section — Portal de Clientes (web-client :4200)
+
+**Contexto:** La página principal fue limpiada de hero/stats en la sesión anterior. Se necesitaba un nuevo hero visual estilo DICE.fm con fuerte identidad de marca.
+
+#### CSS (`apps/web-client/src/app/global.css`)
+
+- Fuente **Anton** (Google Fonts) añadida al `@import`.
+- Nuevo bloque `.hero-split`:
+  - Grid dos columnas `55fr / 45fr`, `min-height: 100vh`, `padding-top: 64px`.
+  - Izquierda (`.hero-split-left`): fondo oscuro, flex column. Eyebrow verde con línea. Titular `.hero-split-headline` con Anton, `clamp(3.8rem, 7.5vw, 7.5rem)`, line-height 0.9, uppercase; `.accent` en verde (`var(--color-primary)`). Botones pill blanco (`.hero-split-cta`) y fantasma (`.hero-split-cta-ghost`).
+  - Derecha (`.hero-split-right`): `overflow: hidden`. `.hero-event-img` con `object-fit: cover; width: 100%; height: 100%` — imagen a pantalla completa sin padding ni bordes. Hover: `scale(1.04)` en 0.6s.
+  - Responsive 960px: colapsa a 1 columna, panel der. `min-height: 55vw`. Responsive 480px: `min-height: 80vw`.
+
+#### Page (`apps/web-client/src/app/page.tsx`)
+
+- `nextEvent`: primer evento futuro con `status === 'PUBLISHED'` ordenado por fecha ascendente; fallback al `events[0]`.
+- Hero visible solo si `!query` (no hay búsqueda activa).
+- Panel derecho: `<Link>` wrapping `<img src={squareImageUrl || imageUrl || bannerImageUrl || undefined}>` con clases `hero-event-img-wrap` / `hero-event-img`.
+- Fallback si no hay eventos: `.hero-no-event` con ícono 🎵.
 

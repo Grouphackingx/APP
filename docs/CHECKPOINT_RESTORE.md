@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 17 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Panel Host: Asistentes + Escáner de tickets con cámara QR y búsqueda por ID + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin)
+**Fecha de Última Actualización:** 18 de Mayo de 2026
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con evento próximo + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -140,7 +140,11 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | GET    | `/api/orders/attendees/me`      | JWT (HOST)  | ✅ OK  | Lista de asistentes de eventos del organizador (decodifica JWT de tickets) |
 | GET    | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Obtener perfil completo del usuario autenticado |
 | PATCH  | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Actualizar perfil (nombre, email, password, ID, dirección, foto, etc.) |
-| POST   | `/api/upload`                   | Opcional    | ✅ OK  | Subir imágenes — tipos: `logo`, `event`, `user-avatar`. Directorios: `uploads/organizers/{id}/...` y `uploads/users/{id}/avatar/` |
+| GET    | `/api/auth/me/organizer`        | JWT         | ✅ OK  | Perfil completo: HOST (con organizerProfile) o OrganizerMember autenticado |
+| PATCH  | `/api/auth/me/basic`            | JWT         | ✅ OK  | Actualizar nombre, email, teléfono, avatar — funciona para HOST y OrganizerMember |
+| PATCH  | `/api/auth/me/password`         | JWT         | ✅ OK  | Cambiar contraseña con verificación de contraseña actual (bcrypt compare + hash) |
+| PATCH  | `/api/auth/me/organizer-profile`| JWT (HOST)  | ✅ OK  | Actualizar datos de organización: nombre, descripción, logo, dirección, provincia, ciudad. 403 si es miembro. |
+| POST   | `/api/upload`                   | Opcional    | ✅ OK  | Subir imágenes — tipos: `logo`, `event`, `user-avatar`, `member-avatar`. Directorios: `uploads/organizers/{id}/logo|events/`, `uploads/users/{id}/avatar/`, `uploads/organizers/{orgId}/members/{memberId}/avatar/` |
 | GET    | `/api/plans`                    | No          | ✅ OK  | Planes públicos (para formulario de registro) |
 | GET    | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Listar |
 | POST   | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Crear |
@@ -157,7 +161,7 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 | Ruta           | Estado | Descripción                                                |
 | :------------- | :----- | :--------------------------------------------------------- |
-| `/`            | ✅     | Home: Catálogo de eventos en grid + buscador colapsable en header |
+| `/`            | ✅     | Hero Section split (Anton font, titular grande izq. + imagen evento más próximo a pantalla completa der.) + Catálogo de eventos en grid + buscador colapsable en header |
 | `/login`       | ✅     | Formulario de login con JWT y localStorage                 |
 | `/register`    | ✅     | Formulario de registro                                     |
 | `/events/[id]` | ✅     | Detalle del evento + mapa de asientos interactivo + compra |
@@ -176,6 +180,8 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | Eliminar Zona        | ✅     | Botón oculto si la zona tiene tickets vendidos (`hasSold`)          |
 | Asistentes           | ✅     | Lista de compradores por evento con tickets comprados/usados y estado de asistencia. Filtro por evento + búsqueda por nombre/email + filas expandibles |
 | Escáner de Tickets   | ✅     | 3 tabs: Cámara QR (con botones Escanear/Detener), Buscar por ID corto (`#c288f2ae`), Token JWT manual. Validación en tiempo real contra API. |
+| Usuarios             | ✅     | Gestión de miembros OrganizerMember: crear ADMIN/STAFF, editar, eliminar, subir avatar. Solo visible para el HOST principal (no para miembros). |
+| Perfil               | ✅     | Actualización de perfil personal (nombre, email, teléfono, avatar con upload), datos de organización (solo HOST: nombre org, descripción, logo, dirección), cambio de contraseña con verificación de contraseña actual. |
 
 ### Web Admin - Global (Puerto 4202)
 
@@ -223,6 +229,102 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 ---
 
 ## 4. 🔧 Cambios Realizados en Sesiones Anteriores
+
+### Sesión del 17-18 de Mayo 2026 (Continuación) — Avatar Miembros, Página Perfil Host, Hero Section Web Client
+
+#### 4.A. Ruta de Avatar de Miembros Corregida
+
+**Archivo**: `apps/api/src/app/upload/upload.controller.ts`
+- Tipo `member-avatar`: el destino cambió de `uploads/members/{memberId}/avatar/` a `uploads/organizers/{orgUserId}/members/{memberId}/avatar/`, donde `orgUserId` se obtiene del JWT del organizador autenticado (`req.user.sub`).
+- La URL retornada también refleja la nueva ruta, manteniendo consistencia con la estructura jerárquica de organización.
+
+#### 4.B. Nuevos DTOs de Perfil
+
+**Archivo**: `libs/shared/src/lib/dto/auth.dto.ts`
+
+Tres DTOs nuevos añadidos antes de `UpdateProfileDto`:
+- `UpdateBasicInfoDto` — campos opcionales: `name`, `email`, `phone`, `avatarUrl`
+- `ChangePasswordDto` — `currentPassword` (required) + `newPassword` (min 6 chars)
+- `UpdateOrganizerProfileInfoDto` — campos opcionales: `organizationName`, `organizationDescription`, `organizationLogo`, `address`, `province`, `city`
+
+#### 4.C. Métodos de Perfil en AuthService y Endpoints en AuthController
+
+**Archivo**: `apps/api/src/app/auth/auth.service.ts`
+
+Cuatro métodos nuevos:
+- `getOrganizerFullProfile(userId, isMember)` — retorna `{ type: 'host', user }` o `{ type: 'member', member }` según si es OrganizerMember o User principal, sin campo `password`.
+- `updateBasicInfo(userId, isMember, dto)` — actualiza nombre/teléfono/avatarUrl en User o OrganizerMember según contexto.
+- `changePassword(userId, isMember, currentPassword, newPassword)` — verifica contraseña actual con `bcrypt.compare` antes de actualizar.
+- `updateOrganizerProfileInfo(userId, dto)` — actualiza el OrganizerProfile asociado al userId (solo para HOST principal).
+
+**Archivo**: `apps/api/src/app/auth/auth.controller.ts`
+
+Cuatro endpoints nuevos protegidos con `JwtAuthGuard`:
+- `GET /auth/me/organizer` — perfil completo
+- `PATCH /auth/me/basic` — datos básicos (nombre, email, teléfono, avatar)
+- `PATCH /auth/me/password` — cambiar contraseña con verificación
+- `PATCH /auth/me/organizer-profile` — datos de organización (403 si `isMember`)
+
+#### 4.D. AuthContext `updateUser` en Web Host
+
+**Archivo**: `apps/web-host/src/lib/AuthContext.tsx`
+- Agregada función `updateUser(updates: Partial<User>)` a la interfaz y a la implementación del `AuthProvider`.
+- Persiste los cambios en `localStorage` (`ot_host_user`) y actualiza el estado en memoria para que el Sidebar refleje el nuevo nombre/logo/avatar sin necesidad de re-login.
+
+#### 4.E. Funciones API de Perfil en Web Host
+
+**Archivo**: `apps/web-host/src/lib/api.ts`
+
+Cuatro funciones nuevas:
+- `getMyOrganizerProfile(token)` — `GET /auth/me/organizer`
+- `updateMyBasicInfo(data, token)` — `PATCH /auth/me/basic`
+- `changeMyPassword(currentPassword, newPassword, token)` — `PATCH /auth/me/password`
+- `updateMyOrganizerProfileInfo(data, token)` — `PATCH /auth/me/organizer-profile`
+
+#### 4.F. Componente OrganizerProfile (Nuevo)
+
+**Archivo**: `apps/web-host/src/components/OrganizerProfile.tsx`
+
+Vista de perfil con tres tarjetas:
+1. **Información Personal** — nombre, email, teléfono + avatar circular con botón de upload. Para HOST usa `uploadImage(file, token, 'logo')` para el logo de organización; para miembros usa `uploadMemberAvatar(file, memberId, token)` en la ruta corregida.
+2. **Datos de Organización** — nombre de org, descripción, logo (upload circular), dirección, provincia, ciudad. Solo visible para HOST principal.
+3. **Cambiar Contraseña** — tres campos (actual, nueva, confirmar) con toggle de visibilidad por campo. Valida que la nueva coincida antes de hacer la llamada al API.
+
+Sub-componentes internos: `SaveMsg` (mensaje éxito/error con auto-reset 4s) y `PwField` (campo de contraseña con toggle).
+
+Tras guardar, llama a `updateUser()` del `AuthContext` para sincronizar nombre/email/logo en el Sidebar.
+
+#### 4.G. Integración en Dashboard y Sidebar
+
+**Archivos**: `apps/web-host/src/components/Sidebar.tsx` y `apps/web-host/src/app/dashboard/page.tsx`
+
+- Nuevo orden del menú sidebar (final): Inicio → Crear Evento → Mis Eventos → Asistentes → Usuarios (solo HOST principal) → Escáner de Tickets → Perfil
+- Vista `'profile'` añadida al tipo union de `view` en `dashboard/page.tsx`
+- Import y bloque de renderizado de `OrganizerProfile` añadido
+
+#### 4.H. Hero Section en Web Client
+
+**Archivo**: `apps/web-client/src/app/global.css`
+- Import de fuente `Anton` de Google Fonts añadido al `@import` inicial.
+- Nuevo bloque CSS `.hero-split` (~60 líneas):
+  - Grid de dos columnas (`55fr 45fr`), altura mínima `100vh`, `padding-top: 64px` para compensar el header fijo.
+  - `.hero-split-left` — fondo oscuro, flex column, padding lateral responsivo con `clamp()`.
+  - `.hero-split-headline` — `font-family: 'Anton'`, `font-size: clamp(3.8rem, 7.5vw, 7.5rem)`, `line-height: 0.9`, uppercase. `.accent` en color primario (verde).
+  - `.hero-split-cta` — botón blanco pill con texto negro, uppercase. `.hero-split-cta-ghost` — variante transparente con borde sutil.
+  - `.hero-split-right` — `position: relative; overflow: hidden`. Imagen a pantalla completa:
+    - `.hero-event-img-wrap { display: block; width: 100%; height: 100%; }`
+    - `.hero-event-img { width: 100%; height: 100%; object-fit: cover; object-position: center; }`
+    - Efecto hover: `transform: scale(1.04)` en 0.6s.
+  - `.hero-no-event` — estado vacío con borde punteado cuando no hay eventos.
+  - Responsive (960px): grid colapsa a 1 columna; panel derecho con `min-height: 55vw`. (480px): `min-height: 80vw`.
+
+**Archivo**: `apps/web-client/src/app/page.tsx`
+- Cálculo de `nextEvent`: primer evento futuro publicado ordenado por fecha ascendente; fallback al primer evento si no hay futuros.
+- Hero Section visible solo cuando no hay búsqueda activa (`!query`).
+- Panel derecho: `<Link href="/events/{id}" className="hero-event-img-wrap">` con `<img>` usando `squareImageUrl || imageUrl || bannerImageUrl || undefined` (prioriza 1:1, fallback a panorámica).
+- Fallback vacío: `.hero-no-event` con icono 🎵 y texto "Próximamente nuevos eventos".
+
+---
 
 ### Sesión del 17 de Mayo 2026 — Eventos Destacados, Gestión Global de Eventos, Limpieza de UI
 
@@ -338,6 +440,22 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 ---
 
 ## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
+
+### Sesión del 17-18 de Mayo 2026 (Continuación) — Avatar Miembros, Perfil Host, Hero Section
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `apps/api/src/app/upload/upload.controller.ts` | Modificado | Tipo `member-avatar` ahora guarda en `uploads/organizers/{orgUserId}/members/{memberId}/avatar/` en vez del directorio plano anterior |
+| `libs/shared/src/lib/dto/auth.dto.ts` | Modificado | Nuevos DTOs: `UpdateBasicInfoDto`, `ChangePasswordDto`, `UpdateOrganizerProfileInfoDto` |
+| `apps/api/src/app/auth/auth.service.ts` | Modificado | Cuatro métodos nuevos: `getOrganizerFullProfile`, `updateBasicInfo`, `changePassword`, `updateOrganizerProfileInfo` |
+| `apps/api/src/app/auth/auth.controller.ts` | Modificado | Cuatro endpoints nuevos: `GET /auth/me/organizer`, `PATCH /auth/me/basic`, `PATCH /auth/me/password`, `PATCH /auth/me/organizer-profile` |
+| `apps/web-host/src/lib/AuthContext.tsx` | Modificado | Función `updateUser(updates)` añadida para sincronizar perfil en contexto y localStorage sin re-login |
+| `apps/web-host/src/lib/api.ts` | Modificado | Cuatro funciones nuevas: `getMyOrganizerProfile`, `updateMyBasicInfo`, `changeMyPassword`, `updateMyOrganizerProfileInfo` |
+| `apps/web-host/src/components/OrganizerProfile.tsx` | **Nuevo** | Vista de perfil: info personal (con avatar upload), datos de organización (solo HOST), cambio de contraseña con verificación |
+| `apps/web-host/src/components/Sidebar.tsx` | Modificado | Orden del menú reorganizado: Asistentes → Usuarios → Escáner → Perfil |
+| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Vista `'profile'` añadida al tipo union, import y render de `OrganizerProfile` |
+| `apps/web-client/src/app/global.css` | Modificado | Fuente Anton importada; bloque CSS `.hero-split` completo (layout, headline, CTAs, imagen full-bleed, responsive) |
+| `apps/web-client/src/app/page.tsx` | Modificado | Cálculo de `nextEvent` (próximo evento futuro publicado); Hero Section split con imagen full-bleed en panel derecho |
 
 ### Sesión del 17 de Mayo 2026 — Eventos Destacados, Admin Event CRUD, UI Cleanup
 
@@ -518,6 +636,11 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 - [x] ~~Limpieza de página principal web-client: eliminación de hero, stats, botones redundantes~~ ✅ (17 May 2026)
 - [x] ~~Buscador colapsable integrado en Navbar (icono lupa → campo de texto)~~ ✅ (17 May 2026)
 - [x] ~~Eliminación de campo "Imagen General" en formularios de evento (reemplazado por Imagen Cuadrada 1:1)~~ ✅ (17 May 2026)
+- [x] ~~Página Usuarios en Panel Host: gestión de OrganizerMembers (ADMIN/STAFF), avatar, contraseña, estado~~ ✅ (17 May 2026)
+- [x] ~~Página Perfil en Panel Host: info personal, org (solo HOST), cambio de contraseña con verificación~~ ✅ (18 May 2026)
+- [x] ~~Ruta de avatar de miembros bajo directorio del organizador correspondiente~~ ✅ (18 May 2026)
+- [x] ~~Hero Section en Web Client: split DICE.fm con fuente Anton, titular bold, CTA, imagen evento próximo full-bleed~~ ✅ (18 May 2026)
+- [x] ~~Endpoints GET/PATCH /api/auth/me/organizer, /basic, /password, /organizer-profile para perfil de organizador/miembro~~ ✅ (18 May 2026)
 
 ---
 
