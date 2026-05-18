@@ -80,6 +80,61 @@ export class RegisterHostDto extends RegisterDto {
   plan?: string;
 }
 
+export class UpdateBasicInfoDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+}
+
+export class ChangePasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  currentPassword!: string;
+
+  @IsString()
+  @MinLength(6)
+  @IsNotEmpty()
+  newPassword!: string;
+}
+
+export class UpdateOrganizerProfileInfoDto {
+  @IsString()
+  @IsOptional()
+  organizationName?: string;
+
+  @IsString()
+  @IsOptional()
+  organizationDescription?: string;
+
+  @IsString()
+  @IsOptional()
+  organizationLogo?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  province?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+}
+
 export class UpdateProfileDto {
   @IsString()
   @IsOptional()

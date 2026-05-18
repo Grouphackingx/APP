@@ -129,10 +129,29 @@ model Ticket {
   scannedAt    DateTime?
 }
 
+enum OrganizerMemberRole {
+  ADMIN
+  STAFF
+}
+
+model OrganizerMember {
+  id                 String               @id @default(uuid())
+  name               String
+  email              String               @unique
+  phone              String?
+  avatarUrl          String?
+  password           String
+  memberRole         OrganizerMemberRole  @default(STAFF)
+  organizerProfileId String
+  organizerProfile   OrganizerProfile     @relation(fields: [organizerProfileId], references: [id], onDelete: Cascade)
+  createdAt          DateTime             @default(now())
+}
+
 model OrganizerProfile {
   id                      String     @id @default(uuid())
   userId                  String     @unique
   user                    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members                 OrganizerMember[]
   
   firstName               String
   lastName                String

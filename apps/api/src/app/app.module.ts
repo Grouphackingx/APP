@@ -14,6 +14,7 @@ import { TicketsModule } from './tickets/tickets.module';
 import { PaymentsModule } from './payments/payments.module';
 import { UploadModule } from './upload/upload.module';
 import { AdminModule } from './admin/admin.module';
+import { OrganizerMembersModule } from './organizer-members/organizer-members.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AdminModule } from './admin/admin.module';
     PaymentsModule,
     UploadModule,
     AdminModule,
+    OrganizerMembersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -21,19 +21,20 @@ export class UploadController {
           let dir: string;
 
           if (type === 'user-avatar') {
-            // Separate "Usuarios" root — never mixed with organizer/event dirs
             const userId = user ? user.sub : (req.query.userId || 'temp');
             dir = `./uploads/users/${userId}/avatar`;
-            
-            // Clean up old avatars to prevent accumulating files
             if (fs.existsSync(dir)) {
-              const files = fs.readdirSync(dir);
-              for (const file of files) {
-                try {
-                  fs.unlinkSync(`${dir}/${file}`);
-                } catch (err) {
-                  // Ignore errors if the file cannot be deleted
-                }
+              for (const f of fs.readdirSync(dir)) {
+                try { fs.unlinkSync(`${dir}/${f}`); } catch { /* ignore */ }
+              }
+            }
+          } else if (type === 'member-avatar') {
+            const memberId = req.query.memberId || 'temp';
+            const orgUserId = user ? user.sub : 'temp';
+            dir = `./uploads/organizers/${orgUserId}/members/${memberId}/avatar`;
+            if (fs.existsSync(dir)) {
+              for (const f of fs.readdirSync(dir)) {
+                try { fs.unlinkSync(`${dir}/${f}`); } catch { /* ignore */ }
               }
             }
           } else {
@@ -80,6 +81,10 @@ export class UploadController {
     if (type === 'user-avatar') {
       const userId = user ? user.sub : (req.query.userId || 'temp');
       pathPart = `/users/${userId}/avatar`;
+    } else if (type === 'member-avatar') {
+      const memberId = req.query.memberId || 'temp';
+      const orgUserId = user ? user.sub : 'temp';
+      pathPart = `/organizers/${orgUserId}/members/${memberId}/avatar`;
     } else {
       const orgId = user ? user.sub : (organizerId || 'temp');
       pathPart = `/organizers/${orgId}`;

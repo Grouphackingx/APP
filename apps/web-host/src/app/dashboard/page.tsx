@@ -8,6 +8,8 @@ import { CreateEventForm } from '../../components/CreateEventForm';
 import { EditEventForm } from '../../components/EditEventForm';
 import { AttendeesList } from '../../components/AttendeesList';
 import { TicketScanner } from '../../components/TicketScanner';
+import { OrganizerUsers } from '../../components/OrganizerUsers';
+import { OrganizerProfile } from '../../components/OrganizerProfile';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-EC', {
@@ -21,7 +23,12 @@ export default function DashboardPage() {
   const { user, token, logout } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'dashboard' | 'events' | 'create' | 'edit' | 'attendees' | 'scanner'>('dashboard');
+  type View = 'dashboard' | 'events' | 'create' | 'edit' | 'attendees' | 'scanner' | 'users' | 'profile';
+  const [view, setView] = useState<View>(() => {
+    // Staff members land directly on the scanner
+    return 'dashboard';
+  });
+  const navigate = (v: string) => setView(v as View);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
 
@@ -41,6 +48,13 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  // Staff solo puede ver el escáner
+  useEffect(() => {
+    if (user?.isMember && user?.memberRole === 'STAFF') {
+      setView('scanner');
+    }
+  }, [user]);
 
   const totalSeats = events.reduce(
     (sum, e) =>
@@ -129,7 +143,7 @@ export default function DashboardPage() {
       <Sidebar
         user={user}
         activeView={view}
-        onNavigate={setView}
+        onNavigate={navigate}
         onLogout={logout}
       />
 
@@ -370,6 +384,30 @@ export default function DashboardPage() {
               </div>
             </div>
             <TicketScanner token={token} />
+          </>
+        )}
+
+        {view === 'users' && token && !user?.isMember && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Usuarios</h1>
+                <p>Gestiona los usuarios adicionales que pueden acceder a este panel.</p>
+              </div>
+            </div>
+            <OrganizerUsers token={token} />
+          </>
+        )}
+
+        {view === 'profile' && token && (
+          <>
+            <div className="page-header">
+              <div>
+                <h1>Perfil</h1>
+                <p>Actualiza tu información personal, datos de la organización y contraseña.</p>
+              </div>
+            </div>
+            <OrganizerProfile token={token} />
           </>
         )}
 

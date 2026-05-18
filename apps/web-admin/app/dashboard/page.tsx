@@ -318,6 +318,7 @@ export default function AdminDashboard() {
 
   const totalOrgs = organizers.length;
   const approvedOrgs = organizers.filter(o => o.organizerProfile?.status === 'APPROVED').length;
+  const pendingOrgs = organizers.filter(o => o.organizerProfile?.status === 'PENDING').length;
   const filteredEvents = events.filter((e) => {
     if (activeEventTab === 'ACTIVOS') return e.status === 'PUBLISHED';
     if (activeEventTab === 'INACTIVOS') return e.status === 'INACTIVE';

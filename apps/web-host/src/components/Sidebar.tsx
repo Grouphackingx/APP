@@ -1,18 +1,28 @@
 'use client';
 
 interface SidebarProps {
-  user: { name: string; email: string; role: string; organizerProfile?: { organizationLogo?: string } } | null;
+  user: { name: string; email: string; role: string; organizerProfile?: { organizationLogo?: string }; isMember?: boolean; memberRole?: 'ADMIN' | 'STAFF' } | null;
   activeView: string;
-  onNavigate: (view: any) => void;
+  onNavigate: (view: string) => void;
   onLogout: () => void;
 }
 
-export function Sidebar({
-  user,
-  activeView,
-  onNavigate,
-  onLogout,
-}: SidebarProps) {
+export function Sidebar({ user, activeView, onNavigate, onLogout }: SidebarProps) {
+  const isStaff = user?.isMember && user?.memberRole === 'STAFF';
+  const isMainHost = !user?.isMember;
+
+  const navLink = (view: string, icon: string, label: string) => (
+    <a
+      key={view}
+      href="#"
+      className={activeView === view ? 'active' : ''}
+      onClick={(e) => { e.preventDefault(); onNavigate(view); }}
+    >
+      <span className="nav-icon">{icon}</span>
+      {label}
+    </a>
+  );
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -22,61 +32,24 @@ export function Sidebar({
       </div>
 
       <nav className="sidebar-nav">
-        <a
-          href="#"
-          className={activeView === 'dashboard' ? 'active' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate('dashboard');
-          }}
-        >
-          <span className="nav-icon">🏠</span>
-          Inicio
-        </a>
-        <a
-          href="#"
-          className={activeView === 'create' ? 'active' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate('create');
-          }}
-        >
-          <span className="nav-icon">➕</span>
-          Crear Evento
-        </a>
-        <a
-          href="#"
-          className={activeView === 'events' ? 'active' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate('events');
-          }}
-        >
-          <span className="nav-icon">🎪</span>
-          Mis Eventos
-        </a>
-        <a
-          href="#"
-          className={activeView === 'attendees' ? 'active' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate('attendees');
-          }}
-        >
-          <span className="nav-icon">👥</span>
-          Asistentes
-        </a>
-        <a
-          href="#"
-          className={activeView === 'scanner' ? 'active' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate('scanner');
-          }}
-        >
-          <span className="nav-icon">📷</span>
-          Escáner de Tickets
-        </a>
+        {/* Solo para Administrador y HOST principal */}
+        {!isStaff && (
+          <>
+            {navLink('dashboard', '🏠', 'Inicio')}
+            {navLink('create', '➕', 'Crear Evento')}
+            {navLink('events', '🎪', 'Mis Eventos')}
+            {navLink('attendees', '👥', 'Asistentes')}
+          </>
+        )}
+
+        {/* Solo para el HOST principal (no para miembros) */}
+        {isMainHost && navLink('users', '👤', 'Usuarios')}
+
+        {/* Escáner — visible para todos */}
+        {navLink('scanner', '📷', 'Escáner de Tickets')}
+
+        {/* Perfil — visible para todos */}
+        {navLink('profile', '⚙️', 'Perfil')}
       </nav>
 
       {user && (
@@ -90,22 +63,17 @@ export function Sidebar({
           </div>
           <div className="user-info">
             <div className="user-name">{user.name}</div>
-            <div className="user-role">{user.role}</div>
+            <div className="user-role" style={{ fontSize: '0.7rem' }}>
+              {user.isMember ? (user.memberRole === 'STAFF' ? 'Staff' : 'Administrador') : 'Organizador'}
+            </div>
           </div>
           <button
             onClick={onLogout}
             title="Cerrar sesión"
             style={{
-              padding: '0.5rem',
-              borderRadius: 'var(--radius-sm)',
-              transition: 'var(--transition-fast)',
-              fontSize: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              cursor: 'pointer',
+              padding: '0.5rem', borderRadius: 'var(--radius-sm)', transition: 'var(--transition-fast)',
+              fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', cursor: 'pointer',
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

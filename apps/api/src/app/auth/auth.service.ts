@@ -1,7 +1,7 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto } from '@open-ticket/shared';
+import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto, UpdateBasicInfoDto, UpdateOrganizerProfileInfoDto } from '@open-ticket/shared';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -25,20 +25,52 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const user = await this.validateUser(loginDto.email, loginDto.password);
-        if (!user) throw new UnauthorizedException('Invalid credentials');
 
-        if (user.role === 'HOST' && user.organizerProfile?.status === 'PENDING') {
-            throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
+        if (user) {
+            if (user.role === 'HOST' && user.organizerProfile?.status === 'PENDING') {
+                throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
+            }
+            if (user.role === 'HOST' && user.organizerProfile?.status === 'REJECTED') {
+                throw new UnauthorizedException('Tu solicitud de cuenta de organizador fue rechazada. Contacta a soporte para más detalles.');
+            }
+            const payload = {
+                email: user.email,
+                sub: user.id,
+                role: user.role,
+                organizerProfileId: user.organizerProfile?.id ?? null,
+            };
+            return { access_token: this.jwtService.sign(payload), user };
         }
 
-        if (user.role === 'HOST' && user.organizerProfile?.status === 'REJECTED') {
-            throw new UnauthorizedException('Tu solicitud de cuenta de organizador fue rechazada. Contacta a soporte para más detalles.');
+        // Intentar como miembro de organización
+        const member = await this.prisma.organizerMember.findUnique({
+            where: { email: loginDto.email },
+            include: { organizerProfile: true },
+        });
+        if (!member || !(await bcrypt.compare(loginDto.password, member.password))) {
+            throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        const payload = { email: user.email, sub: user.id, role: user.role };
+        const payload = {
+            sub: member.id,
+            email: member.email,
+            role: 'HOST',
+            isMember: true,
+            memberRole: member.memberRole,
+            organizerProfileId: member.organizerProfileId,
+        };
         return {
             access_token: this.jwtService.sign(payload),
-            user,
+            user: {
+                id: member.id,
+                email: member.email,
+                name: member.name,
+                role: 'HOST',
+                isMember: true,
+                memberRole: member.memberRole,
+                organizerProfileId: member.organizerProfileId,
+                organizerProfile: member.organizerProfile,
+            },
         };
     }
 
@@ -96,6 +128,96 @@ export class AuthService {
         });
     }
 
+    async getOrganizerFullProfile(userId: string, isMember: boolean) {
+        if (isMember) {
+            const member = await this.prisma.organizerMember.findUnique({ where: { id: userId } });
+            if (!member) throw new NotFoundException('Miembro no encontrado');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password: _mp, ...safeMember } = member;
+            return { type: 'member', member: safeMember };
+        }
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: { organizerProfile: true },
+        });
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password: _up, ...safeUser } = user;
+        return { type: 'host', user: safeUser };
+    }
+
+    async updateBasicInfo(userId: string, isMember: boolean, dto: UpdateBasicInfoDto) {
+        if (isMember) {
+            return this.prisma.organizerMember.update({
+                where: { id: userId },
+                data: {
+                    ...(dto.name && { name: dto.name }),
+                    ...(dto.phone !== undefined && { phone: dto.phone || null }),
+                    ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl || null }),
+                },
+                select: { id: true, name: true, email: true, phone: true, avatarUrl: true, memberRole: true },
+            });
+        }
+        const data: Record<string, unknown> = {};
+        if (dto.name) data['name'] = dto.name;
+        if (dto.phone !== undefined) data['phone'] = dto.phone || null;
+        if (dto.email) {
+            const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+            if (existing && existing.id !== userId) throw new ConflictException('El email ya está en uso');
+            data['email'] = dto.email;
+        }
+        return this.prisma.user.update({
+            where: { id: userId },
+            data,
+            select: { id: true, name: true, email: true, phone: true, role: true, avatarUrl: true },
+        });
+    }
+
+    async changePassword(userId: string, isMember: boolean, currentPassword: string, newPassword: string) {
+        if (isMember) {
+            const member = await this.prisma.organizerMember.findUnique({ where: { id: userId } });
+            if (!member) throw new NotFoundException('Miembro no encontrado');
+            if (!(await bcrypt.compare(currentPassword, member.password)))
+                throw new UnauthorizedException('La contraseña actual es incorrecta');
+            await this.prisma.organizerMember.update({
+                where: { id: userId },
+                data: { password: await bcrypt.hash(newPassword, 10) },
+            });
+        } else {
+            const user = await this.prisma.user.findUnique({ where: { id: userId } });
+            if (!user) throw new NotFoundException('Usuario no encontrado');
+            if (!(await bcrypt.compare(currentPassword, user.password)))
+                throw new UnauthorizedException('La contraseña actual es incorrecta');
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { password: await bcrypt.hash(newPassword, 10) },
+            });
+        }
+        return { message: 'Contraseña actualizada correctamente' };
+    }
+
+    async updateOrganizerProfileInfo(userId: string, dto: UpdateOrganizerProfileInfoDto) {
+        const profile = await this.prisma.organizerProfile.findUnique({ where: { userId } });
+        if (!profile) throw new NotFoundException('Perfil de organizador no encontrado');
+        return this.prisma.organizerProfile.update({
+            where: { userId },
+            data: {
+                ...(dto.organizationName && { organizationName: dto.organizationName }),
+                ...(dto.organizationDescription !== undefined && { organizationDescription: dto.organizationDescription }),
+                ...(dto.organizationLogo !== undefined && { organizationLogo: dto.organizationLogo || null }),
+                ...(dto.address !== undefined && { address: dto.address }),
+                ...(dto.province !== undefined && { province: dto.province }),
+                ...(dto.city !== undefined && { city: dto.city }),
+            },
+            select: {
+                id: true, organizationName: true, organizationDescription: true,
+                organizationLogo: true, address: true, province: true, city: true,
+                firstName: true, lastName: true, identificationNumber: true, phone: true,
+                plan: true, status: true,
+            },
+        });
+    }
+
     async registerHost(dto: RegisterHostDto) {
         const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
         if (existing) throw new ConflictException('Email already exists');
@@ -128,7 +250,7 @@ export class AuthService {
         });
 
         if (dto.organizationLogo) {
-            const tempIdMatch = dto.organizationLogo.match(/\/uploads\/organizers\/([^\/]+)\//);
+            const tempIdMatch = dto.organizationLogo.match(/[/]uploads[/]organizers[/]([^/]+)[/]/);
             const tempId = tempIdMatch ? tempIdMatch[1] : null;
             
             if (tempId && tempId !== user.id) {
