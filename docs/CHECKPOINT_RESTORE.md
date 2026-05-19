@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 18 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con evento próximo + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin)
+**Fecha de Última Actualización:** 19 de Mayo de 2026
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con carrusel interactivo 1:1 + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -161,7 +161,7 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 
 | Ruta           | Estado | Descripción                                                |
 | :------------- | :----- | :--------------------------------------------------------- |
-| `/`            | ✅     | Hero Section split (Anton font, titular grande izq. + imagen evento más próximo a pantalla completa der.) + Catálogo de eventos en grid + buscador colapsable en header |
+| `/`            | ✅     | Hero Section split (Anton font, titular izq. reducido 10% + carrusel interactivo coverflow der. con los 3 próximos eventos) + Catálogo de eventos en grid + buscador colapsable en header con icono SVG outlined |
 | `/login`       | ✅     | Formulario de login con JWT y localStorage                 |
 | `/register`    | ✅     | Formulario de registro                                     |
 | `/events/[id]` | ✅     | Detalle del evento + mapa de asientos interactivo + compra |
@@ -229,6 +229,56 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 ---
 
 ## 4. 🔧 Cambios Realizados en Sesiones Anteriores
+
+### Sesión del 19 de Mayo 2026 — Carrusel Hero Interactivo (Coverflow 1:1), Refinamiento Visual
+
+#### 4.0.A. Carrusel Hero — HeroCarousel.tsx (Nuevo Componente)
+
+**Archivo**: `apps/web-client/src/components/HeroCarousel.tsx` (nuevo)
+
+Componente cliente (`'use client'`) con efecto coverflow de tres tarjetas (prev/active/next):
+- **Circular motion**: Truco de "teleport con dos rAFs" — la tarjeta que va a envolver se coloca instantáneamente fuera de pantalla (sin transición CSS via `transition: none !important`), y en el siguiente frame de pintura desliza hacia su nueva posición. Esto evita que se vea el deslizamiento "a través del centro".
+- **Auto-avance**: Intervalo de 4500ms. Se pausa al hacer hover. `navigateRef` y `activeRef` evitan closures obsoletos dentro del setInterval.
+- **Navegación**: Dots de navegación en la parte inferior. Click en tarjeta lateral avanza al evento correspondiente.
+- **Fallback**: Si no hay eventos, muestra panel vacío con texto "Próximamente nuevos eventos".
+
+#### 4.0.B. Actualización de page.tsx — Selección de 3 próximos eventos
+
+**Archivo**: `apps/web-client/src/app/page.tsx`
+
+- Calcula los 3 próximos eventos futuros publicados ordenados por fecha ascendente para el carrusel.
+- Fallback: si no hay eventos futuros, usa los primeros 3 publicados.
+- Reemplazó el `nextEvent` único (imagen estática) por `carouselEvents[]` para el nuevo `HeroCarousel`.
+
+#### 4.0.C. CSS del Carrusel y Hero — global.css
+
+**Archivo**: `apps/web-client/src/app/global.css`
+
+Cambios acumulados en esta sesión:
+
+| Propiedad CSS | Valor Anterior | Valor Nuevo | Motivo |
+|---|---|---|---|
+| `.hero-split grid-template-columns` | `55fr 45fr` | `1fr 1fr` | Panel derecho necesita más espacio para tarjetas cuadradas |
+| `.hero-carousel-card height` | `90%` | `75%` | Relación de aspecto 1:1 requiere reducir alto para que el ancho no desborde el panel |
+| `.hero-carousel-card aspect-ratio` | `2 / 3` | `1 / 1` | Imágenes de eventos son cuadradas — corrección de distorsión |
+| `.hcc-enter-right translate` | `+200%` | `+140%` | Posición de entrada ajustada a tarjetas cuadradas |
+| `.hcc-enter-left translate` | `-200%` | `-140%` | Idem dirección opuesta |
+| `.hero-split-right background` | `#08090b` → `var(--bg-primary)` → | `transparent` | El contenedor blending con fondo de página para no verse como cuadrado |
+| `.hero-split-right box-shadow` | `0 24px 64px ... + 0 0 0 1px rgba(...)` | `sin box-shadow` | Eliminación del borde del contenedor |
+| `.hero-split-right border-radius` | `20px` | `eliminado` | Sin contenedor visible, no se necesita |
+| `.hero-split-right::before/::after` | — | Gradientes `var(--bg-primary) → transparent` al 22% de ancho | Fade lateral: tarjetas parciales se disuelven en vez de cortarse abruptamente |
+| `.hero-carousel-dots z-index` | `10` | `20` | Por encima de los pseudo-elementos de fade (z-index 10) |
+| `.hero-split-left transform` | — | `scale(0.9); transform-origin: top left` | Reducción visual uniforme de todo el contenido izquierdo en 10% |
+| `.hero-split-headline margin-bottom` | `1.75rem` | `eliminado` | Iguala el espacio titular→subtítulo con el espacio subtítulo→botones (ambos usan el `gap: 1.5rem` del flex) |
+
+#### 4.0.D. Icono de búsqueda SVG en Navbar
+
+**Archivo**: `apps/web-client/src/components/SearchBar.tsx`
+
+- Reemplazado el emoji `🔍` (en ambas instancias: botón colapsable + ícono dentro del input expandido) por SVG inline outlined.
+- SVG: `<circle cx="11" cy="11" r="8"/>` + `<line x1="21" y1="21" x2="16.65" y2="16.65"/>`, `stroke="currentColor"`, `strokeWidth="2"`, `strokeLinecap/Linejoin="round"`. Sin relleno. 18px en botón, 16px dentro del input.
+
+---
 
 ### Sesión del 17-18 de Mayo 2026 (Continuación) — Avatar Miembros, Página Perfil Host, Hero Section Web Client
 
@@ -441,6 +491,15 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 
 ## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
 
+### Sesión del 19 de Mayo 2026 — Carrusel Hero Coverflow, Refinamiento Visual
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `apps/web-client/src/components/HeroCarousel.tsx` | **Nuevo** | Carrusel coverflow con 3 tarjetas, circular motion via doble rAF teleport, auto-avance 4.5s, pausa en hover, dots navegación |
+| `apps/web-client/src/app/page.tsx` | Modificado | Calcula 3 próximos eventos futuros para carrusel; reemplaza `nextEvent` único por `carouselEvents[]` |
+| `apps/web-client/src/app/global.css` | Modificado | aspect-ratio 1:1, altura 75%, columnas 1fr 1fr, contenedor transparente sin borde, gradientes fade lateral, escala izquierda -10%, spacing headline ajustado, dots z-index 20 |
+| `apps/web-client/src/components/SearchBar.tsx` | Modificado | Emoji 🔍 reemplazado por SVG inline outlined (circle + line, strokeWidth 2, sin relleno) en botón y en input expandido |
+
 ### Sesión del 17-18 de Mayo 2026 (Continuación) — Avatar Miembros, Perfil Host, Hero Section
 
 | Archivo | Tipo de Cambio | Descripción |
@@ -641,6 +700,12 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 - [x] ~~Ruta de avatar de miembros bajo directorio del organizador correspondiente~~ ✅ (18 May 2026)
 - [x] ~~Hero Section en Web Client: split DICE.fm con fuente Anton, titular bold, CTA, imagen evento próximo full-bleed~~ ✅ (18 May 2026)
 - [x] ~~Endpoints GET/PATCH /api/auth/me/organizer, /basic, /password, /organizer-profile para perfil de organizador/miembro~~ ✅ (18 May 2026)
+- [x] ~~Carrusel Hero coverflow interactivo con 3 próximos eventos: circular motion (teleport doble rAF), auto-avance, dots, pausa hover~~ ✅ (19 May 2026)
+- [x] ~~Aspecto 1:1 en tarjetas del carrusel (corregido de 2:3), contenedor transparente sin borde visible~~ ✅ (19 May 2026)
+- [x] ~~Fade lateral en bordes del carrusel: gradiente var(--bg-primary)→transparent via ::before/::after~~ ✅ (19 May 2026)
+- [x] ~~Reducción 10% del contenido izquierdo del hero (scale 0.9 transform-origin top left)~~ ✅ (19 May 2026)
+- [x] ~~Equalización de espaciado: titular→subtítulo = subtítulo→botones (eliminado margin-bottom del headline)~~ ✅ (19 May 2026)
+- [x] ~~Icono búsqueda SVG outlined (circle + line) en lugar de emoji 🔍 en SearchBar~~ ✅ (19 May 2026)
 
 ---
 

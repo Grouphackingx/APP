@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
 
-**Última Actualización:** 18 de Mayo de 2026
-**Estado del Proyecto:** ✅ Fases 1-4 Completas + Perfil Usuario + Toast autenticación + Asistentes y Escáner (Host) + Tickets USED rojo (Client) + Eventos Destacados (Admin) + Gestión Global Eventos (Admin) + Usuarios OrganizerMembers (Host) + Página Perfil Host + Hero Section Web Client
+**Última Actualización:** 19 de Mayo de 2026
+**Estado del Proyecto:** ✅ Fases 1-4 Completas + Perfil Usuario + Toast autenticación + Asistentes y Escáner (Host) + Tickets USED rojo (Client) + Eventos Destacados (Admin) + Gestión Global Eventos (Admin) + Usuarios OrganizerMembers (Host) + Página Perfil Host + Hero Section con Carrusel Coverflow 1:1
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -119,7 +119,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api
 
 | Ruta           | Componente             | Estado       | DescripciÃ³n                                                |
 | :------------- | :--------------------- | :----------- | :--------------------------------------------------------- |
-| `/`            | `page.tsx`             | âœ…           | Hero animado + catÃ¡logo de eventos en grid                 |
+| `/`            | `page.tsx`             | ✅           | Hero split: titular izq (Anton, scale 0.9) + carrusel coverflow der (3 próximos eventos, 1:1, fade lateral) + catálogo en grid + búsqueda SVG en navbar |
 | `/login`       | `login/page.tsx`       | âœ…           | Formulario de login con JWT                                |
 | `/register`    | `register/page.tsx`    | âœ…           | Formulario de registro                                     |
 | `/events/[id]` | `events/[id]/page.tsx` | âœ…           | Detalle del evento + mapa de asientos interactivo + compra |
