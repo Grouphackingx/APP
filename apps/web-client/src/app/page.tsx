@@ -1,5 +1,6 @@
 import { getEvents } from '../lib/api';
 import { EventCard } from '../components/EventCard';
+import { HeroCarousel } from '../components/HeroCarousel';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -15,65 +16,75 @@ export default async function HomePage(props: {
 
   try {
     const allEvents = await getEvents(query);
-    events = allEvents.filter((e: any) => e.status === 'PUBLISHED');
-  } catch (e: any) {
-    error = e.message || 'No se pudieron cargar los eventos';
+    events = allEvents.filter((e) => (e as { status?: string }).status === 'PUBLISHED');
+  } catch (err: unknown) {
+    error = err instanceof Error ? err.message : 'No se pudieron cargar los eventos';
   }
 
-  // Pick the nearest future event for the hero; fall back to first event
+  type AnyEvent = typeof events[number] & {
+    date: string;
+    squareImageUrl?: string;
+    imageUrl?: string;
+    bannerImageUrl?: string;
+  };
+
+  const toCarouselShape = (e: AnyEvent) => ({
+    id: e.id,
+    title: e.title,
+    squareImageUrl: (e.squareImageUrl ?? null) as string | null,
+    imageUrl: (e.imageUrl ?? null) as string | null,
+    bannerImageUrl: (e.bannerImageUrl ?? null) as string | null,
+  });
+
+  // First 3 upcoming future events for the hero carousel
   const now = new Date();
-  const nextEvent = events
-    .filter(e => new Date((e as any).date) > now)
-    .sort((a, b) => new Date((a as any).date).getTime() - new Date((b as any).date).getTime())[0]
-    ?? (events[0] as any ?? null);
+  const heroEvents = (events as AnyEvent[])
+    .filter(e => new Date(e.date) > now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 3)
+    .map(toCarouselShape);
+
+  // Fallback: first 3 published if no future events
+  const carouselEvents = heroEvents.length > 0
+    ? heroEvents
+    : (events as AnyEvent[]).slice(0, 3).map(toCarouselShape);
 
   return (
     <>
       {/* ── Hero Section — only on main page (no search) ── */}
       {!query && (
-        <section className="hero-split" aria-label="Bienvenida">
-          {/* Left — headline + CTA */}
-          <div className="hero-split-left">
-            <span className="hero-split-eyebrow">Plataforma de Eventos</span>
+        <section className="hero-section" aria-label="Bienvenida">
+          <div className="hero-split">
+            {/* Left — headline + CTA */}
+            <div className="hero-split-left">
+              <span className="hero-split-eyebrow">Plataforma de Eventos</span>
 
-            <h1 className="hero-split-headline">
-              LA CULTURA
-              <br />
-              QUE NOS
-              <span className="accent">MUEVE</span>
-            </h1>
+              <h1 className="hero-split-headline">
+                LA CULTURA
+                <br />
+                QUE NOS
+                <span className="accent">MUEVE</span>
+              </h1>
 
-            <p className="hero-split-sub">
-              Los mejores shows de música afro, salsa y fusión latinoamericana.
-              Compra tus entradas en segundos y vive la experiencia.
-            </p>
+              <p className="hero-split-sub">
+                Los mejores shows de música afro, salsa y fusión latinoamericana.
+                Compra tus entradas en segundos y vive la experiencia.
+              </p>
 
-            <div className="hero-split-actions">
-              <a href="#eventos" className="hero-split-cta">
-                Explorar Eventos
-              </a>
-              <Link href="/register" className="hero-split-cta-ghost">
-                Crear Cuenta
-              </Link>
-            </div>
-          </div>
-
-          {/* Right — next upcoming event image 1:1 */}
-          <div className="hero-split-right">
-            {nextEvent ? (
-              <Link href={`/events/${nextEvent.id}`} className="hero-event-img-wrap" title={nextEvent.title}>
-                <img
-                  className="hero-event-img"
-                  src={nextEvent.squareImageUrl || nextEvent.imageUrl || nextEvent.bannerImageUrl || undefined}
-                  alt={nextEvent.title}
-                />
-              </Link>
-            ) : (
-              <div className="hero-no-event">
-                <div className="hero-no-event-icon">🎵</div>
-                <p>Próximamente nuevos eventos</p>
+              <div className="hero-split-actions">
+                <a href="#eventos" className="hero-split-cta">
+                  Explorar Eventos
+                </a>
+                <Link href="/register" className="hero-split-cta-ghost">
+                  Crear Cuenta
+                </Link>
               </div>
-            )}
+            </div>
+
+            {/* Right — interactive carousel with next 3 upcoming events */}
+            <div className="hero-split-right">
+              <HeroCarousel events={carouselEvents} />
+            </div>
           </div>
         </section>
       )}
@@ -102,9 +113,7 @@ export default async function HomePage(props: {
             <div className="empty-state">
               <div className="empty-icon">{query ? '🔍' : '🎪'}</div>
               <h3>
-                {query
-                  ? 'No se encontraron eventos'
-                  : 'Aún no hay eventos publicados'}
+                {query ? 'No se encontraron eventos' : 'Aún no hay eventos publicados'}
               </h3>
               <p>
                 {query

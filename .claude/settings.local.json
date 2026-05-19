@@ -8,7 +8,9 @@
       "Bash(curl -s http://localhost:3000/api)",
       "Bash(npx prisma *)",
       "Read(//tmp/**)",
-      "Bash(curl -s -X GET http://localhost:3000/api/auth/me/organizer -H \"Authorization: Bearer invalid\" -w \"\\\\nStatus: %{http_code}\")"
+      "Bash(curl -s -X GET http://localhost:3000/api/auth/me/organizer -H \"Authorization: Bearer invalid\" -w \"\\\\nStatus: %{http_code}\")",
+      "Bash(docker-compose start *)",
+      "Bash(npx next *)"
     ]
   }
 }
