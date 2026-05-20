@@ -6,6 +6,7 @@ import Link from 'next/link';
 interface CarouselEvent {
   id: string;
   title: string;
+  portraitImageUrl?: string | null;
   squareImageUrl?: string | null;
   imageUrl?: string | null;
   bannerImageUrl?: string | null;
@@ -113,7 +114,7 @@ export function HeroCarousel({ events }: { events: CarouselEvent[] }) {
         {events.map((event, i) => {
           const sc = slotClass(i);
           const isActive = sc === 'hcc-active';
-          const img = event.squareImageUrl || event.imageUrl || event.bannerImageUrl;
+          const img = event.portraitImageUrl || event.squareImageUrl || event.imageUrl || event.bannerImageUrl;
           return (
             <div
               key={event.id}

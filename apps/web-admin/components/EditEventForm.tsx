@@ -93,6 +93,8 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const [bannerImagePreview, setBannerImagePreview] = useState<string>(initialData?.bannerImageUrl || '');
   const [squareImageFile, setSquareImageFile] = useState<File | null>(null);
   const [squareImagePreview, setSquareImagePreview] = useState<string>(initialData?.squareImageUrl || '');
+  const [portraitImageFile, setPortraitImageFile] = useState<File | null>(null);
+  const [portraitImagePreview, setPortraitImagePreview] = useState<string>((initialData as any)?.portraitImageUrl || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
@@ -236,6 +238,15 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         }
       }
 
+      let portraitImageUrl = (initialData as any)?.portraitImageUrl || '';
+      if (portraitImageFile) {
+        try {
+          portraitImageUrl = await uploadImage(portraitImageFile, token);
+        } catch (uploadError: unknown) {
+          throw new Error(`Error subiendo imagen retrato: ${(uploadError as Error).message}`);
+        }
+      }
+
       let seatingMapImageUrl = initialData?.seatingMapImageUrl || '';
 
       if (seatingMapImageFile) {
@@ -273,6 +284,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         imageUrl: imageUrl || initialData?.imageUrl || '',
         bannerImageUrl,
         squareImageUrl,
+        portraitImageUrl,
         seatingMapImageUrl,
         hasSeatingChart,
         zones: zones.map((z: ZoneInput) => ({
@@ -387,6 +399,41 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                 <div className="upload-placeholder">
                   <span>🖼️ Cargar Imagen</span>
                   <small>(Max 5MB)</small>
+                </div>
+              )}
+            </label>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Imagen Retrato (Relación 3:4) — usada en tarjetas de eventos</label>
+          <div className="image-upload-container">
+            <input
+              type="file"
+              id="portraitUpload"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setPortraitImageFile(file);
+                  setPortraitImagePreview(URL.createObjectURL(file));
+                }
+              }}
+              className="file-input"
+              hidden
+            />
+            <label htmlFor="portraitUpload" className="file-label">
+              {portraitImagePreview ? (
+                <div
+                  className="image-preview"
+                  style={{ backgroundImage: `url(${portraitImagePreview})`, aspectRatio: '3/4', backgroundSize: 'cover', backgroundPosition: 'center' }}
+                >
+                  <div className="image-overlay">Cambiar Imagen</div>
+                </div>
+              ) : (
+                <div className="upload-placeholder">
+                  <span>🖼️ Cargar Imagen 3:4</span>
+                  <small>(Recomendado: 1200×1600px — Max 5MB)</small>
                 </div>
               )}
             </label>

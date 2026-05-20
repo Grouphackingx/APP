@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
-**Fecha de Última Actualización:** 19 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con carrusel interactivo 1:1 + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin)
+**Fecha de Última Actualización:** 20 de Mayo de 2026
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con carrusel interactivo 3:4 + Sección Eventos Destacados (condicional) + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin + Imagen Retrato 3:4 por evento)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -198,6 +198,16 @@ Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `
 | Destacar Evento      | ✅     | Botón ⭐ Destacar con duración en días. Botón rojo para quitar. Badge amarillo con fecha de expiración |
 | Editar Evento (Admin)| ✅     | Formulario completo idéntico al de organizadores (nombre, imágenes, zonas, estado, etc.) |
 | Eliminar Evento      | ✅     | Botón 🗑️ solo visible si el evento no tiene tickets vendidos |
+
+### Web Client (Puerto 4200) — Actualizaciones (20 Mayo 2026)
+
+| Sección              | Estado | Descripción                                                        |
+| :------------------- | :----- | :----------------------------------------------------------------- |
+| Sección Destacados   | ✅     | `FeaturedEventsSection` — aparece solo cuando hay eventos con `isFeatured: true` activo. Tarjetas con imagen 1:1, badge dorado "★ DESTACADO", hover sutil. Sin overlay oscuro ni brillo de fondo. |
+| Carrusel Hero        | ✅     | Ahora usa `portraitImageUrl` (3:4) como imagen principal. Aspect-ratio de tarjetas actualizado a `3/4`. Posición vertical ajustada a `top: 45%`. |
+| EventCard (general)  | ✅     | Usa `squareImageUrl` (1:1) como imagen principal. Placeholder `/default-portrait.svg` si no hay imagen. |
+| Página de Evento     | ✅     | Banner panorámico con `aspect-ratio: 289/111` (exacto para 2023×777px), `object-fit: contain`, `border-radius: 15px`. Sin recorte de imagen. |
+| Imagen Retrato 3:4   | ✅     | Campo `portraitImageUrl` disponible en formularios de creación/edición de eventos (web-host y web-admin). |
 
 ### Web Client (Puerto 4200) — Actualizaciones (8 Mayo 2026)
 
@@ -491,6 +501,26 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 
 ## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
 
+### Sesión del 20 de Mayo 2026 — Destacados en Web Client, Imagen Retrato 3:4, Fixes de Banner
+
+| Archivo | Tipo de Cambio | Descripción |
+| :--- | :--- | :--- |
+| `apps/api/src/app/scheduler/featured-events.scheduler.ts` | **Nuevo** | Cron job `@Cron(EVERY_HOUR)` que desactiva `isFeatured` cuando `featuredUntil < now` |
+| `apps/api/src/app/scheduler/scheduler.module.ts` | **Nuevo** | Módulo NestJS que encapsula el scheduler |
+| `apps/api/src/app/app.module.ts` | Modificado | Registra `ScheduleModule.forRoot()` + `SchedulerModule` |
+| `apps/api/src/app/events/events.service.ts` | Modificado | `portraitImageUrl` agregado a `allowedEventFields` en método `update` |
+| `libs/shared/prisma/schema.prisma` | Modificado | Campo `portraitImageUrl String?` agregado al modelo `Event` |
+| `apps/web-client/src/components/FeaturedEventsSection.tsx` | **Nuevo** | Sección de eventos destacados: tarjetas 1:1, badge dorado, condicional (solo si hay destacados), sin overlay oscuro ni brillo de fondo |
+| `apps/web-client/src/components/HeroCarousel.tsx` | Modificado | Usa `portraitImageUrl` como imagen principal (fallback: square → image → banner). Interface `CarouselEvent` actualizada. |
+| `apps/web-client/src/components/EventCard.tsx` | Modificado | Usa `squareImageUrl` como imagen principal (1:1). Fallback: `imageUrl → /default-portrait.svg` |
+| `apps/web-client/src/lib/api.ts` | Modificado | `EventItem` interface: campos `isFeatured`, `featuredUntil`, `portraitImageUrl` agregados |
+| `apps/web-client/src/app/page.tsx` | Modificado | Separa publicados en `featuredEvents` y `generalEvents`. Carrusel usa todos los publicados. Sección destacados condicional. `CarouselEvent` type con `portraitImageUrl`. |
+| `apps/web-client/src/app/global.css` | Modificado | Bloque `.featured-section` completo (sin overlay, sin brillo dorado). `.event-card-image` aspect-ratio 1:1. `.hero-carousel-card` aspect-ratio 3:4, `top: 45%`, `height: 85%`. `.event-detail-hero` aspect-ratio 289/111, `object-fit: contain`, `border-radius: 15px`, sin `height` fijo. |
+| `apps/web-client/public/default-portrait.svg` | **Nuevo** | Placeholder SVG oscuro 3:4 para eventos sin imagen |
+| `apps/web-host/src/components/CreateEventForm.tsx` | Modificado | Campo "Imagen Retrato (3:4)" con upload, preview y nota 1200×1600px |
+| `apps/web-host/src/components/EditEventForm.tsx` | Modificado | Campo "Imagen Retrato (3:4)" con upload, preview y preload del valor existente |
+| `apps/web-admin/components/EditEventForm.tsx` | Modificado | Campo "Imagen Retrato (3:4)" con upload, preview y preload del valor existente |
+
 ### Sesión del 19 de Mayo 2026 — Carrusel Hero Coverflow, Refinamiento Visual
 
 | Archivo | Tipo de Cambio | Descripción |
@@ -622,8 +652,8 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 - [ ] Integración real con Stripe (reemplazar el mock)
 - [ ] Emails transaccionales (confirmación de registro, aprobación y compra)
 - [ ] Reportes financieros para organizadores
-- [ ] Sección de "Eventos Destacados" en la página principal del web-client (carrusel/banner que muestre los eventos con `isFeatured: true`)
-- [ ] Automatización de expiración de destacados (cron job o middleware que desactive `isFeatured` cuando `featuredUntil < now`)
+- [x] ~~Sección de "Eventos Destacados" en la página principal del web-client~~ ✅ (20 May 2026)
+- [x] ~~Automatización de expiración de destacados (cron job `@nestjs/schedule` cada hora)~~ ✅ (20 May 2026)
 - [ ] Mover carpeta temporal del logo (se guarda en `uploads/organizers/{email_safe}/` en el registro, debería moverse a `uploads/organizers/{userId}/` tras crearse el usuario)
 - [ ] Reemplazar foto de perfil anterior al subir una nueva (actualmente se acumulan archivos en `uploads/users/{id}/avatar/`)
 
@@ -706,6 +736,12 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 - [x] ~~Reducción 10% del contenido izquierdo del hero (scale 0.9 transform-origin top left)~~ ✅ (19 May 2026)
 - [x] ~~Equalización de espaciado: titular→subtítulo = subtítulo→botones (eliminado margin-bottom del headline)~~ ✅ (19 May 2026)
 - [x] ~~Icono búsqueda SVG outlined (circle + line) en lugar de emoji 🔍 en SearchBar~~ ✅ (19 May 2026)
+- [x] ~~Sección Eventos Destacados en web-client: condicional (solo si hay destacados activos), tarjetas 1:1 con badge dorado, eventos destacados excluidos del catálogo general~~ ✅ (20 May 2026)
+- [x] ~~Cron job de expiración automática de destacados (`@nestjs/schedule`, cada hora, desactiva cuando `featuredUntil < now`)~~ ✅ (20 May 2026)
+- [x] ~~Campo `portraitImageUrl` (3:4): schema Prisma, backend, formularios CreateEvent/EditEvent (web-host y web-admin), usado en carrusel hero~~ ✅ (20 May 2026)
+- [x] ~~Carrusel hero usa `portraitImageUrl` (3:4) como imagen principal, aspect-ratio 3:4, posición vertical ajustada~~ ✅ (20 May 2026)
+- [x] ~~EventCard general usa `squareImageUrl` (1:1), placeholder SVG oscuro cuando no hay imagen~~ ✅ (20 May 2026)
+- [x] ~~Banner del evento: `aspect-ratio: 289/111` (exacto 2023×777px), `object-fit: contain`, `border-radius: 15px`, sin recorte~~ ✅ (20 May 2026)
 
 ---
 

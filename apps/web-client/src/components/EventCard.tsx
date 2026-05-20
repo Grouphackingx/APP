@@ -30,7 +30,7 @@ export function EventCard({
       id={`event-card-${event.id}`}
     >
       <div className="event-card-image">
-        <img src={event.squareImageUrl || event.imageUrl || '/default-square.jpg'} alt={event.title} />
+        <img src={event.squareImageUrl || event.imageUrl || '/default-portrait.svg'} alt={event.title} />
         <div className="event-card-badge">
           {event.status === 'PUBLISHED'
             ? '🔥 En Venta'

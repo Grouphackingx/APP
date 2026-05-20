@@ -100,12 +100,15 @@ export interface EventItem {
   imageUrl: string | null;
   bannerImageUrl?: string | null;
   squareImageUrl?: string | null;
+  portraitImageUrl?: string | null;
   seatingMapImageUrl?: string | null;
   hasSeatingChart?: boolean;
   mapUrl?: string | null;
   videoUrl?: string | null;
   galleryUrls?: string[];
   status: string;
+  isFeatured?: boolean;
+  featuredUntil?: string | null;
   organizerId: string;
   organizer?: EventOrganizer;
   zones: Zone[];

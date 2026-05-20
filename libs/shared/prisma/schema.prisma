@@ -69,6 +69,7 @@ model Event {
   imageUrl    String?
   bannerImageUrl String?
   squareImageUrl String?
+  portraitImageUrl String?
   seatingMapImageUrl String?
   hasSeatingChart Boolean @default(true)
   mapUrl      String?

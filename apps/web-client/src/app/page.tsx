@@ -1,9 +1,19 @@
-import { getEvents } from '../lib/api';
+import { getEvents, type EventItem } from '../lib/api';
 import { EventCard } from '../components/EventCard';
 import { HeroCarousel } from '../components/HeroCarousel';
+import { FeaturedEventsSection } from '../components/FeaturedEventsSection';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
+
+type CarouselEvent = {
+  id: string;
+  title: string;
+  portraitImageUrl: string | null;
+  squareImageUrl: string | null;
+  imageUrl: string | null;
+  bannerImageUrl: string | null;
+};
 
 export default async function HomePage(props: {
   searchParams: Promise<{ q?: string }>;
@@ -11,43 +21,47 @@ export default async function HomePage(props: {
   const searchParams = await props.searchParams;
   const query = searchParams.q;
 
-  let events: Awaited<ReturnType<typeof getEvents>> = [];
+  let featuredEvents: EventItem[] = [];
+  let generalEvents: EventItem[] = [];
   let error = '';
 
   try {
     const allEvents = await getEvents(query);
-    events = allEvents.filter((e) => (e as { status?: string }).status === 'PUBLISHED');
+    const published = allEvents.filter((e) => e.status === 'PUBLISHED');
+
+    const now = new Date();
+
+    featuredEvents = published.filter(
+      (e) =>
+        e.isFeatured &&
+        (!e.featuredUntil || new Date(e.featuredUntil) > now)
+    );
+
+    const featuredIds = new Set(featuredEvents.map((e) => e.id));
+    generalEvents = published.filter((e) => !featuredIds.has(e.id));
   } catch (err: unknown) {
     error = err instanceof Error ? err.message : 'No se pudieron cargar los eventos';
   }
 
-  type AnyEvent = typeof events[number] & {
-    date: string;
-    squareImageUrl?: string;
-    imageUrl?: string;
-    bannerImageUrl?: string;
-  };
-
-  const toCarouselShape = (e: AnyEvent) => ({
+  const toCarouselShape = (e: EventItem): CarouselEvent => ({
     id: e.id,
     title: e.title,
-    squareImageUrl: (e.squareImageUrl ?? null) as string | null,
-    imageUrl: (e.imageUrl ?? null) as string | null,
-    bannerImageUrl: (e.bannerImageUrl ?? null) as string | null,
+    portraitImageUrl: e.portraitImageUrl ?? null,
+    squareImageUrl: e.squareImageUrl ?? null,
+    imageUrl: e.imageUrl ?? null,
+    bannerImageUrl: e.bannerImageUrl ?? null,
   });
 
-  // First 3 upcoming future events for the hero carousel
+  const allPublished = [...featuredEvents, ...generalEvents];
   const now = new Date();
-  const heroEvents = (events as AnyEvent[])
-    .filter(e => new Date(e.date) > now)
+  const heroEvents = allPublished
+    .filter((e) => new Date(e.date) > now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3)
     .map(toCarouselShape);
 
-  // Fallback: first 3 published if no future events
-  const carouselEvents = heroEvents.length > 0
-    ? heroEvents
-    : (events as AnyEvent[]).slice(0, 3).map(toCarouselShape);
+  const carouselEvents: CarouselEvent[] =
+    heroEvents.length > 0 ? heroEvents : allPublished.slice(0, 3).map(toCarouselShape);
 
   return (
     <>
@@ -55,7 +69,6 @@ export default async function HomePage(props: {
       {!query && (
         <section className="hero-section" aria-label="Bienvenida">
           <div className="hero-split">
-            {/* Left — headline + CTA */}
             <div className="hero-split-left">
               <span className="hero-split-eyebrow">Plataforma de Eventos</span>
 
@@ -81,13 +94,15 @@ export default async function HomePage(props: {
               </div>
             </div>
 
-            {/* Right — interactive carousel with next 3 upcoming events */}
             <div className="hero-split-right">
               <HeroCarousel events={carouselEvents} />
             </div>
           </div>
         </section>
       )}
+
+      {/* ── Featured Events — only on main page (no search), only if there are featured events ── */}
+      {!query && <FeaturedEventsSection events={featuredEvents} />}
 
       {/* ── Events Section ── */}
       <section className="section" id="eventos">
@@ -109,7 +124,7 @@ export default async function HomePage(props: {
               <h3>Error al cargar eventos</h3>
               <p>{error}</p>
             </div>
-          ) : events.length === 0 ? (
+          ) : generalEvents.length === 0 && featuredEvents.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">{query ? '🔍' : '🎪'}</div>
               <h3>
@@ -126,9 +141,9 @@ export default async function HomePage(props: {
                 </Link>
               )}
             </div>
-          ) : (
+          ) : generalEvents.length === 0 ? null : (
             <div className="events-grid">
-              {events.map((event, i) => (
+              {generalEvents.map((event, i) => (
                 <EventCard key={event.id} event={event} index={i} />
               ))}
             </div>

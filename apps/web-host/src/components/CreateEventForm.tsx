@@ -63,6 +63,8 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   const [bannerImagePreview, setBannerImagePreview] = useState<string>('');
   const [squareImageFile, setSquareImageFile] = useState<File | null>(null);
   const [squareImagePreview, setSquareImagePreview] = useState<string>('');
+  const [portraitImageFile, setPortraitImageFile] = useState<File | null>(null);
+  const [portraitImagePreview, setPortraitImagePreview] = useState<string>('');
   const [seatingMapImageFile, setSeatingMapImageFile] = useState<File | null>(
     null,
   );
@@ -158,6 +160,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
       let imageUrl = '';
       let bannerImageUrl = '';
       let squareImageUrl = '';
+      let portraitImageUrl = '';
       let seatingMapImageUrl = '';
 
 
@@ -175,6 +178,14 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
           squareImageUrl = await uploadImage(squareImageFile, token);
         } catch (uploadError: any) {
           throw new Error(`Error subiendo imagen cuadrada: ${uploadError.message}`);
+        }
+      }
+
+      if (portraitImageFile) {
+        try {
+          portraitImageUrl = await uploadImage(portraitImageFile, token);
+        } catch (uploadError: any) {
+          throw new Error(`Error subiendo imagen retrato: ${uploadError.message}`);
         }
       }
 
@@ -213,6 +224,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         imageUrl,
         bannerImageUrl,
         squareImageUrl,
+        portraitImageUrl,
         seatingMapImageUrl,
         hasSeatingChart,
         zones: zones.map((z) => ({
@@ -326,6 +338,41 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                 <div className="upload-placeholder">
                   <span>🖼️ Cargar Imagen</span>
                   <small>(Max 5MB)</small>
+                </div>
+              )}
+            </label>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Imagen Retrato (Relación 3:4) — usada en tarjetas de eventos</label>
+          <div className="image-upload-container">
+            <input
+              type="file"
+              id="portraitUpload"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setPortraitImageFile(file);
+                  setPortraitImagePreview(URL.createObjectURL(file));
+                }
+              }}
+              className="file-input"
+              hidden
+            />
+            <label htmlFor="portraitUpload" className="file-label">
+              {portraitImagePreview ? (
+                <div
+                  className="image-preview"
+                  style={{ backgroundImage: `url(${portraitImagePreview})`, aspectRatio: '3/4', backgroundSize: 'cover', backgroundPosition: 'center' }}
+                >
+                  <div className="image-overlay">Cambiar Imagen</div>
+                </div>
+              ) : (
+                <div className="upload-placeholder">
+                  <span>🖼️ Cargar Imagen 3:4</span>
+                  <small>(Recomendado: 1200×1600px — Max 5MB)</small>
                 </div>
               )}
             </label>

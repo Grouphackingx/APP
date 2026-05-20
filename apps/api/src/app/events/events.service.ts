@@ -129,7 +129,7 @@ export class EventsService {
         // Clean basicData: only include fields that exist on the Event model
         const allowedEventFields = [
             'title', 'description', 'date', 'location', 'province', 'city',
-            'imageUrl', 'bannerImageUrl', 'squareImageUrl', 'seatingMapImageUrl', 'hasSeatingChart', 'mapUrl',
+            'imageUrl', 'bannerImageUrl', 'squareImageUrl', 'portraitImageUrl', 'seatingMapImageUrl', 'hasSeatingChart', 'mapUrl',
             'videoUrl', 'galleryUrls', 'status', 'category'
         ];
         const basicData: Record<string, unknown> = {};
