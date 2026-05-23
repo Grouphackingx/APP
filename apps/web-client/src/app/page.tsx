@@ -107,16 +107,12 @@ export default async function HomePage(props: {
       {/* ── Events Section ── */}
       <section className="section" id="eventos">
         <div className="section-inner">
-          <div className="section-header">
-            <h2>
-              {query ? `🔍 Resultados para "${query}"` : '🎵 Próximos Eventos'}
-            </h2>
-            <p>
-              {query
-                ? 'Explora los eventos que coinciden con tu búsqueda.'
-                : 'No te pierdas las mejores experiencias. Asegura tu lugar ahora.'}
-            </p>
-          </div>
+          {query && (
+            <div className="section-header">
+              <h2>{`🔍 Resultados para "${query}"`}</h2>
+              <p>Explora los eventos que coinciden con tu búsqueda.</p>
+            </div>
+          )}
 
           {error ? (
             <div className="empty-state">

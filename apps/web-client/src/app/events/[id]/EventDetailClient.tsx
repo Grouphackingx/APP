@@ -198,15 +198,27 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                   <div className="info-item-icon">🎭</div>
                   <div className="info-item-content">
                     <span className="info-item-label">Categoría</span>
-                    <span className="info-item-value">General</span>
+                    <span className="info-item-value">{event.category || 'General'}</span>
                   </div>
                 </div>
                 <div className="info-item">
-                  <div className="info-item-icon">🎤</div>
+                  <div className="info-item-icon">
+                    {event.organizer?.organizerProfile?.organizationLogo ? (
+                      <img
+                        src={event.organizer.organizerProfile.organizationLogo}
+                        alt={event.organizer.organizerProfile.organizationName || event.organizer.name}
+                        className="organizer-avatar"
+                      />
+                    ) : (
+                      <div className="organizer-avatar organizer-avatar--fallback">
+                        {(event.organizer?.organizerProfile?.organizationName || event.organizer?.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
                   <div className="info-item-content">
                     <span className="info-item-label">Organizador</span>
                     <span className="info-item-value">
-                      {event.organizer?.name || 'Desconocido'}
+                      {event.organizer?.organizerProfile?.organizationName || event.organizer?.name || 'Desconocido'}
                     </span>
                   </div>
                 </div>
@@ -534,7 +546,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                               </div>
                             )}
                           </div>
-                          <span>${Number(zone.price).toFixed(2)}</span>
+                          <span>{Number(zone.price) === 0 ? 'GRATIS' : `$${Number(zone.price).toFixed(2)}`}</span>
                         </div>
 
                         {event.hasSeatingChart !== false &&
@@ -701,17 +713,19 @@ export function EventDetailClient({ event }: { event: EventItem }) {
 
                 {/* Purchase Action */}
                 <div className="ticket-purchase-action">
-                  <div className="total-row">
-                    <span>Total</span>
-                    <span
-                      style={{
-                        fontSize: '1.25rem',
-                        color: 'var(--color-primary)',
-                      }}
-                    >
-                      ${totalPrice.toFixed(2)}
-                    </span>
-                  </div>
+                  {user && (
+                    <div className="total-row">
+                      <span>Total</span>
+                      <span
+                        style={{
+                          fontSize: '1.25rem',
+                          color: 'var(--color-primary)',
+                        }}
+                      >
+                        ${totalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   {user && (
                     <button
                       className="btn btn-primary btn-full"

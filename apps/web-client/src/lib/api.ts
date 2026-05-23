@@ -87,6 +87,10 @@ export interface Seat {
 export interface EventOrganizer {
   name: string;
   email: string;
+  organizerProfile?: {
+    organizationLogo: string | null;
+    organizationName: string | null;
+  } | null;
 }
 
 export interface EventItem {
@@ -106,6 +110,7 @@ export interface EventItem {
   mapUrl?: string | null;
   videoUrl?: string | null;
   galleryUrls?: string[];
+  category?: string | null;
   status: string;
   isFeatured?: boolean;
   featuredUntil?: string | null;

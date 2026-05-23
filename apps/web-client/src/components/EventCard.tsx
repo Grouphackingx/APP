@@ -16,6 +16,14 @@ function formatTime(dateStr: string): string {
   return d.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
 }
 
+function isEventSoldOut(event: EventItem): boolean {
+  if (!event.zones || event.zones.length === 0) return false;
+  return event.zones.every(zone => {
+    if (!zone.seats || zone.seats.length === 0) return false;
+    return zone.seats.every(seat => seat.isSold);
+  });
+}
+
 export function EventCard({
   event,
   index,
@@ -23,6 +31,8 @@ export function EventCard({
   event: EventItem;
   index: number;
 }) {
+  const soldOut = isEventSoldOut(event);
+
   return (
     <Link
       href={`/events/${event.id}`}
@@ -31,13 +41,11 @@ export function EventCard({
     >
       <div className="event-card-image">
         <img src={event.squareImageUrl || event.imageUrl || '/default-portrait.svg'} alt={event.title} />
-        <div className="event-card-badge">
-          {event.status === 'PUBLISHED'
-            ? '🔥 En Venta'
-            : event.status === 'DRAFT'
-              ? '📝 Borrador'
-              : event.status}
-        </div>
+        {soldOut && (
+          <div className="event-card-badge event-card-badge--sold-out">
+            🚫 Agotado
+          </div>
+        )}
       </div>
       <div className="event-card-body">
         <h3>{event.title}</h3>

@@ -42,22 +42,11 @@ Abre **3 terminales** en VS Code (`Ctrl+Shift+ñ`) y ejecuta:
 
 **Terminal 1: Backend (API)**
 
-> ⚠️ **IMPORTANTE**: El NX Daemon NO funciona correctamente en este proyecto. La API NO se recompila automáticamente cuando haces cambios. Debes usar el siguiente flujo:
-
 ```bash
-# Opción A: Build manual + Run directo (RECOMENDADO)
-npx nx build api
-node dist/apps/api/main.js
-
-# Opción B: Si quieres try nx serve (puede no recompilar cambios automáticamente)
-npx nx serve api
+npx nx serve api --no-dte
 ```
 
-> **Si cambias código del backend**, debes Ctrl+C, re-build y re-run:
-> ```bash
-> npx nx build api
-> node dist/apps/api/main.js
-> ```
+> La API se recompila y reinicia automáticamente al guardar cambios en el backend.
 
 _(Espera a que diga "Application is running on: http://localhost:3000/api")_
 
@@ -617,7 +606,7 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 
 ## 6. 📝 Notas Técnicas Para el Desarrollador
 
-- **NX Daemon**: NO funciona en este proyecto. Siempre hacer `npx nx build api` y luego `node dist/apps/api/main.js` para ver cambios del backend.
+- **NX Daemon**: Activo (`useDaemonProcess: true`). Usar `npx nx serve api --no-dte` para desarrollo — recompila y reinicia automáticamente al guardar cambios.
 - **Puertos**: PostgreSQL en **5435**, Redis en **6380** (no estándar para evitar conflictos).
 - **Prisma**: Versión **5.22.0** (bloqueada — v7+ tiene incompatibilidades de CLI). Al cambiar el schema correr `npx prisma db push --schema=libs/shared/prisma/schema.prisma` con la API **detenida** para poder regenerar el cliente.
 - **JWT**: Tokens duran **24 horas** (`auth.module.ts` → `expiresIn: '24h'`).

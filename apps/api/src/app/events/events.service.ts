@@ -101,7 +101,7 @@ export class EventsService {
 
         return this.prisma.event.findMany({
             where,
-            include: { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true } } },
+            include: { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } } },
             orderBy: { date: 'asc' },
         });
     }
@@ -119,7 +119,7 @@ export class EventsService {
         await this.updatePastEventsStatus();
         return this.prisma.event.findUnique({
             where: { id },
-            include: { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true } } },
+            include: { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } } },
         });
     }
 

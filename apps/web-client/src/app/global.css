@@ -896,10 +896,12 @@ textarea {
   font-size: 0.75rem;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  background: var(--color-primary); /* Solid Green Badge */
-  backdrop-filter: none;
   color: white;
   z-index: 2;
+}
+
+.event-card-badge--sold-out {
+  background: #ef4444;
 }
 
 /* ... Auth Forms ... */
@@ -1234,6 +1236,29 @@ textarea {
   font-size: 1.5rem;
   color: var(--text-primary);
   margin-top: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  flex-shrink: 0;
+}
+
+.organizer-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.organizer-avatar--fallback {
+  background: var(--color-primary);
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .info-item-content {
@@ -1273,9 +1298,8 @@ textarea {
 }
 
 .ticket-purchase-action {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
 }
 
 .total-row {
