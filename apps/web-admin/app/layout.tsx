@@ -2,7 +2,7 @@ import './global.css';
 import { AuthProvider } from '../lib/AuthContext';
 
 export const metadata = {
-  title: 'Global Admin Dashboard | OpenTicket',
+  title: 'Global Admin Dashboard | AfroEventos',
   description: 'Administración de Organizadores y Eventos',
 };
 

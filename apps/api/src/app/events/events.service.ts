@@ -3,9 +3,32 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto, CreateZoneDto } from '@open-ticket/shared';
 import { Prisma } from '@prisma/client';
 
+function toSlug(text: string): string {
+    return text
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+}
+
 @Injectable()
 export class EventsService {
     constructor(private prisma: PrismaService) { }
+
+    private async generateUniqueSlug(title: string, excludeId?: string): Promise<string> {
+        const base = toSlug(title);
+        let slug = base;
+        let i = 2;
+        while (true) {
+            const existing = await this.prisma.event.findUnique({ where: { slug } });
+            if (!existing || existing.id === excludeId) break;
+            slug = `${base}-${i++}`;
+        }
+        return slug;
+    }
 
     async create(organizerId: string, createEventDto: CreateEventDto) {
         const { zones, ...eventData } = createEventDto;
@@ -52,11 +75,11 @@ export class EventsService {
             }
         }
 
-        // Simplistic seat generation for demonstration
-        // In production, this would be more complex based on layout
+        const slug = await this.generateUniqueSlug(eventData.title);
         return this.prisma.event.create({
             data: {
                 ...(eventData as any),
+                slug,
                 organizer: { connect: { id: organizerId } },
                 zones: {
                     create: zones.map(zone => ({
@@ -115,12 +138,30 @@ export class EventsService {
         });
     }
 
-    async findOne(id: string) {
+    async findOne(idOrSlug: string) {
         await this.updatePastEventsStatus();
-        return this.prisma.event.findUnique({
-            where: { id },
-            include: { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } } },
-        });
+        const include = { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } } };
+        // Try slug first, then fall back to UUID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+        const event = isUuid
+            ? await this.prisma.event.findUnique({ where: { id: idOrSlug }, include })
+            : await this.prisma.event.findUnique({ where: { slug: idOrSlug }, include });
+        // Backfill slug if missing
+        if (event && !event.slug) {
+            const slug = await this.generateUniqueSlug(event.title, event.id);
+            await this.prisma.event.update({ where: { id: event.id }, data: { slug } });
+            event.slug = slug;
+        }
+        return event;
+    }
+
+    async backfillSlugs() {
+        const events = await this.prisma.event.findMany({ where: { slug: null } });
+        for (const ev of events) {
+            const slug = await this.generateUniqueSlug(ev.title, ev.id);
+            await this.prisma.event.update({ where: { id: ev.id }, data: { slug } });
+        }
+        return { updated: events.length };
     }
 
     async update(id: string, updateData: UpdateEventDto) {

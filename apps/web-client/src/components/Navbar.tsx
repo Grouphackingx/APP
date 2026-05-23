@@ -12,7 +12,7 @@ export function Navbar() {
       <div className="navbar-inner">
         <Link href="/" className="navbar-logo" id="navbar-logo">
           <span className="logo-icon">🎫</span>
-          OpenTicket
+          AfroEventos
         </Link>
 
         <div className="navbar-links">

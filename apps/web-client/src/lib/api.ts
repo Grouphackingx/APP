@@ -95,6 +95,7 @@ export interface EventOrganizer {
 
 export interface EventItem {
   id: string;
+  slug?: string | null;
   title: string;
   description: string | null;
   date: string;

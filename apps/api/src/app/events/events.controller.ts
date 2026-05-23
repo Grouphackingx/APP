@@ -24,6 +24,11 @@ export class EventsController {
         return this.eventsService.findMyEvents(req.user.userId);
     }
 
+    @Get('backfill-slugs')
+    backfillSlugs() {
+        return this.eventsService.backfillSlugs();
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.eventsService.findOne(id);

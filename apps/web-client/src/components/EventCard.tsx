@@ -35,7 +35,7 @@ export function EventCard({
 
   return (
     <Link
-      href={`/events/${event.id}`}
+      href={`/events/${event.slug || event.id}`}
       className={`event-card animate-fade-in-up stagger-${Math.min(index + 1, 6)}`}
       id={`event-card-${event.id}`}
     >

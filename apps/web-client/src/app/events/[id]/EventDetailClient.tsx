@@ -118,6 +118,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
   };
 
   const totalPrice = selectedSeats.reduce((sum, s) => sum + s.price, 0);
+  const allZonesFree = event.zones.length > 0 && event.zones.every(z => Number(z.price) === 0);
 
   const handlePurchase = async () => {
     if (!token || selectedSeats.length === 0) return;
@@ -454,7 +455,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                         Debes iniciar sesión para seleccionar entradas
                       </p>
                       <Link
-                        href={`/login?redirect=${encodeURIComponent(`/events/${event.id}`)}`}
+                        href={`/login?redirect=${encodeURIComponent(`/events/${event.slug || event.id}`)}`}
                         style={{
                           fontSize: '0.8rem', fontWeight: 600,
                           color: '#F59E0B', textDecoration: 'underline',
@@ -549,7 +550,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                           <span>{Number(zone.price) === 0 ? 'GRATIS' : `$${Number(zone.price).toFixed(2)}`}</span>
                         </div>
 
-                        {event.hasSeatingChart !== false &&
+                        {Number(zone.price) !== 0 && (event.hasSeatingChart !== false &&
                         zone.capacity <= 50 ? (
                           /* Assigned Seating Logic */
                           zone.seats && zone.seats.length > 0 ? (
@@ -685,7 +686,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                               );
                             })()}
                           </div>
-                        )}
+                        ))}
                       </div>
                     );
                   })}
@@ -703,7 +704,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                       Inicia sesión para comprar/seleccionar asientos.
                     </p>
                     <Link
-                      href={`/login?redirect=${encodeURIComponent(`/events/${event.id}`)}`}
+                      href={`/login?redirect=${encodeURIComponent(`/events/${event.slug || event.id}`)}`}
                       className="btn btn-primary btn-sm btn-full"
                     >
                       Iniciar Sesión
@@ -713,7 +714,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
 
                 {/* Purchase Action */}
                 <div className="ticket-purchase-action">
-                  {user && (
+                  {user && !allZonesFree && (
                     <div className="total-row">
                       <span>Total</span>
                       <span
@@ -726,7 +727,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                       </span>
                     </div>
                   )}
-                  {user && (
+                  {user && !allZonesFree && (
                     <button
                       className="btn btn-primary btn-full"
                       onClick={handlePurchase}
@@ -735,7 +736,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                       {purchasing ? 'Procesando...' : 'Comprar >'}
                     </button>
                   )}
-                  {user && selectedSeats.length === 0 && (
+                  {user && !allZonesFree && selectedSeats.length === 0 && (
                     <p
                       style={{
                         textAlign: 'center',

@@ -1,7 +1,7 @@
 # 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
 
 **Fecha de Última Actualización:** 20 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con carrusel interactivo 3:4 + Sección Eventos Destacados (condicional) + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin + Imagen Retrato 3:4 por evento)
+**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con carrusel interactivo 3:4 + Sección Eventos Destacados (condicional) + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin + Imagen Retrato 3:4 por evento + **URL Slugs amigables** + **Rebrand AfroEventos** + **NX Daemon hot-reload** + **UX/UI mejoras Web Client** — 23 May 2026)
 
 Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
 
@@ -738,5 +738,66 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 
 - **Lint warnings `any`**: Múltiples archivos usan `any` type (especialmente `events.service.ts` y `EditEventForm.tsx`). Funcional pero debería tiparse mejor.
 - **Console.log en create**: `events.service.ts` línea 10 tiene un `console.log` de debug que debería removerse.
-- **NX Daemon**: No funciona, requiere rebuild manual del backend. Investigar fix o migrar a otro método de serve.
+- **NX Daemon**: RESUELTO (23 May 2026) — `useDaemonProcess: true` + `watch: true` en serve target.
 - **Galería de imágenes en edición**: Las imágenes de galería existentes se acumulan en vez de reemplazarse (al editar, se suman las nuevas a las anteriores).
+
+---
+
+## 10. 📋 Sesión del 22-23 de Mayo 2026 — UX/UI Web Client + URL Slugs + Rebrand AfroEventos
+
+### Cambios en Backend (API)
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `nx.json` | `"useDaemonProcess": true` — daemon reactivado |
+| `apps/api/project.json` | `watch: true` en target `serve` (dev y producción) — hot-reload automático |
+| `apps/api/src/app/events/events.service.ts` | `findAll` y `findOne` ahora incluyen `organizer.organizerProfile.organizationLogo/Name`. Función `generateUniqueSlug()` y `backfillSlugs()`. `create` genera slug automático. `findOne` acepta slug o UUID. |
+| `apps/api/src/app/events/events.controller.ts` | Nuevo endpoint `GET /events/backfill-slugs` |
+| `libs/shared/prisma/schema.prisma` | Campo `slug String? @unique` agregado al modelo `Event` |
+
+**Comando ejecutado:** `GET /api/events/backfill-slugs` — 17 eventos existentes recibieron slug.
+
+### Cambios en Web Client (Puerto 4200)
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `src/components/EventCard.tsx` | Badge "🔥 En Venta" eliminado. Solo muestra "🚫 Agotado" (rojo) cuando todos los seats tienen `isSold: true`. Link usa `event.slug \|\| event.id`. |
+| `src/components/FeaturedEventsSection.tsx` | Link usa `event.slug \|\| event.id` |
+| `src/components/HeroCarousel.tsx` | Interface `CarouselEvent` agrega campo `slug?`. Link usa `event.slug \|\| event.id` |
+| `src/components/Navbar.tsx` | "OpenTicket" → "AfroEventos" |
+| `src/components/Footer.tsx` | "OpenTicket" → "AfroEventos" (marca + copyright) |
+| `src/lib/api.ts` | `EventItem`: nuevos campos `slug?`, `category?`. `EventOrganizer`: nuevos campos `organizerProfile.organizationLogo/Name`. |
+| `src/app/layout.tsx` | `<title>` → "AfroEventos — Descubre Eventos Increíbles" |
+| `src/app/page.tsx` | Header "🎵 Próximos Eventos / No te pierdas..." eliminado. Añadido header "🗓 Próximos Eventos" con `.featured-header` solo en vista sin búsqueda. Espaciado reducido entre secciones. Hero text: "MÚSICA, BAILE / Y CULTURA QUE / TE PRENDE". Subtítulo actualizado. |
+| `src/app/global.css` | `.event-card-badge--sold-out` (rojo). `.organizer-avatar` circular 40px. `.upcoming-icon` con glow verde. `.hero-split-headline` font-size reducido a `clamp(2.97rem, 5.3vw, 5.3rem)`, `line-height: 1.05`, `.accent` cambiado a `display: inline`. `.ticket-purchase-action` sin `border-top`. Espaciado sección ajustado. `.featured-section padding-bottom: 0`. |
+| `src/app/events/[id]/EventDetailClient.tsx` | Avatar circular del organizador (logo o inicial fallback). Categoría real en lugar de "General". Total y botón Comprar ocultos si no hay sesión. Línea continua quitada de purchase action. "GRATIS" para zonas con precio 0. Selectores y contadores ocultos en zonas GRATIS. Total + Comprar + texto ayuda ocultos cuando todas las zonas son GRATIS (`allZonesFree`). Links del toast de login usan slug. |
+
+### Cambios en Web Host (Puerto 4201)
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `src/components/Sidebar.tsx` | "OpenTicket" → "AfroEventos" |
+| `src/app/login/page.tsx` | "OpenTicket Host" → "AfroEventos Host" |
+| `src/app/dashboard/page.tsx` | Mensaje cuenta en revisión → "AfroEventos" |
+
+### Cambios en Web Admin (Puerto 4202)
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `components/Sidebar.tsx` | "OpenTicket" → "AfroEventos" |
+| `app/layout.tsx` | `<title>` → "AfroEventos" |
+| `app/login/page.tsx` | Subtítulo → "AfroEventos" |
+| `app/dashboard/page.tsx` | Mensaje bienvenida → "AfroEventos" |
+
+### Cambios en Mobile App
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `src/app/screens/Login.tsx` | "OpenTicket Validator" → "AfroEventos Validator" |
+
+### Notas importantes de esta sesión
+
+- **Comando para iniciar el backend ahora:** `npx nx serve api --no-dte` (hot-reload automático, no más rebuild manual)
+- **URLs de eventos ahora son amigables:** `/events/fiestas-de-san-luis-de-salinas` en lugar de UUID. Backend acepta slug o UUID (compatibilidad hacia atrás).
+- **Rebrand completo:** El proyecto se llama **AfroEventos**. Los imports internos `@open-ticket/shared` NO se cambiaron (son identificadores del monorepo).
+- **Zonas GRATIS:** Precio $0.00 muestra "GRATIS", oculta selectores/contadores y oculta Total+Comprar si todas las zonas son gratuitas.

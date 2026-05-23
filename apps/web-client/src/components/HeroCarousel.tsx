@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 interface CarouselEvent {
   id: string;
+  slug?: string | null;
   title: string;
   portraitImageUrl?: string | null;
   squareImageUrl?: string | null;
@@ -123,7 +124,7 @@ export function HeroCarousel({ events }: { events: CarouselEvent[] }) {
               aria-hidden={!isActive}
             >
               <Link
-                href={`/events/${event.id}`}
+                href={`/events/${event.slug || event.id}`}
                 onClick={e => !isActive && e.preventDefault()}
                 tabIndex={isActive ? 0 : -1}
                 className="hcc-link"

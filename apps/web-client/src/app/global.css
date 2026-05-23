@@ -367,9 +367,9 @@ textarea {
 
 .hero-split-headline {
   font-family: 'Anton', 'Impact', sans-serif;
-  font-size: clamp(3.8rem, 7.5vw, 7.5rem);
+  font-size: clamp(2.97rem, 5.3vw, 5.3rem);
   font-weight: 400;
-  line-height: 0.9;
+  line-height: 1.05;
   letter-spacing: 0.01em;
   text-transform: uppercase;
   color: #fff;
@@ -378,7 +378,7 @@ textarea {
 
 .hero-split-headline .accent {
   color: var(--color-primary);
-  display: block;
+  display: inline;
 }
 
 .hero-split-sub {
@@ -663,7 +663,7 @@ textarea {
   }
 
   .hero-split-headline {
-    font-size: clamp(3.5rem, 14vw, 5.5rem);
+    font-size: clamp(2.4rem, 10vw, 3.8rem);
   }
 }
 
@@ -673,7 +673,7 @@ textarea {
   }
 
   .hero-split-headline {
-    font-size: clamp(3rem, 16vw, 4.5rem);
+    font-size: clamp(2rem, 12vw, 3rem);
   }
 
   .hero-split-actions {
@@ -766,7 +766,7 @@ textarea {
 
 /* ===== Section ===== */
 .section {
-  padding: 5rem 2rem;
+  padding: 2.5rem 2rem 5rem;
 }
 
 .section-inner {
@@ -1610,7 +1610,7 @@ textarea {
 
 /* ===== Featured Events Section ===== */
 .featured-section {
-  padding: 4rem 0 2.5rem;
+  padding: 4rem 0 0;
   position: relative;
 }
 
@@ -1638,6 +1638,12 @@ textarea {
   font-size: 1.4rem;
   line-height: 1;
   filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
+}
+
+.upcoming-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(106, 196, 77, 0.5));
 }
 
 .featured-sub {
@@ -1784,7 +1790,7 @@ textarea {
 }
 
 @media (max-width: 640px) {
-  .featured-section { padding: 2.5rem 0 1.5rem; }
+  .featured-section { padding: 2.5rem 0 0; }
   .featured-grid { grid-template-columns: 1fr; }
   .featured-label { font-size: 1.3rem; }
 }

@@ -27,7 +27,7 @@ export function Sidebar({ user, activeView, onNavigate, onLogout }: SidebarProps
     <aside className="sidebar">
       <div className="sidebar-logo">
         <span className="logo-icon">🎫</span>
-        OpenTicket
+        AfroEventos
         <span className="logo-badge">HOST</span>
       </div>
 

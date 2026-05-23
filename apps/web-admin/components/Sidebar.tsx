@@ -17,7 +17,7 @@ export function Sidebar({
     <aside className="sidebar">
       <div className="sidebar-logo">
         <span className="logo-icon" style={{color: '#8b5cf6'}}>⚡</span>
-        OpenTicket
+        AfroEventos
         <span className="logo-badge" style={{color: '#8b5cf6', borderColor: '#8b5cf6'}}>ADMIN</span>
       </div>
 

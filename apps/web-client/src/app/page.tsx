@@ -73,15 +73,17 @@ export default async function HomePage(props: {
               <span className="hero-split-eyebrow">Plataforma de Eventos</span>
 
               <h1 className="hero-split-headline">
-                LA CULTURA
+                MÚSICA, BAILE
                 <br />
-                QUE NOS
-                <span className="accent">MUEVE</span>
+                Y CULTURA QUE
+                <br />
+                TE <span className="accent">PRENDE</span>
               </h1>
 
+
               <p className="hero-split-sub">
-                Los mejores shows de música afro, salsa y fusión latinoamericana.
-                Compra tus entradas en segundos y vive la experiencia.
+                Los mejores shows de música afro, salsa y bomba en un solo lugar.
+                Accede a los mejores eventos, festivales y fiestas desde una sola plataforma.
               </p>
 
               <div className="hero-split-actions">
@@ -107,10 +109,18 @@ export default async function HomePage(props: {
       {/* ── Events Section ── */}
       <section className="section" id="eventos">
         <div className="section-inner">
-          {query && (
+          {query ? (
             <div className="section-header">
               <h2>{`🔍 Resultados para "${query}"`}</h2>
               <p>Explora los eventos que coinciden con tu búsqueda.</p>
+            </div>
+          ) : (
+            <div className="featured-header">
+              <div className="featured-label">
+                <span className="upcoming-icon">🗓</span>
+                Próximos Eventos
+              </div>
+              <p className="featured-sub">Descubre lo que viene y asegura tu lugar</p>
             </div>
           )}
 

@@ -343,7 +343,7 @@ export default function AdminDashboard() {
             <div className="page-header" style={{ marginBottom: '1.5rem' }}>
               <div>
                 <h1>Panel de Resumen</h1>
-                <p>Bienvenido al Sistema Central de OpenTicket. Aquí fluye el estado de toda la red.</p>
+                <p>Bienvenido al Sistema Central de AfroEventos. Aquí fluye el estado de toda la red.</p>
               </div>
             </div>
 

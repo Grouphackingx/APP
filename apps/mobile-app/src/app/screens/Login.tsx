@@ -35,7 +35,7 @@ export default function LoginScreen({ onLogin }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🎫 OpenTicket Validator</Text>
+      <Text style={styles.title}>🎫 AfroEventos Validator</Text>
       <Text style={styles.subtitle}>Staff Access Only</Text>
 
       <View style={styles.card}>

@@ -41,7 +41,7 @@ export default function LoginPage() {
         >
           🎫
         </div>
-        <h1>OpenTicket Host</h1>
+        <h1>AfroEventos Host</h1>
         <p className="auth-subtitle">Panel de Organizador de Eventos</p>
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}

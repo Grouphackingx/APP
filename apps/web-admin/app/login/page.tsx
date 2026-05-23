@@ -42,7 +42,7 @@ export default function LoginPage() {
           🎫
         </div>
         <h1 className="text-3xl font-black text-slate-800 mb-2">Global Admin</h1>
-        <p className="auth-subtitle mb-6 text-slate-500">Panel de Control General de la Plataforma OpenTicket</p>
+        <p className="auth-subtitle mb-6 text-slate-500">Panel de Control General de la Plataforma AfroEventos</p>
 
         {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
 
