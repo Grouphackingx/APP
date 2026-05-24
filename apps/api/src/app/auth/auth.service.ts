@@ -1,14 +1,17 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto, UpdateBasicInfoDto, UpdateOrganizerProfileInfoDto } from '@open-ticket/shared';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
+        private mail: MailService,
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
@@ -27,6 +30,9 @@ export class AuthService {
         const user = await this.validateUser(loginDto.email, loginDto.password);
 
         if (user) {
+            if (!user.emailVerified) {
+                throw new UnauthorizedException('EMAIL_NOT_VERIFIED');
+            }
             if (user.role === 'HOST' && user.organizerProfile?.status === 'PENDING') {
                 throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
             }
@@ -79,11 +85,22 @@ export class AuthService {
         if (existing) throw new ConflictException('Email already exists');
 
         const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+        const emailVerifyToken = crypto.randomBytes(32).toString('hex');
+        const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
         const user = await this.prisma.user.create({
-            data: { ...registerDto, password: hashedPassword },
+            data: {
+                ...registerDto,
+                password: hashedPassword,
+                emailVerified: false,
+                emailVerifyToken,
+                emailVerifyExpires,
+            },
         });
         const { password, ...result } = user;
-        return result;
+        this.mail.sendWelcomeUser(result.email, result.name).catch(() => null);
+        this.mail.sendEmailVerification(result.email, result.name, emailVerifyToken).catch(() => null);
+        return { message: 'Registro exitoso. Revisa tu correo para verificar tu cuenta.' };
     }
 
     async getProfile(userId: string) {
@@ -193,6 +210,13 @@ export class AuthService {
                 data: { password: await bcrypt.hash(newPassword, 10) },
             });
         }
+        if (isMember) {
+            const m = await this.prisma.organizerMember.findUnique({ where: { id: userId } });
+            if (m) this.mail.sendPasswordChanged(m.email, m.name).catch(() => null);
+        } else {
+            const u = await this.prisma.user.findUnique({ where: { id: userId } });
+            if (u) this.mail.sendPasswordChanged(u.email, u.name).catch(() => null);
+        }
         return { message: 'Contraseña actualizada correctamente' };
     }
 
@@ -287,9 +311,73 @@ export class AuthService {
 
         const { password, ...result } = user;
         const payload = { email: result.email, sub: result.id, role: result.role };
+        this.mail.sendWelcomeHost(
+            result.email,
+            result.name,
+            result.organizerProfile?.organizationName || result.name,
+        ).catch(() => null);
         return {
             access_token: this.jwtService.sign(payload),
             user: result,
         };
+    }
+
+    async verifyEmail(token: string) {
+        const user = await this.prisma.user.findUnique({ where: { emailVerifyToken: token } });
+        if (!user) throw new BadRequestException('El enlace de verificación no es válido.');
+        if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
+            throw new BadRequestException('El enlace de verificación ha expirado. Solicita uno nuevo.');
+        }
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: true, emailVerifyToken: null, emailVerifyExpires: null },
+        });
+        return { message: '¡Correo verificado! Ya puedes iniciar sesión.' };
+    }
+
+    async resendVerification(email: string) {
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        // Always return success to avoid email enumeration
+        if (!user || user.emailVerified) {
+            return { message: 'Si existe una cuenta pendiente de verificación, recibirás un nuevo correo.' };
+        }
+        const token = crypto.randomBytes(32).toString('hex');
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerifyToken: token, emailVerifyExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+        });
+        this.mail.sendEmailVerification(user.email, user.name, token).catch(() => null);
+        return { message: 'Si existe una cuenta pendiente de verificación, recibirás un nuevo correo.' };
+    }
+
+    async forgotPassword(email: string) {
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        // Always return success to avoid email enumeration
+        if (user) {
+            const token = crypto.randomBytes(32).toString('hex');
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    resetPasswordToken: token,
+                    resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000), // 1h
+                },
+            });
+            this.mail.sendPasswordReset(user.email, user.name, token).catch(() => null);
+        }
+        return { message: 'Si existe una cuenta con ese correo, recibirás instrucciones para restablecer tu contraseña.' };
+    }
+
+    async resetPassword(token: string, newPassword: string) {
+        const user = await this.prisma.user.findUnique({ where: { resetPasswordToken: token } });
+        if (!user) throw new BadRequestException('El enlace de recuperación no es válido.');
+        if (user.resetPasswordExpires && user.resetPasswordExpires < new Date()) {
+            throw new BadRequestException('El enlace de recuperación ha expirado. Solicita uno nuevo.');
+        }
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashed, resetPasswordToken: null, resetPasswordExpires: null },
+        });
+        return { message: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.' };
     }
 }

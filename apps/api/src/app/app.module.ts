@@ -17,6 +17,7 @@ import { UploadModule } from './upload/upload.module';
 import { AdminModule } from './admin/admin.module';
 import { OrganizerMembersModule } from './organizer-members/organizer-members.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
     AdminModule,
     OrganizerMembersModule,
     SchedulerModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

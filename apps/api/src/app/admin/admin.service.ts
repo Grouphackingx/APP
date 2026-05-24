@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+  ) {}
 
   async getAllOrganizers() {
     return this.prisma.user.findMany({
@@ -64,11 +68,12 @@ export class AdminService {
 
   async createOrganizer(data: any) {
     const { email, password, firstName, lastName, identificationNumber, phone, organizationName, organizationDescription, organizationLogo, address, province, city, plan, status } = data;
-    
+
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException('Ya existe un usuario con este correo');
 
-    const hashedPassword = await bcrypt.hash(password || 'host123', 10);
+    const rawPassword = password || 'host123';
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
     
     const user = await this.prisma.user.create({
       data: {
@@ -123,22 +128,38 @@ export class AdminService {
       }
     }
 
+    this.mail.sendAccountCreatedByAdmin(
+      user.email, user.name, user.email, rawPassword, 'HOST', organizationName,
+    ).catch(() => null);
+
     return user;
   }
 
-  async setOrganizerStatus(userId: string, status: any) {
+  async setOrganizerStatus(userId: string, status: any, reason?: string) {
     const profile = await this.prisma.organizerProfile.findUnique({
-      where: { userId }
+      where: { userId },
+      include: { user: { select: { email: true, name: true } } },
     });
 
     if (!profile) {
       throw new NotFoundException('Organizer profile not found for this user');
     }
 
-    return this.prisma.organizerProfile.update({
+    const updated = await this.prisma.organizerProfile.update({
       where: { userId },
-      data: { status }
+      data: { status },
     });
+
+    const { email, name } = (profile as any).user;
+    const orgName = profile.organizationName;
+
+    if (status === 'APPROVED') {
+      this.mail.sendHostApproved(email, name, orgName).catch(() => null);
+    } else if (status === 'REJECTED') {
+      this.mail.sendHostRejected(email, name, orgName, reason).catch(() => null);
+    }
+
+    return updated;
   }
 
   async updateOrganizer(userId: string, data: any) {
@@ -222,17 +243,24 @@ export class AdminService {
     const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
     if (existing) throw new ConflictException('Ya existe un usuario con este correo');
 
-    const hashedPassword = await bcrypt.hash(data.password || 'admin123', 10);
-    return this.prisma.user.create({
+    const rawPassword = data.password || 'admin123';
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+    const user = await this.prisma.user.create({
       data: {
         name: `${data.firstName} ${data.lastName}`.trim(),
         email: data.email,
         phone: data.phone,
         password: hashedPassword,
-        role: data.role // 'ADMIN' or 'EDITOR'
+        role: data.role,
       },
       select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true }
     });
+
+    this.mail.sendAccountCreatedByAdmin(
+      user.email, user.name, user.email, rawPassword, user.role as 'ADMIN' | 'EDITOR',
+    ).catch(() => null);
+
+    return user;
   }
 
   async updateAdminUser(id: string, data: any) {

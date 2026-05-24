@@ -32,9 +32,10 @@ export class AdminController {
   @Roles(Role.ADMIN, Role.EDITOR)
   setOrganizerStatus(
     @Param('id') userId: string,
-    @Body('status') status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    @Body('status') status: 'PENDING' | 'APPROVED' | 'REJECTED',
+    @Body('reason') reason?: string,
   ) {
-    return this.adminService.setOrganizerStatus(userId, status as any); // cast safely using enums generated
+    return this.adminService.setOrganizerStatus(userId, status as any, reason);
   }
 
   @Patch('organizers/:id')

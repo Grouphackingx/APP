@@ -13,7 +13,19 @@
       "Bash(npx next *)",
       "Bash(echo \"Web Client PID: $!\")",
       "Bash(echo \"Web Host PID: $!\")",
-      "Bash(echo \"Web Admin PID: $!\")"
+      "Bash(echo \"Web Admin PID: $!\")",
+      "Bash(Start-Sleep -Seconds 15)",
+      "Bash(Get-Content \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--AFROEVENTOS-APP\\\\a46685d1-a7ac-4f03-b5e3-0e994769e6da\\\\tasks\\\\be3956ft0.output\" -Tail 20)",
+      "Bash(kill 25160)",
+      "Bash(echo \"Nuevo PID: $!\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/forgot-password -H 'Content-Type: application/json' -d '{\"email\":\"noexiste@test.com\"}')",
+      "Bash(curl -s \"http://localhost:3000/api/auth/verify-email?token=tokeninvalido\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/resend-verification -H 'Content-Type: application/json' -d '{\"email\":\"test@test.com\"}')",
+      "Bash(pkill -f \"main.js\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":3000\")",
+      "Bash(findstr LISTENING)",
+      "Bash(taskkill /PID 25160 /F)"
     ]
   }
 }

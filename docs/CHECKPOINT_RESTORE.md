@@ -1,13 +1,11 @@
-# 🟢 PUNTO DE RESTAURACIÓN: OPENTICKET (Sistema Completo)
+# PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 20 de Mayo de 2026
-**Estado del Proyecto:** ✅ COMPLETO Y VERIFICADO (Fases 1-4 + Portal Cliente: Mi Perfil + Toast de login + Tickets usados en rojo + Hero Section con carrusel interactivo 3:4 + Sección Eventos Destacados (condicional) + Panel Host: Asistentes + Escáner de tickets + Página Usuarios (OrganizerMembers ADMIN/STAFF) + Página Perfil + Panel Admin: Gestión Global de Eventos con Destacados + Edición/Eliminación de eventos por Admin + Imagen Retrato 3:4 por evento + **URL Slugs amigables** + **Rebrand AfroEventos** + **NX Daemon hot-reload** + **UX/UI mejoras Web Client** — 23 May 2026)
-
-Este archivo contiene toda la información necesaria para retomar el proyecto y continuar con las pruebas en cualquier momento.
+**Fecha de Última Actualización:** 24 de Mayo de 2026
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español
 
 ---
 
-## 1. 🚀 Cómo Retomar el Proyecto
+## 1. Cómo Retomar el Proyecto
 
 Para volver a levantar todo el sistema después de reiniciar tu PC o VS Code:
 
@@ -28,27 +26,18 @@ npx prisma generate --schema=libs/shared/prisma/schema.prisma
 npx prisma db push --schema=libs/shared/prisma/schema.prisma
 ```
 
-### Paso 3: Seed de Roles (solo primera vez con BD vacía)
+### Paso 3: Iniciar Servidores
 
-Si la BD está vacía, primero registra los usuarios con el API corriendo, luego ejecuta:
+Abre **4 terminales** en VS Code (`Ctrl+Shift+ñ`) y ejecuta:
 
-```bash
-node scripts/seed-roles.js
-```
-
-### Paso 4: Iniciar Servidores
-
-Abre **3 terminales** en VS Code (`Ctrl+Shift+ñ`) y ejecuta:
-
-**Terminal 1: Backend (API)**
+**Terminal 1: Backend (API) — con hot-reload automático**
 
 ```bash
 npx nx serve api --no-dte
 ```
 
-> La API se recompila y reinicia automáticamente al guardar cambios en el backend.
-
-_(Espera a que diga "Application is running on: http://localhost:3000/api")_
+> Daemon activo: recompila y reinicia automáticamente al guardar cambios.
+> _(Espera a que diga "Application is running on: http://localhost:3000/api")_
 
 **Terminal 2: Web Client (Usuarios)**
 
@@ -77,9 +66,17 @@ npx next dev --port=4202
 
 _(Accesible en http://localhost:4202)_
 
-> **⚠️ Nota**: No uses `npx nx dev ...` ya que la TUI interactiva de Nx puede dar problemas. Usa `npx next dev --port=XXXX` directamente.
+> **NOTA**: No uses `npx nx dev ...` ya que la TUI interactiva de Nx puede dar problemas. Usa `npx next dev --port=XXXX` directamente.
 
-### Paso 5: Iniciar App Móvil (Staff — Opcional)
+### Paso 4 (Alternativa): Script de inicio rápido
+
+```bash
+start-all.bat
+```
+
+Inicia los 4 servicios en ventanas separadas automáticamente.
+
+### Paso 5: App Móvil (Staff — Opcional)
 
 ```bash
 cd apps/mobile-app
@@ -90,569 +87,338 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 ---
 
-## 2. 🧪 Datos de Prueba (Credenciales)
-
-Puedes usar estos usuarios pre-creados o registrar nuevos (Asegurate de correr `create-admin.ts` para el super usuario):
+## 2. Credenciales de Prueba
 
 | Rol                    | Email                      | Password       | Dónde usarlo                           |
 | :--------------------- | :------------------------- | :------------- | :------------------------------------- |
 | Administrador Global   | `admin@admin.com`          | `admin123`     | `http://localhost:4202` (web-admin)    |
-| **Organizador (Host)** | `admin@openticket.com`     | _(desconocida — restablecer si es necesario)_  | `http://localhost:4201` (Panel Host) |
-| **Organizador (Host)** | `grouphackingx@gmail.com`  | _(desconocida — restablecer si es necesario)_  | `http://localhost:4201` (Panel Host) |
-| **Cliente (User)**     | `dmxwilly@gmail.com`       | `willy2024`    | `http://localhost:4200` (Portal Cliente) |
-| **Cliente (User)**     | `cliente@openticket.com`   | `cliente123`   | `http://localhost:4200` (Portal Cliente) |
-| **Staff (Validator)**  | `staff@openticket.com`     | `staff123`     | Mobile App (Expo Go)                   |
+| Organizador (Host)     | `admin@openticket.com`     | _(restablecer si es necesario)_ | `http://localhost:4201` (Panel Host) |
+| Organizador (Host)     | `grouphackingx@gmail.com`  | _(restablecer si es necesario)_ | `http://localhost:4201` (Panel Host) |
+| Cliente (User)         | `dmxwilly@gmail.com`       | `willy2024`    | `http://localhost:4200` (Portal Cliente) |
+| Cliente (User)         | `cliente@openticket.com`   | `cliente123`   | `http://localhost:4200` (Portal Cliente) |
+| Staff (Validator)      | `staff@openticket.com`     | `staff123`     | Mobile App (Expo Go)                   |
 
-> ⚠️ **NOTA**: Los tokens JWT duran **24 horas** (aumentado para desarrollo). Si la API devuelve 401 cerrar sesión y volver a entrar.
+> **NOTA**: Los tokens JWT duran **24 horas**. Si la API devuelve 401, cerrar sesión y volver a entrar.
 
 ---
 
-## 3. ✅ Funcionalidades Verificadas
+## 3. Funcionalidades Verificadas
 
-### Backend (API - Puerto 3000)
+### Backend (API — Puerto 3000)
 
-| Método | Endpoint                        | Auth        | Estado | Descripción                             |
-| :----- | :------------------------------ | :---------- | :----- | :-------------------------------------- |
-| POST   | `/api/auth/login`               | No          | ✅ OK  | Login JWT (retorna access_token + user) |
-| POST   | `/api/auth/register`            | No          | ✅ OK  | Registro de usuarios                    |
-| GET    | `/api/events`                   | No          | ✅ OK  | Listar eventos con zonas y asientos     |
-| GET    | `/api/events/:id`               | No          | ✅ OK  | Detalle de evento con zonas y asientos  |
-| POST   | `/api/events`                   | JWT (HOST)  | ✅ OK  | Crear evento con zonas y asientos       |
-| PATCH  | `/api/events/:id`               | JWT (HOST)  | ✅ OK  | Editar evento, zonas, descripciones     |
-| DELETE | `/api/events/:id`               | JWT (HOST)  | ✅ OK  | Borrar evento (solo si 0 vendidos)      |
-| POST   | `/api/orders/lock-seats`        | JWT         | ✅ OK  | Bloquear asientos (Redis 10 min)        |
-| POST   | `/api/orders/unlock-seats`      | JWT         | ✅ OK  | Liberar asientos bloqueados             |
-| POST   | `/api/orders/purchase`          | JWT         | ✅ OK  | Comprar tickets (genera QR JWT)         |
-| GET    | `/api/orders`                   | JWT         | ✅ OK  | Obtener órdenes enriquecidos            |
-| POST   | `/api/tickets/validate`         | JWT         | ✅ OK  | Validar ticket QR (VALID → USED)        |
-| POST   | `/api/tickets/validate-by-id`   | JWT         | ✅ OK  | Validar ticket por ID corto (startsWith)|
-| GET    | `/api/orders/attendees/me`      | JWT (HOST)  | ✅ OK  | Lista de asistentes de eventos del organizador (decodifica JWT de tickets) |
-| GET    | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Obtener perfil completo del usuario autenticado |
-| PATCH  | `/api/auth/me`                  | JWT (USER)  | ✅ OK  | Actualizar perfil (nombre, email, password, ID, dirección, foto, etc.) |
-| GET    | `/api/auth/me/organizer`        | JWT         | ✅ OK  | Perfil completo: HOST (con organizerProfile) o OrganizerMember autenticado |
-| PATCH  | `/api/auth/me/basic`            | JWT         | ✅ OK  | Actualizar nombre, email, teléfono, avatar — funciona para HOST y OrganizerMember |
-| PATCH  | `/api/auth/me/password`         | JWT         | ✅ OK  | Cambiar contraseña con verificación de contraseña actual (bcrypt compare + hash) |
-| PATCH  | `/api/auth/me/organizer-profile`| JWT (HOST)  | ✅ OK  | Actualizar datos de organización: nombre, descripción, logo, dirección, provincia, ciudad. 403 si es miembro. |
-| POST   | `/api/upload`                   | Opcional    | ✅ OK  | Subir imágenes — tipos: `logo`, `event`, `user-avatar`, `member-avatar`. Directorios: `uploads/organizers/{id}/logo|events/`, `uploads/users/{id}/avatar/`, `uploads/organizers/{orgId}/members/{memberId}/avatar/` |
-| GET    | `/api/plans`                    | No          | ✅ OK  | Planes públicos (para formulario de registro) |
-| GET    | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Listar |
-| POST   | `/api/admin/plans`              | JWT (ADMIN) | ✅ OK  | CRUD Planes - Crear |
-| PATCH  | `/api/admin/plans/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Planes - Editar |
-| DELETE | `/api/admin/plans/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Planes - Eliminar |
-| GET    | `/api/admin/users`              | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Listar |
-| POST   | `/api/admin/users`              | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Crear |
-| PATCH  | `/api/admin/users/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Editar |
-| DELETE | `/api/admin/users/:id`          | JWT (ADMIN) | ✅ OK  | CRUD Usuarios Admin - Eliminar |
-| GET    | `/api/admin/events`             | JWT (ADMIN) | ✅ OK  | Listar todos los eventos globalmente (con zonas, seats y organizador) |
-| PATCH  | `/api/admin/events/:id/featured`| JWT (ADMIN) | ✅ OK  | Activar/desactivar destacado de evento con duración en días |
+| Método | Endpoint                            | Auth        | Estado | Descripción                             |
+| :----- | :---------------------------------- | :---------- | :----- | :-------------------------------------- |
+| POST   | `/api/auth/login`                   | No          | OK     | Login JWT (retorna access_token + user) |
+| POST   | `/api/auth/register`                | No          | OK     | Registro + envía email de verificación  |
+| GET    | `/api/auth/verify-email?token=`     | No          | OK     | Verifica email con token JWT            |
+| POST   | `/api/auth/resend-verification`     | No          | OK     | Reenvía email verificación (anti-enum)  |
+| POST   | `/api/auth/forgot-password`         | No          | OK     | Solicita reset de contraseña (anti-enum)|
+| POST   | `/api/auth/reset-password`          | No          | OK     | Restablece contraseña con token         |
+| GET    | `/api/auth/me`                      | JWT (USER)  | OK     | Perfil completo del usuario autenticado |
+| PATCH  | `/api/auth/me`                      | JWT (USER)  | OK     | Actualizar perfil (nombre, email, password, ID, dirección, foto) |
+| GET    | `/api/auth/me/organizer`            | JWT         | OK     | Perfil completo: HOST o OrganizerMember |
+| PATCH  | `/api/auth/me/basic`                | JWT         | OK     | Actualizar nombre, email, teléfono, avatar |
+| PATCH  | `/api/auth/me/password`             | JWT         | OK     | Cambiar contraseña con verificación bcrypt |
+| PATCH  | `/api/auth/me/organizer-profile`    | JWT (HOST)  | OK     | Datos de organización (403 si es miembro) |
+| GET    | `/api/events`                       | No          | OK     | Listar eventos con zonas y asientos     |
+| GET    | `/api/events/:id`                   | No          | OK     | Detalle por slug o UUID                 |
+| POST   | `/api/events`                       | JWT (HOST)  | OK     | Crear evento con zonas + genera slug    |
+| PATCH  | `/api/events/:id`                   | JWT (HOST)  | OK     | Editar evento, zonas, descripciones + notifica compradores si se cancela o reprograma |
+| DELETE | `/api/events/:id`                   | JWT (HOST)  | OK     | Borrar evento (solo si 0 vendidos)      |
+| POST   | `/api/orders/lock-seats`            | JWT         | OK     | Bloquear asientos (Redis 10 min)        |
+| POST   | `/api/orders/unlock-seats`          | JWT         | OK     | Liberar asientos bloqueados             |
+| POST   | `/api/orders/purchase`              | JWT         | OK     | Comprar tickets (genera QR JWT + envía confirmación por email) |
+| GET    | `/api/orders`                       | JWT         | OK     | Mis órdenes enriquecidas con detalle    |
+| GET    | `/api/orders/attendees/me`          | JWT (HOST)  | OK     | Lista de asistentes del organizador     |
+| POST   | `/api/tickets/validate`             | JWT         | OK     | Validar ticket QR (VALID → USED)        |
+| POST   | `/api/tickets/validate-by-id`       | JWT         | OK     | Validar por ID corto (#c288f2ae)        |
+| POST   | `/api/upload`                       | Opcional    | OK     | Subir imágenes (logo/event/user-avatar/member-avatar) |
+| GET    | `/api/plans`                        | No          | OK     | Planes públicos para formulario registro|
+| GET    | `/api/admin/plans`                  | JWT (ADMIN) | OK     | CRUD Planes — Listar                    |
+| POST   | `/api/admin/plans`                  | JWT (ADMIN) | OK     | CRUD Planes — Crear                     |
+| PATCH  | `/api/admin/plans/:id`              | JWT (ADMIN) | OK     | CRUD Planes — Editar                    |
+| DELETE | `/api/admin/plans/:id`              | JWT (ADMIN) | OK     | CRUD Planes — Eliminar                  |
+| GET    | `/api/admin/users`                  | JWT (ADMIN) | OK     | Gestión usuarios Admin/Editor — Listar  |
+| POST   | `/api/admin/users`                  | JWT (ADMIN) | OK     | Crear Admin/Editor (envía credenciales por email) |
+| PATCH  | `/api/admin/users/:id`              | JWT (ADMIN) | OK     | Editar Admin/Editor                     |
+| DELETE | `/api/admin/users/:id`              | JWT (ADMIN) | OK     | Eliminar Admin/Editor                   |
+| GET    | `/api/admin/events`                 | JWT (ADMIN) | OK     | Directorio global de eventos            |
+| PATCH  | `/api/admin/events/:id/featured`    | JWT (ADMIN) | OK     | Activar/desactivar evento destacado     |
 
 ### Web Client (Puerto 4200)
 
-| Ruta           | Estado | Descripción                                                |
-| :------------- | :----- | :--------------------------------------------------------- |
-| `/`            | ✅     | Hero Section split (Anton font, titular izq. reducido 10% + carrusel interactivo coverflow der. con los 3 próximos eventos) + Catálogo de eventos en grid + buscador colapsable en header con icono SVG outlined |
-| `/login`       | ✅     | Formulario de login con JWT y localStorage                 |
-| `/register`    | ✅     | Formulario de registro                                     |
-| `/events/[id]` | ✅     | Detalle del evento + mapa de asientos interactivo + compra |
-| `/my-tickets`  | ✅     | Lista de tickets comprados con QR y estado                 |
-| `/my-profile`  | ✅     | Perfil del usuario: foto de avatar, datos de acceso, identificación, dirección (provincia/ciudad Ecuador) |
+| Ruta                        | Estado | Descripción                                                |
+| :-------------------------- | :----- | :--------------------------------------------------------- |
+| `/`                         | OK     | Hero split (Anton font) + Carrusel coverflow 3:4 + Sección Destacados (condicional) + Catálogo en grid |
+| `/login`                    | OK     | Login + link "¿Olvidaste tu contraseña?" |
+| `/register`                 | OK     | Registro + pantalla "Revisa tu correo" post-registro |
+| `/verify-email?token=`      | OK     | Verificación de email con estados: verificando / éxito / expirado |
+| `/forgot-password`          | OK     | Solicitar reset de contraseña |
+| `/reset-password?token=`    | OK     | Nueva contraseña + confirmación + auto-redirect 3s |
+| `/eventos/[id]`             | OK     | Detalle del evento + mapa de asientos interactivo + compra |
+| `/my-tickets`               | OK     | Lista de tickets comprados con QR y estado (USED gris) |
+| `/my-profile`               | OK     | Perfil: avatar, datos acceso, identificación, dirección Ecuador |
+| `/politicas-de-privacidad`  | OK     | 9 secciones de política de privacidad |
+| `/terminos-y-condiciones`   | OK     | 12 secciones de términos y condiciones |
+
+> **NOTA**: La ruta anterior `/events/[id]` ya no existe. Fue reemplazada por `/eventos/[id]`.
+> Los enlaces en tarjetas, carrusel, mis tickets y email templates todos apuntan a `/eventos/`.
 
 ### Web Host (Puerto 4201)
 
 | Sección              | Estado | Descripción                                                         |
 | :------------------- | :----- | :------------------------------------------------------------------ |
-| Login                | ✅     | Login para organizadores                                            |
-| Dashboard            | ✅     | Stats + tabla de eventos con pestañas (Activos/Inactivos/Borrador)  |
-| Crear Evento         | ✅     | Formulario completo con zonas, galería, mapa, video                 |
-| Editar Evento        | ✅     | Edición de zonas con protección de ventas activas                   |
-| Eliminar Evento      | ✅     | Solo visible si 0 tickets vendidos                                  |
-| Eliminar Zona        | ✅     | Botón oculto si la zona tiene tickets vendidos (`hasSold`)          |
-| Asistentes           | ✅     | Lista de compradores por evento con tickets comprados/usados y estado de asistencia. Filtro por evento + búsqueda por nombre/email + filas expandibles |
-| Escáner de Tickets   | ✅     | 3 tabs: Cámara QR (con botones Escanear/Detener), Buscar por ID corto (`#c288f2ae`), Token JWT manual. Validación en tiempo real contra API. |
-| Usuarios             | ✅     | Gestión de miembros OrganizerMember: crear ADMIN/STAFF, editar, eliminar, subir avatar. Solo visible para el HOST principal (no para miembros). |
-| Perfil               | ✅     | Actualización de perfil personal (nombre, email, teléfono, avatar con upload), datos de organización (solo HOST: nombre org, descripción, logo, dirección), cambio de contraseña con verificación de contraseña actual. |
+| Login                | OK     | Login + link "¿Olvidaste tu contraseña?" → `/forgot-password`       |
+| Forgot Password      | OK     | Solicitar reset de contraseña por email (válido 60 min)             |
+| Reset Password       | OK     | Nueva contraseña + confirmación + auto-redirect 3s al login         |
+| Dashboard / Inicio   | OK     | Stats + tabla de eventos con pestañas (Activos/Inactivos/Borrador)  |
+| Crear Evento         | OK     | Formulario completo con zonas, galería, imagen retrato 3:4          |
+| Editar Evento        | OK     | Edición de zonas con protección de ventas activas                   |
+| Eliminar Evento      | OK     | Solo visible si 0 tickets vendidos                                  |
+| Asistentes           | OK     | Compradores por evento + tickets comprados/usados + filtro + búsqueda |
+| Escáner de Tickets   | OK     | 3 tabs: Cámara QR, Buscar por ID corto, Token JWT manual            |
+| Usuarios             | OK     | OrganizerMembers (ADMIN/STAFF): crear, editar, eliminar, avatar     |
+| Perfil               | OK     | Info personal, datos de organización (solo HOST), cambio contraseña |
 
-### Web Admin - Global (Puerto 4202)
-
-| Sección              | Estado | Descripción                                                        |
-| :------------------- | :----- | :----------------------------------------------------------------- |
-| Login                | ✅     | Login para administrador global                                    |
-| Panel Inicio         | ✅     | Resumen del sistema con stats de organizaciones                    |
-| Gestión Organizadores| ✅     | Tabla + avatar/logo, acciones: Aprobar, Editar, Eliminar           |
-| Modal Edición Org    | ✅     | Edición: email, org, representante, ubicación, plan, estado, **contraseña** y **logo** |
-| Gestión de Planes    | ✅     | CRUD completo de planes (nombre, precio, límite de eventos)        |
-| Gestión de Usuarios  | ✅     | CRUD Admin/Editor; Editores sin acceso a Planes ni Usuarios        |
-| Analíticas           | ✅     | Métricas de eventos, tickets y revenue por organizador             |
-| Gestión de Eventos   | ✅     | Directorio global de eventos con pestañas (Activos/Inactivos/Borrador), contadores por categoría |
-| Destacar Evento      | ✅     | Botón ⭐ Destacar con duración en días. Botón rojo para quitar. Badge amarillo con fecha de expiración |
-| Editar Evento (Admin)| ✅     | Formulario completo idéntico al de organizadores (nombre, imágenes, zonas, estado, etc.) |
-| Eliminar Evento      | ✅     | Botón 🗑️ solo visible si el evento no tiene tickets vendidos |
-
-### Web Client (Puerto 4200) — Actualizaciones (20 Mayo 2026)
+### Web Admin (Puerto 4202)
 
 | Sección              | Estado | Descripción                                                        |
 | :------------------- | :----- | :----------------------------------------------------------------- |
-| Sección Destacados   | ✅     | `FeaturedEventsSection` — aparece solo cuando hay eventos con `isFeatured: true` activo. Tarjetas con imagen 1:1, badge dorado "★ DESTACADO", hover sutil. Sin overlay oscuro ni brillo de fondo. |
-| Carrusel Hero        | ✅     | Ahora usa `portraitImageUrl` (3:4) como imagen principal. Aspect-ratio de tarjetas actualizado a `3/4`. Posición vertical ajustada a `top: 45%`. |
-| EventCard (general)  | ✅     | Usa `squareImageUrl` (1:1) como imagen principal. Placeholder `/default-portrait.svg` si no hay imagen. |
-| Página de Evento     | ✅     | Banner panorámico con `aspect-ratio: 289/111` (exacto para 2023×777px), `object-fit: contain`, `border-radius: 15px`. Sin recorte de imagen. |
-| Imagen Retrato 3:4   | ✅     | Campo `portraitImageUrl` disponible en formularios de creación/edición de eventos (web-host y web-admin). |
-
-### Web Client (Puerto 4200) — Actualizaciones (8 Mayo 2026)
-
-| Sección              | Estado | Descripción                                                        |
-| :------------------- | :----- | :----------------------------------------------------------------- |
-| Mis Tickets — Usados | ✅     | Tickets escaneados (USED) se muestran en rojo: badge "🔒 Usado", borde de tarjeta, franja "Escaneado: fecha", y texto "Ticket ya utilizado" bajo el QR |
-
-### Web Client (Puerto 4200) — Actualizaciones (3 Mayo 2026)
-
-| Sección              | Estado | Descripción                                                        |
-| :------------------- | :----- | :----------------------------------------------------------------- |
-| Navbar               | ✅     | Botón `👤 Mi Perfil` entre "Mis Tickets" y "Salir" (solo logueados) |
-| Mi Perfil - Header   | ✅     | Avatar circular 80px. Botón ✏️ para cambiar foto. Preview instantáneo al seleccionar. |
-| Mi Perfil - Acceso   | ✅     | Edición de nombre, email, teléfono, contraseña (con toggle visibilidad) |
-| Mi Perfil - ID       | ✅     | Tipo documento (Cédula/RUC/Pasaporte), número, fecha nacimiento, ciudadanía |
-| Mi Perfil - Dirección| ✅     | Provincia (24 provincias Ecuador), ciudad dependiente de provincia, dirección |
-| Foto de perfil       | ✅     | Upload a `uploads/users/{userId}/avatar/`. Directorio independiente de organizadores. |
-| Toast no-autenticado | ✅     | Al pulsar asiento/entrada sin login → toast 🔒 amarillo con link al login. Auto-cierre 4s. |
-
-### Web Host (Puerto 4201) — Actualizaciones (2 Mayo 2026)
-
-| Sección              | Estado | Descripción                                                        |
-| :------------------- | :----- | :----------------------------------------------------------------- |
-| Registro - Paso 2    | ✅     | Nuevo campo Logo de Organización con preview circular y botón subir|
-| Registro - Paso 3    | ✅     | Planes cargados dinámicamente desde la BD (no hardcoded)           |
-| Cuenta en Revisión   | ✅     | Pantalla con botón "Cerrar Sesión y Volver" para cuenta PENDING    |
-| Login bloqueado      | ✅     | Cuentas PENDING/REJECTED reciben mensaje de error descriptivo       |
+| Login                | OK     | Login + link "¿Olvidaste tu contraseña?" → `/forgot-password`      |
+| Forgot Password      | OK     | Solicitar reset de contraseña por email                            |
+| Reset Password       | OK     | Nueva contraseña + confirmación + auto-redirect 3s al login        |
+| Panel Inicio         | OK     | Resumen del sistema con stats de organizaciones                    |
+| Gestión Organizadores| OK     | Tabla + avatar/logo, acciones: Aprobar, Editar, Eliminar           |
+| Modal Edición Org    | OK     | Email, org, representante, ubicación, plan, estado, contraseña, logo |
+| Gestión de Planes    | OK     | CRUD completo (nombre, precio, límite de eventos)                  |
+| Gestión de Usuarios  | OK     | CRUD Admin/Editor; envía credenciales por email al crear           |
+| Analíticas           | OK     | Métricas de eventos, tickets y revenue por organizador             |
+| Gestión de Eventos   | OK     | Directorio global con tabs (Activos/Inactivos/Borrador)            |
+| Destacar Evento      | OK     | Botón Destacar con duración en días + expiración automática (cron) |
+| Editar Evento        | OK     | Formulario completo con todas las validaciones de ventas           |
+| Eliminar Evento      | OK     | Solo visible si el evento no tiene tickets vendidos                |
 
 ---
 
-## 4. 🔧 Cambios Realizados en Sesiones Anteriores
+## 4. Sistema de Emails Transaccionales
 
-### Sesión del 19 de Mayo 2026 — Carrusel Hero Interactivo (Coverflow 1:1), Refinamiento Visual
+### Configuración (`.env`)
 
-#### 4.0.A. Carrusel Hero — HeroCarousel.tsx (Nuevo Componente)
+```env
+MAIL_HOST=smtp.gmail.com        # o smtp.resend.com para Resend
+MAIL_PORT=587                   # 465 para SSL
+MAIL_SECURE=false               # true para SSL
+MAIL_USER=tucuenta@gmail.com
+MAIL_PASS=xxxx xxxx xxxx xxxx  # contraseña de aplicación Gmail
+MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
+```
 
-**Archivo**: `apps/web-client/src/components/HeroCarousel.tsx` (nuevo)
+> Si `MAIL_HOST` está vacío, los emails se "envían" sin error (se loguean silenciosamente).
+> Patrón fire-and-forget en todos los lados: `.catch(() => null)` — nunca bloquea el flujo del usuario.
 
-Componente cliente (`'use client'`) con efecto coverflow de tres tarjetas (prev/active/next):
-- **Circular motion**: Truco de "teleport con dos rAFs" — la tarjeta que va a envolver se coloca instantáneamente fuera de pantalla (sin transición CSS via `transition: none !important`), y en el siguiente frame de pintura desliza hacia su nueva posición. Esto evita que se vea el deslizamiento "a través del centro".
-- **Auto-avance**: Intervalo de 4500ms. Se pausa al hacer hover. `navigateRef` y `activeRef` evitan closures obsoletos dentro del setInterval.
-- **Navegación**: Dots de navegación en la parte inferior. Click en tarjeta lateral avanza al evento correspondiente.
-- **Fallback**: Si no hay eventos, muestra panel vacío con texto "Próximamente nuevos eventos".
+### Templates Implementados (13 total)
 
-#### 4.0.B. Actualización de page.tsx — Selección de 3 próximos eventos
+| Template | Trigger | Descripción |
+| :--- | :--- | :--- |
+| `welcome-user` | Registro de cliente | Bienvenida + CTA explorar eventos |
+| `welcome-host` | Registro de organizador | Bienvenida + próximos pasos |
+| `verify-email` | Registro de cliente | Token de verificación de email (expira en 24h) |
+| `reset-password` | Forgot password | Token para restablecer contraseña (expira en 1h) |
+| `password-changed` | Cambio de contraseña | Confirmación + alerta "¿No fuiste tú?" con link reset |
+| `purchase-confirmation` | Compra de tickets | Resumen de compra con todos los tickets y QR info |
+| `host-approved` | Admin aprueba organizador | Bienvenida al panel de organizadores |
+| `host-rejected` | Admin rechaza organizador | Motivo del rechazo + opciones |
+| `account-created-by-admin` | Admin crea HOST/ADMIN/EDITOR | Credenciales (email + contraseña temporal) + URL del panel correcto |
+| `member-invitation` | Host crea miembro ADMIN/STAFF | Credenciales + descripción del rol + URL del panel |
+| `event-canceled` | Evento cancelado (status → CANCELLED) | Aviso urgente con detalle del evento + info de reembolso |
+| `event-rescheduled` | Evento reprogramado (fecha/lugar cambiados) | Comparación fecha/lugar anterior vs. nueva |
+| `base.layout` | Base compartida | Layout HTML responsive con logo, gradiente y footer |
 
-**Archivo**: `apps/web-client/src/app/page.tsx`
+### Cuándo se dispara cada email
 
-- Calcula los 3 próximos eventos futuros publicados ordenados por fecha ascendente para el carrusel.
-- Fallback: si no hay eventos futuros, usa los primeros 3 publicados.
-- Reemplazó el `nextEvent` único (imagen estática) por `carouselEvents[]` para el nuevo `HeroCarousel`.
+| Acción del sistema | Email enviado |
+| :--- | :--- |
+| `POST /api/auth/register` | `welcome-user` + `verify-email` |
+| `GET /api/auth/verify-email?token=` (éxito) | _(ninguno)_ |
+| `POST /api/auth/forgot-password` | `reset-password` (si el email existe; siempre responde igual) |
+| `POST /api/auth/reset-password` (éxito) | _(ninguno actualmente)_ |
+| `PATCH /api/auth/me/password` (éxito) | `password-changed` |
+| `PATCH /api/auth/me/basic` con password | `password-changed` |
+| `POST /api/orders/purchase` (éxito) | `purchase-confirmation` |
+| Admin aprueba organizador | `host-approved` |
+| Admin rechaza organizador | `host-rejected` |
+| `POST /api/admin/users` (crear HOST) | `account-created-by-admin` (role: HOST, link al panel Host) |
+| `POST /api/admin/users` (crear ADMIN/EDITOR) | `account-created-by-admin` (role: ADMIN, link al panel Admin) |
+| `POST /organizer-members` (crear miembro) | `member-invitation` |
+| `PATCH /api/events/:id` con `status: CANCELLED` | `event-canceled` a todos los compradores |
+| `PATCH /api/events/:id` con cambio de fecha/lugar | `event-rescheduled` a todos los compradores |
 
-#### 4.0.C. CSS del Carrusel y Hero — global.css
+### Cómo encuentra compradores para notificaciones de evento
 
-**Archivo**: `apps/web-client/src/app/global.css`
+Los compradores se identifican decodificando todos los `qrCodeToken` (JWT) de la tabla `Ticket`. Cada token contiene `{ eventId, ... }`. Proceso en `EventsService.notifyBuyersOfChange()`:
 
-Cambios acumulados en esta sesión:
-
-| Propiedad CSS | Valor Anterior | Valor Nuevo | Motivo |
-|---|---|---|---|
-| `.hero-split grid-template-columns` | `55fr 45fr` | `1fr 1fr` | Panel derecho necesita más espacio para tarjetas cuadradas |
-| `.hero-carousel-card height` | `90%` | `75%` | Relación de aspecto 1:1 requiere reducir alto para que el ancho no desborde el panel |
-| `.hero-carousel-card aspect-ratio` | `2 / 3` | `1 / 1` | Imágenes de eventos son cuadradas — corrección de distorsión |
-| `.hcc-enter-right translate` | `+200%` | `+140%` | Posición de entrada ajustada a tarjetas cuadradas |
-| `.hcc-enter-left translate` | `-200%` | `-140%` | Idem dirección opuesta |
-| `.hero-split-right background` | `#08090b` → `var(--bg-primary)` → | `transparent` | El contenedor blending con fondo de página para no verse como cuadrado |
-| `.hero-split-right box-shadow` | `0 24px 64px ... + 0 0 0 1px rgba(...)` | `sin box-shadow` | Eliminación del borde del contenedor |
-| `.hero-split-right border-radius` | `20px` | `eliminado` | Sin contenedor visible, no se necesita |
-| `.hero-split-right::before/::after` | — | Gradientes `var(--bg-primary) → transparent` al 22% de ancho | Fade lateral: tarjetas parciales se disuelven en vez de cortarse abruptamente |
-| `.hero-carousel-dots z-index` | `10` | `20` | Por encima de los pseudo-elementos de fade (z-index 10) |
-| `.hero-split-left transform` | — | `scale(0.9); transform-origin: top left` | Reducción visual uniforme de todo el contenido izquierdo en 10% |
-| `.hero-split-headline margin-bottom` | `1.75rem` | `eliminado` | Iguala el espacio titular→subtítulo con el espacio subtítulo→botones (ambos usan el `gap: 1.5rem` del flex) |
-
-#### 4.0.D. Icono de búsqueda SVG en Navbar
-
-**Archivo**: `apps/web-client/src/components/SearchBar.tsx`
-
-- Reemplazado el emoji `🔍` (en ambas instancias: botón colapsable + ícono dentro del input expandido) por SVG inline outlined.
-- SVG: `<circle cx="11" cy="11" r="8"/>` + `<line x1="21" y1="21" x2="16.65" y2="16.65"/>`, `stroke="currentColor"`, `strokeWidth="2"`, `strokeLinecap/Linejoin="round"`. Sin relleno. 18px en botón, 16px dentro del input.
+1. Carga todos los tickets con su `order.user`
+2. Decodifica cada JWT con `JwtService.verify()`
+3. Filtra los que tienen `decoded.eventId === eventId`
+4. Deduplicación por userId para no enviar duplicados
+5. Envía email a cada comprador único
 
 ---
 
-### Sesión del 17-18 de Mayo 2026 (Continuación) — Avatar Miembros, Página Perfil Host, Hero Section Web Client
+## 5. Auth Flow Completo (Verificación y Reset)
 
-#### 4.A. Ruta de Avatar de Miembros Corregida
+### Schema Prisma (campos agregados a `User`)
 
-**Archivo**: `apps/api/src/app/upload/upload.controller.ts`
-- Tipo `member-avatar`: el destino cambió de `uploads/members/{memberId}/avatar/` a `uploads/organizers/{orgUserId}/members/{memberId}/avatar/`, donde `orgUserId` se obtiene del JWT del organizador autenticado (`req.user.sub`).
-- La URL retornada también refleja la nueva ruta, manteniendo consistencia con la estructura jerárquica de organización.
+```prisma
+emailVerified        Boolean   @default(true)  // true = grandfathered existing users
+resetPasswordToken   String?   @unique
+resetPasswordExpires DateTime?
+```
 
-#### 4.B. Nuevos DTOs de Perfil
+> `emailVerified @default(true)` mantiene compatibilidad con usuarios anteriores.
+> Los hosts tienen `emailVerified: true` por defecto (son aprobados manualmente por el admin).
 
-**Archivo**: `libs/shared/src/lib/dto/auth.dto.ts`
+### Flujo Verificación de Email
 
-Tres DTOs nuevos añadidos antes de `UpdateProfileDto`:
-- `UpdateBasicInfoDto` — campos opcionales: `name`, `email`, `phone`, `avatarUrl`
-- `ChangePasswordDto` — `currentPassword` (required) + `newPassword` (min 6 chars)
-- `UpdateOrganizerProfileInfoDto` — campos opcionales: `organizationName`, `organizationDescription`, `organizationLogo`, `address`, `province`, `city`
+```
+POST /api/auth/register
+  → Crea usuario con emailVerified: false
+  → Genera token JWT (expiresIn: '24h')
+  → Guarda token en User.resetPasswordToken (reutilizado)
+  → Envía email verify-email con link:
+    http://localhost:4200/verify-email?token=JWT
 
-#### 4.C. Métodos de Perfil en AuthService y Endpoints en AuthController
+GET /api/auth/verify-email?token=JWT
+  → Verifica JWT + busca usuario por token
+  → Actualiza emailVerified: true
+  → Limpia token del campo
+  → Retorna { message: 'Email verificado correctamente' }
 
-**Archivo**: `apps/api/src/app/auth/auth.service.ts`
+POST /api/auth/resend-verification { email }
+  → Anti-enumeración: siempre responde igual
+  → Busca usuario, genera nuevo token, reenvía email
+```
 
-Cuatro métodos nuevos:
-- `getOrganizerFullProfile(userId, isMember)` — retorna `{ type: 'host', user }` o `{ type: 'member', member }` según si es OrganizerMember o User principal, sin campo `password`.
-- `updateBasicInfo(userId, isMember, dto)` — actualiza nombre/teléfono/avatarUrl en User o OrganizerMember según contexto.
-- `changePassword(userId, isMember, currentPassword, newPassword)` — verifica contraseña actual con `bcrypt.compare` antes de actualizar.
-- `updateOrganizerProfileInfo(userId, dto)` — actualiza el OrganizerProfile asociado al userId (solo para HOST principal).
+### Flujo Reset de Contraseña
 
-**Archivo**: `apps/api/src/app/auth/auth.controller.ts`
+```
+POST /api/auth/forgot-password { email }
+  → Anti-enumeración: siempre responde igual
+  → Si el email existe: genera token JWT (expiresIn: '1h')
+  → Guarda token + expires en resetPasswordToken/Expires
+  → Envía email reset-password con link:
+    http://localhost:4200/reset-password?token=JWT (web-client)
+    http://localhost:4201/reset-password?token=JWT (web-host)
+    http://localhost:4202/reset-password?token=JWT (web-admin)
 
-Cuatro endpoints nuevos protegidos con `JwtAuthGuard`:
-- `GET /auth/me/organizer` — perfil completo
-- `PATCH /auth/me/basic` — datos básicos (nombre, email, teléfono, avatar)
-- `PATCH /auth/me/password` — cambiar contraseña con verificación
-- `PATCH /auth/me/organizer-profile` — datos de organización (403 si `isMember`)
+POST /api/auth/reset-password { token, newPassword }
+  → Verifica JWT + compara con campo resetPasswordToken
+  → Verifica que no haya expirado (resetPasswordExpires)
+  → Hashea nueva contraseña con bcrypt
+  → Actualiza contraseña + limpia token/expires
+  → Retorna { message: 'Contraseña actualizada correctamente' }
+```
 
-#### 4.D. AuthContext `updateUser` en Web Host
+### Páginas de Auth en Web Client (`/apps/web-client/src/app/`)
 
-**Archivo**: `apps/web-host/src/lib/AuthContext.tsx`
-- Agregada función `updateUser(updates: Partial<User>)` a la interfaz y a la implementación del `AuthProvider`.
-- Persiste los cambios en `localStorage` (`ot_host_user`) y actualiza el estado en memoria para que el Sidebar refleje el nuevo nombre/logo/avatar sin necesidad de re-login.
+| Ruta | Archivo | Descripción |
+| :--- | :--- | :--- |
+| `/verify-email` | `verify-email/page.tsx` | Estados: verificando spinner / éxito / token expirado con opción reenvío |
+| `/forgot-password` | `forgot-password/page.tsx` | Form email + pantalla éxito "Revisa tu correo" |
+| `/reset-password` | `reset-password/page.tsx` | Nueva contraseña + confirmar + toggle visibilidad + auto-redirect 3s |
+| `/register` | `register/page.tsx` | Modificado: paso 2 muestra "Revisa tu correo, verifica tu email" |
+| `/login` | `login/page.tsx` | Modificado: link "¿Olvidaste tu contraseña?" junto al label Password |
 
-#### 4.E. Funciones API de Perfil en Web Host
+### Páginas de Auth en Web Host (`/apps/web-host/src/app/`)
 
-**Archivo**: `apps/web-host/src/lib/api.ts`
+| Ruta | Archivo | Descripción |
+| :--- | :--- | :--- |
+| `/forgot-password` | `forgot-password/page.tsx` | Placeholder `admin@afroeventos.com` + "válido 60 min" |
+| `/reset-password` | `reset-password/page.tsx` | Nueva contraseña + confirmar + auto-redirect 3s |
+| `/login` | `login/page.tsx` | Modificado: link "¿Olvidaste tu contraseña?" |
 
-Cuatro funciones nuevas:
-- `getMyOrganizerProfile(token)` — `GET /auth/me/organizer`
-- `updateMyBasicInfo(data, token)` — `PATCH /auth/me/basic`
-- `changeMyPassword(currentPassword, newPassword, token)` — `PATCH /auth/me/password`
-- `updateMyOrganizerProfileInfo(data, token)` — `PATCH /auth/me/organizer-profile`
+### Páginas de Auth en Web Admin (`/apps/web-admin/app/`)
 
-#### 4.F. Componente OrganizerProfile (Nuevo)
-
-**Archivo**: `apps/web-host/src/components/OrganizerProfile.tsx`
-
-Vista de perfil con tres tarjetas:
-1. **Información Personal** — nombre, email, teléfono + avatar circular con botón de upload. Para HOST usa `uploadImage(file, token, 'logo')` para el logo de organización; para miembros usa `uploadMemberAvatar(file, memberId, token)` en la ruta corregida.
-2. **Datos de Organización** — nombre de org, descripción, logo (upload circular), dirección, provincia, ciudad. Solo visible para HOST principal.
-3. **Cambiar Contraseña** — tres campos (actual, nueva, confirmar) con toggle de visibilidad por campo. Valida que la nueva coincida antes de hacer la llamada al API.
-
-Sub-componentes internos: `SaveMsg` (mensaje éxito/error con auto-reset 4s) y `PwField` (campo de contraseña con toggle).
-
-Tras guardar, llama a `updateUser()` del `AuthContext` para sincronizar nombre/email/logo en el Sidebar.
-
-#### 4.G. Integración en Dashboard y Sidebar
-
-**Archivos**: `apps/web-host/src/components/Sidebar.tsx` y `apps/web-host/src/app/dashboard/page.tsx`
-
-- Nuevo orden del menú sidebar (final): Inicio → Crear Evento → Mis Eventos → Asistentes → Usuarios (solo HOST principal) → Escáner de Tickets → Perfil
-- Vista `'profile'` añadida al tipo union de `view` en `dashboard/page.tsx`
-- Import y bloque de renderizado de `OrganizerProfile` añadido
-
-#### 4.H. Hero Section en Web Client
-
-**Archivo**: `apps/web-client/src/app/global.css`
-- Import de fuente `Anton` de Google Fonts añadido al `@import` inicial.
-- Nuevo bloque CSS `.hero-split` (~60 líneas):
-  - Grid de dos columnas (`55fr 45fr`), altura mínima `100vh`, `padding-top: 64px` para compensar el header fijo.
-  - `.hero-split-left` — fondo oscuro, flex column, padding lateral responsivo con `clamp()`.
-  - `.hero-split-headline` — `font-family: 'Anton'`, `font-size: clamp(3.8rem, 7.5vw, 7.5rem)`, `line-height: 0.9`, uppercase. `.accent` en color primario (verde).
-  - `.hero-split-cta` — botón blanco pill con texto negro, uppercase. `.hero-split-cta-ghost` — variante transparente con borde sutil.
-  - `.hero-split-right` — `position: relative; overflow: hidden`. Imagen a pantalla completa:
-    - `.hero-event-img-wrap { display: block; width: 100%; height: 100%; }`
-    - `.hero-event-img { width: 100%; height: 100%; object-fit: cover; object-position: center; }`
-    - Efecto hover: `transform: scale(1.04)` en 0.6s.
-  - `.hero-no-event` — estado vacío con borde punteado cuando no hay eventos.
-  - Responsive (960px): grid colapsa a 1 columna; panel derecho con `min-height: 55vw`. (480px): `min-height: 80vw`.
-
-**Archivo**: `apps/web-client/src/app/page.tsx`
-- Cálculo de `nextEvent`: primer evento futuro publicado ordenado por fecha ascendente; fallback al primer evento si no hay futuros.
-- Hero Section visible solo cuando no hay búsqueda activa (`!query`).
-- Panel derecho: `<Link href="/events/{id}" className="hero-event-img-wrap">` con `<img>` usando `squareImageUrl || imageUrl || bannerImageUrl || undefined` (prioriza 1:1, fallback a panorámica).
-- Fallback vacío: `.hero-no-event` con icono 🎵 y texto "Próximamente nuevos eventos".
+| Ruta | Archivo | Descripción |
+| :--- | :--- | :--- |
+| `/forgot-password` | `forgot-password/page.tsx` | Menciona "cuenta de administrador" |
+| `/reset-password` | `reset-password/page.tsx` | Nueva contraseña + confirmar + auto-redirect 3s |
+| `/login` | `login/page.tsx` | Modificado: link "¿Olvidaste tu contraseña?" |
 
 ---
 
-### Sesión del 17 de Mayo 2026 — Eventos Destacados, Gestión Global de Eventos, Limpieza de UI
+## 6. Cambio de URL `/events/` → `/eventos/`
 
-#### 4.1. Sistema de Eventos Destacados (Featured Events)
+### Qué cambió
 
-**Modelo de datos**: Se agregaron los campos `isFeatured` (Boolean, default false) y `featuredUntil` (DateTime?, nullable) al modelo `Event` en `schema.prisma`. Sincronizado con `npx prisma db push`.
+- La ruta del Portal de Clientes para ver eventos es ahora `/eventos/[id]` (en español)
+- La carpeta `apps/web-client/src/app/events/[id]/` fue eliminada
+- La carpeta `apps/web-client/src/app/eventos/[id]/` es la ruta activa
 
-**Backend**:
-- `AdminService.getAllEvents()`: Retorna todos los eventos con relaciones `organizer.organizerProfile` y `zones.seats` para poder validar tickets vendidos.
-- `AdminService.toggleEventFeatured(id, isFeatured, durationDays?)`: Calcula `featuredUntil` sumando `durationDays` a la fecha actual. Al desactivar, pone ambos campos en `false`/`null`.
-- `AdminController`: Endpoints `GET /api/admin/events` y `PATCH /api/admin/events/:id/featured` protegidos con `@Roles(Role.ADMIN)`.
+### Archivos migrados
 
-**Frontend Admin**:
-- Navegación "🌟 Eventos" en el Sidebar.
-- Vista con pestañas Activos/Inactivos/Borrador (contadores dinámicos).
-- Botón ⭐ Destacar: al presionar, solicita duración en días vía `window.prompt`.
-- Botón rojo "Quitar Destacado" con confirmación.
-- Badge amarillo "⭐ Destacado (hasta DD/MM/YYYY)" en la columna de estado.
+| Archivo | Cambio |
+| :--- | :--- |
+| `src/app/eventos/[id]/page.tsx` | Nuevo. OG `pageUrl` apunta a `/eventos/`. Reemplaza a `events/[id]/page.tsx` |
+| `src/app/eventos/[id]/EventDetailClient.tsx` | Nuevo. Login redirect y links del toast usan `/eventos/` |
+| `src/components/EventCard.tsx` | `href` → `/eventos/${event.slug \|\| event.id}` |
+| `src/components/FeaturedEventsSection.tsx` | `href` → `/eventos/${event.slug \|\| event.id}` |
+| `src/components/HeroCarousel.tsx` | `href` → `/eventos/${event.slug \|\| event.id}` |
+| `src/app/my-tickets/page.tsx` | `href` → `/eventos/${group.eventId}` |
 
-#### 4.2. Edición de Eventos desde Admin Global
+### Qué NO cambió (correcto así)
 
-Se copió `EditEventForm.tsx` del `web-host` al `web-admin/components/`. El admin puede editar cualquier campo del evento (título, imágenes, zonas, estado, etc.) con las mismas validaciones de protección de ventas.
-
-#### 4.3. Eliminación de Eventos desde Admin Global
-
-Se agregó botón 🗑️ que solo aparece si el evento no tiene tickets vendidos (misma lógica que en el panel de organizadores). Pide confirmación antes de eliminar.
-
-#### 4.4. Limpieza de UI en Web Client (Página Principal)
-
-- **Eliminados**: Hero section ("La nueva era de eventos digitales"), botones "Explorar eventos" y "Crear cuenta", textos estadísticos ("Eventos encontrados", "Digital y seguro", "Entrada dinámica", "2", "100%", "QR"), botón "Eventos" del header, texto "Descubre eventos que te inspiran".
-- **Buscador colapsable**: Movido a la cabecera (Navbar), junto al botón "Iniciar Sesión". Se muestra solo como icono de lupa (🔍); al presionarlo se expande un campo de texto funcional para buscar eventos.
-- **Padding mejorado**: Espaciado estratégico en títulos/subtítulos de sección "Próximos Eventos".
-- **Tarjetas de evento**: Eliminado botón "Ver Detalles" para reducir altura vertical.
-
-#### 4.5. Campo de Imagen Simplificado
-
-Se eliminó el campo "Imagen del evento (General)" del formulario de creación/edición de eventos. Ahora las imágenes principales son:
-- **Banner Panorámico** (2000x576) — para cabecera del detalle
-- **Imagen Cuadrada** (1:1) — como imagen general/tarjeta
+- `apps/web-client/src/lib/api.ts:130` — llama a `/api/events/${id}` (ruta del backend NestJS, no del frontend)
+- `apps/web-host/src/lib/api.ts` y `apps/web-admin/lib/api.ts` — todas sus referencias `/events/` son llamadas HTTP al backend
 
 ---
 
-### Sesión del 30-31 Marzo 2026 — Edición de Zonas en Eventos
+## 7. Notas Técnicas Importantes
 
-### Problema Principal Resuelto: Edición de Zonas en Eventos
-
-**Síntoma**: Al editar un evento desde el dashboard del Host, los campos "Descripción" y "Capacidad" de las zonas no se guardaban. Los cambios se perdían al recargar.
-
-**Causa Raíz Encontrada**: Tres problemas interconectados:
-
-#### 4.1. NX Daemon No Recompilaba la API Automáticamente
-
-**Archivo afectado**: Flujo de desarrollo
-**Problema**: El mensaje `NX Daemon is not running. Node process will not restart automatically after file changes` aparecía al correr `npx nx serve api`. Esto significaba que TODOS los cambios al código del backend que se hicieron en sesiones anteriores **nunca se aplicaron** porque el servidor seguía ejecutando el código viejo compilado.
-**Solución**: Documentado el flujo correcto: `npx nx build api` → `node dist/apps/api/main.js`. Se debe reiniciar manualmente tras cada cambio en el backend.
-
-#### 4.2. `basicData` No Estaba Sanitizado Para Prisma
-
-**Archivo**: `apps/api/src/app/events/events.service.ts` (método `update`)
-**Problema**: El `basicData` (datos del evento sin zonas) se pasaba directamente a `prisma.event.update()`. Si contenía campos desconocidos o tipos incorrectos (ej: `date` como string en vez de `Date`), la transacción Prisma podía fallar silenciosamente y revertir los cambios de zonas.
-**Solución**: Se implementó un filtro explícito de campos permitidos (`allowedEventFields`) y conversión de `date` string → `Date` object antes de pasarlo a Prisma.
-
-#### 4.3. Método `update` Reescrito Completamente
-
-**Archivo**: `apps/api/src/app/events/events.service.ts`
-**Cambios clave**:
-- **Filtrado de campos**: Solo pasa a Prisma los campos que existen en el modelo `Event`
-- **Conversión de fecha**: `date` string → `Date` object
-- **Protección de capacidad**: No permite reducir la capacidad por debajo del número de entradas vendidas. Lanza error `400 Bad Request` con mensaje descriptivo.
-- **Gestión de asientos al cambiar capacidad**:
-  - Si la capacidad **aumenta**: Crea nuevos asientos automáticamente (numerados secuencialmente)
-  - Si la capacidad **disminuye**: Elimina solo asientos **no vendidos** (de mayor a menor número)
-- **Respuesta mejorada**: El PATCH ahora retorna el evento completo con zonas y asientos incluidos
-- **Eliminación de debug**: Removido el `import('fs')` de debug
-
-#### 4.4. `findAll` Actualizado Para Incluir Asientos
-
-**Archivo**: `apps/api/src/app/events/events.service.ts` (método `findAll`)
-**Cambio**: `include: { zones: true }` → `include: { zones: { include: { seats: true } } }`
-**Motivo**: El dashboard del Host necesita saber qué zonas tienen boletos vendidos para bloquear correctamente los campos nombre/precio en el formulario de edición.
-
-#### 4.5. EditEventForm Mejorado
-
-**Archivo**: `apps/web-host/src/components/EditEventForm.tsx`
-**Cambios**:
-- **soldCount en ZoneInput**: Cada zona ahora calcula y almacena el número exacto de asientos vendidos
-- **Protección visual**:
-  - Campos `Nombre` y `Precio`: Deshabilitados (gris) si la zona tiene ventas activas. Muestra "Bloqueado (ventas activas)" en rojo.
-  - Campo `Descripción`: Siempre editable (incluso con ventas activas)
-  - Campo `Capacidad`: Siempre editable pero con `min` dinámico basado en asientos vendidos. Muestra "Mínimo: X (vendidos)" en amarillo.
-- **Validación pre-submit**: Antes de enviar al backend, verifica que ninguna zona tenga capacidad menor al número de vendidos
-- **Tipos flexibles**: `price` y `capacity` usan `number | string` en el estado de React para permitir edición fluida (sin que al borrar un número se fuerze a 0). Se convierten a `Number()` solo al momento del submit.
-
-#### 4.6. Controlador Simplificado
-
-**Archivo**: `apps/api/src/app/events/events.controller.ts`
-**Cambio**: El endpoint PATCH usa `@Request() req` y lee `req.body` directamente, evitando que el `ValidationPipe` global (`whitelist: true`) filtre campos de zona del payload.
-
-#### 4.7. DTOs Actualizados
-
-**Archivo**: `libs/shared/src/lib/dto/events.dto.ts`
-**Cambios**:
-- `CreateZoneDto`: Agregado campo opcional `id?: string` (necesario para identificar zonas existentes en updates)
-- `CreateEventDto`: Campo `zones` ahora es `@IsOptional()` (para permitir PATCH sin zonas)
-- Nuevo `UpdateEventDto`: Extiende `PartialType(CreateEventDto)` para validación más flexible
-
-### Validación de Fecha Removida en Update
-
-**Archivo**: `apps/api/src/app/events/events.service.ts`
-**Cambio**: Se removió la validación `if (date < now) throw 'fecha en el pasado'` del método `update`.
-**Motivo**: Bloqueaba la edición de metadatos (descripciones, capacidades) en eventos activos/pasados. La validación de fecha futura se mantiene solo en `create`.
-
----
-
-## 5. 📁 Archivos Modificados Esta Sesión (Mayo 2026)
-
-### Sesión del 20 de Mayo 2026 — Destacados en Web Client, Imagen Retrato 3:4, Fixes de Banner
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `apps/api/src/app/scheduler/featured-events.scheduler.ts` | **Nuevo** | Cron job `@Cron(EVERY_HOUR)` que desactiva `isFeatured` cuando `featuredUntil < now` |
-| `apps/api/src/app/scheduler/scheduler.module.ts` | **Nuevo** | Módulo NestJS que encapsula el scheduler |
-| `apps/api/src/app/app.module.ts` | Modificado | Registra `ScheduleModule.forRoot()` + `SchedulerModule` |
-| `apps/api/src/app/events/events.service.ts` | Modificado | `portraitImageUrl` agregado a `allowedEventFields` en método `update` |
-| `libs/shared/prisma/schema.prisma` | Modificado | Campo `portraitImageUrl String?` agregado al modelo `Event` |
-| `apps/web-client/src/components/FeaturedEventsSection.tsx` | **Nuevo** | Sección de eventos destacados: tarjetas 1:1, badge dorado, condicional (solo si hay destacados), sin overlay oscuro ni brillo de fondo |
-| `apps/web-client/src/components/HeroCarousel.tsx` | Modificado | Usa `portraitImageUrl` como imagen principal (fallback: square → image → banner). Interface `CarouselEvent` actualizada. |
-| `apps/web-client/src/components/EventCard.tsx` | Modificado | Usa `squareImageUrl` como imagen principal (1:1). Fallback: `imageUrl → /default-portrait.svg` |
-| `apps/web-client/src/lib/api.ts` | Modificado | `EventItem` interface: campos `isFeatured`, `featuredUntil`, `portraitImageUrl` agregados |
-| `apps/web-client/src/app/page.tsx` | Modificado | Separa publicados en `featuredEvents` y `generalEvents`. Carrusel usa todos los publicados. Sección destacados condicional. `CarouselEvent` type con `portraitImageUrl`. |
-| `apps/web-client/src/app/global.css` | Modificado | Bloque `.featured-section` completo (sin overlay, sin brillo dorado). `.event-card-image` aspect-ratio 1:1. `.hero-carousel-card` aspect-ratio 3:4, `top: 45%`, `height: 85%`. `.event-detail-hero` aspect-ratio 289/111, `object-fit: contain`, `border-radius: 15px`, sin `height` fijo. |
-| `apps/web-client/public/default-portrait.svg` | **Nuevo** | Placeholder SVG oscuro 3:4 para eventos sin imagen |
-| `apps/web-host/src/components/CreateEventForm.tsx` | Modificado | Campo "Imagen Retrato (3:4)" con upload, preview y nota 1200×1600px |
-| `apps/web-host/src/components/EditEventForm.tsx` | Modificado | Campo "Imagen Retrato (3:4)" con upload, preview y preload del valor existente |
-| `apps/web-admin/components/EditEventForm.tsx` | Modificado | Campo "Imagen Retrato (3:4)" con upload, preview y preload del valor existente |
-
-### Sesión del 19 de Mayo 2026 — Carrusel Hero Coverflow, Refinamiento Visual
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `apps/web-client/src/components/HeroCarousel.tsx` | **Nuevo** | Carrusel coverflow con 3 tarjetas, circular motion via doble rAF teleport, auto-avance 4.5s, pausa en hover, dots navegación |
-| `apps/web-client/src/app/page.tsx` | Modificado | Calcula 3 próximos eventos futuros para carrusel; reemplaza `nextEvent` único por `carouselEvents[]` |
-| `apps/web-client/src/app/global.css` | Modificado | aspect-ratio 1:1, altura 75%, columnas 1fr 1fr, contenedor transparente sin borde, gradientes fade lateral, escala izquierda -10%, spacing headline ajustado, dots z-index 20 |
-| `apps/web-client/src/components/SearchBar.tsx` | Modificado | Emoji 🔍 reemplazado por SVG inline outlined (circle + line, strokeWidth 2, sin relleno) en botón y en input expandido |
-
-### Sesión del 17-18 de Mayo 2026 (Continuación) — Avatar Miembros, Perfil Host, Hero Section
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `apps/api/src/app/upload/upload.controller.ts` | Modificado | Tipo `member-avatar` ahora guarda en `uploads/organizers/{orgUserId}/members/{memberId}/avatar/` en vez del directorio plano anterior |
-| `libs/shared/src/lib/dto/auth.dto.ts` | Modificado | Nuevos DTOs: `UpdateBasicInfoDto`, `ChangePasswordDto`, `UpdateOrganizerProfileInfoDto` |
-| `apps/api/src/app/auth/auth.service.ts` | Modificado | Cuatro métodos nuevos: `getOrganizerFullProfile`, `updateBasicInfo`, `changePassword`, `updateOrganizerProfileInfo` |
-| `apps/api/src/app/auth/auth.controller.ts` | Modificado | Cuatro endpoints nuevos: `GET /auth/me/organizer`, `PATCH /auth/me/basic`, `PATCH /auth/me/password`, `PATCH /auth/me/organizer-profile` |
-| `apps/web-host/src/lib/AuthContext.tsx` | Modificado | Función `updateUser(updates)` añadida para sincronizar perfil en contexto y localStorage sin re-login |
-| `apps/web-host/src/lib/api.ts` | Modificado | Cuatro funciones nuevas: `getMyOrganizerProfile`, `updateMyBasicInfo`, `changeMyPassword`, `updateMyOrganizerProfileInfo` |
-| `apps/web-host/src/components/OrganizerProfile.tsx` | **Nuevo** | Vista de perfil: info personal (con avatar upload), datos de organización (solo HOST), cambio de contraseña con verificación |
-| `apps/web-host/src/components/Sidebar.tsx` | Modificado | Orden del menú reorganizado: Asistentes → Usuarios → Escáner → Perfil |
-| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Vista `'profile'` añadida al tipo union, import y render de `OrganizerProfile` |
-| `apps/web-client/src/app/global.css` | Modificado | Fuente Anton importada; bloque CSS `.hero-split` completo (layout, headline, CTAs, imagen full-bleed, responsive) |
-| `apps/web-client/src/app/page.tsx` | Modificado | Cálculo de `nextEvent` (próximo evento futuro publicado); Hero Section split con imagen full-bleed en panel derecho |
-
-### Sesión del 17 de Mayo 2026 — Eventos Destacados, Admin Event CRUD, UI Cleanup
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `libs/shared/prisma/schema.prisma` | Modificado | Campos `isFeatured` (Boolean) y `featuredUntil` (DateTime?) en modelo `Event` |
-| `apps/api/src/app/admin/admin.service.ts` | Modificado | Métodos `getAllEvents()` (con zones/seats) y `toggleEventFeatured()` |
-| `apps/api/src/app/admin/admin.controller.ts` | Modificado | Endpoints `GET /admin/events` y `PATCH /admin/events/:id/featured` |
-| `apps/web-admin/components/Sidebar.tsx` | Modificado | Nueva entrada "🌟 Eventos" en navegación lateral |
-| `apps/web-admin/components/EditEventForm.tsx` | **Nuevo** | Copia del formulario de edición de eventos del web-host |
-| `apps/web-admin/lib/api.ts` | Modificado | Funciones `getAllEventsAdmin()`, `setEventFeatured()`, `deleteEvent()` |
-| `apps/web-admin/app/dashboard/page.tsx` | Modificado | Vista de eventos con tabs (Activos/Inactivos/Borrador), destacar, editar y eliminar |
-| `apps/web-client/src/app/page.tsx` | Modificado | Eliminación de hero, stats, botones innecesarios. Limpieza general de UI |
-| `apps/web-client/src/components/Navbar.tsx` | Modificado | Buscador colapsable integrado como icono lupa en el header |
-| `apps/web-client/src/components/SearchBar.tsx` | Modificado | Componente de búsqueda adaptado para funcionar dentro del Navbar |
-| `apps/web-client/src/components/EventCard.tsx` | Modificado | Eliminado botón "Ver Detalles" para reducir altura de tarjetas |
-| `apps/web-host/src/components/CreateEventForm.tsx` | Modificado | Eliminado campo "Imagen del evento (General)" |
-| `apps/web-host/src/components/EditEventForm.tsx` | Modificado | Eliminado campo "Imagen del evento (General)" |
-| `start-all.bat` | **Nuevo** | Script batch para iniciar los 4 servicios en ventanas separadas |
-
-### Sesión del 8 de Mayo 2026 — Asistentes y Escáner (Host) + Tickets Usados en Rojo (Client)
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `apps/api/src/app/orders/orders.service.ts` | Modificado | Nuevo método `getMyEventAttendees(organizerId)`: obtiene todos los tickets del organizador decodificando JWTs, agrupa por usuario+evento, retorna ticketsBought/ticketsUsed |
-| `apps/api/src/app/orders/orders.controller.ts` | Modificado | Nuevo endpoint `GET /orders/attendees/me` protegido con JwtAuthGuard |
-| `apps/api/src/app/tickets/tickets.service.ts` | Modificado | Nuevo método `validateByTicketId(partialId, staffId)`: busca ticket por `id startsWith` y valida su QR |
-| `apps/api/src/app/tickets/tickets.controller.ts` | Modificado | Nuevo endpoint `POST /tickets/validate-by-id` |
-| `apps/web-host/src/lib/api.ts` | Modificado | Nuevas funciones: `getAttendees(token)`, `validateTicket(qrToken, authToken)`, `validateTicketById(ticketId, authToken)` |
-| `apps/web-host/src/components/Sidebar.tsx` | Modificado | Nuevas entradas en el menú: "👥 Asistentes" y "📷 Escáner de Tickets" |
-| `apps/web-host/src/components/AttendeesList.tsx` | **Nuevo** | Vista de asistentes: stats (compradores/entradas/asistencias/sin asistir), filtro por evento, búsqueda por nombre/email, filas expandibles con detalle de tickets |
-| `apps/web-host/src/components/TicketScanner.tsx` | **Nuevo** | Escáner con 3 tabs: Cámara (jsQR + getUserMedia + botones Escanear/Detener + overlay pausado), Buscar por ID corto, Token JWT manual. Mensajes de error de cámara detallados por tipo de DOMException |
-| `apps/web-host/src/components/EditEventForm.tsx` | Modificado | Botón "Eliminar zona" oculto cuando `zone.hasSold === true` |
-| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Vistas `'attendees'` y `'scanner'` agregadas al tipo de `view`. Imports y renderizado de `AttendeesList` y `TicketScanner` |
-| `apps/web-client/src/app/my-tickets/my-tickets.css` | Modificado | Tickets USED en rojo: `.badge-used` (rojo con borde), `.ticket-used` (tinte rojo + borde), `.ticket-scanned` (franja roja izquierda), `.qr-used .qr-label-text` (rojo) |
-| `apps/web-client/src/app/my-tickets/page.tsx` | Modificado | Emoji badge "✔️ Usado" → "🔒 Usado" |
-
-### Sesión del 3 de Mayo 2026 — Mi Perfil (usuarios), Foto de Avatar, Toast de Login en Localidades
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `libs/shared/prisma/schema.prisma` | Modificado | Nuevos campos en `User`: `avatarUrl`, `idType`, `idNumber`, `address`, `province`, `city`, `birthDate`, `citizenship` |
-| `libs/shared/src/lib/dto/auth.dto.ts` | Modificado | Nuevo `UpdateProfileDto` con todos los campos opcionales del perfil |
-| `apps/api/src/app/auth/auth.service.ts` | Modificado | Métodos `getProfile(userId)` y `updateProfile(userId, dto)` con bcrypt para password y select sin campo password |
-| `apps/api/src/app/auth/auth.controller.ts` | Modificado | Endpoints `GET /auth/me` y `PATCH /auth/me` protegidos con `JwtAuthGuard` |
-| `apps/api/src/app/upload/upload.controller.ts` | **Reescritura** | Nuevo tipo `user-avatar` → guarda en `uploads/users/{userId}/avatar/`. Separado completamente de directorio `organizers/`. |
-| `apps/web-client/src/lib/api.ts` | Modificado | Interfaces `UserProfile`, `UpdateProfileData`. Funciones `getProfile()`, `updateProfile()`, `uploadUserAvatar()` |
-| `apps/web-client/src/lib/AuthContext.tsx` | Modificado | Interfaz `User` extendida con campos de perfil. Nueva función `updateUser()` para sincronizar contexto sin re-login. |
-| `apps/web-client/src/components/Navbar.tsx` | Modificado | Botón `👤 Mi Perfil` entre "Mis Tickets" y "Salir" |
-| `apps/web-client/src/app/my-profile/page.tsx` | **Nuevo** | Página completa con 3 secciones: Datos de acceso, Identificación, Dirección. Avatar con upload inmediato. |
-| `apps/web-client/src/app/my-profile/my-profile.css` | **Nuevo** | Estilos de la página de perfil: avatar circular, overlay de edición, grid de formulario, secciones. |
-| `apps/web-client/src/app/events/[id]/EventDetailClient.tsx` | Modificado | Toast 🔒 amarillo cuando usuario no autenticado intenta seleccionar asiento. Auto-cierre 4s. Asientos numerados y botones GA ahora clicables para todos. |
-
-### Sesión del 2 de Mayo 2026 — Logo, Planes Dinámicos, Bloqueo de Login, Reset Contraseña, CRUD Admin
-
-| Archivo | Tipo de Cambio | Descripción |
-| :--- | :--- | :--- |
-| `apps/api/src/app/auth/auth.service.ts` | Modificado | Login bloquea organizadores PENDING/REJECTED con mensaje descriptivo |
-| `apps/api/src/app/app.service.ts` | Nuevo método | `getPlans()` expone planes públicos consultando Prisma |
-| `apps/api/src/app/app.controller.ts` | Modificado | Endpoint público `GET /api/plans` sin autenticación |
-| `apps/api/src/app/upload/upload.controller.ts` | **Reescritura** | Crea directorios dinámicos: `uploads/organizers/{id}/logo/` y `.../events/{eventId}/`. Sin auth obligatoria (soporta registro sin token). |
-| `apps/api/src/app/admin/admin.service.ts` | Modificado | `updateOrganizer` hashea contraseña con bcrypt si se provee |
-| `apps/web-host/src/app/register/page.tsx` | Modificado | Paso 2: campo logo con preview. Paso 3: planes dinámicos desde API. |
-| `apps/web-host/src/app/dashboard/page.tsx` | Modificado | Pantalla "Cuenta en Revisión" con botón "Cerrar Sesión y Volver" |
-| `apps/web-host/src/lib/api.ts` | Modificado | `uploadImage()` acepta `type/eventId/organizerId`. Auth header condicional. `getPublicPlans()` añadido. |
-| `apps/web-admin/app/dashboard/page.tsx` | Modificado | Logo en modales edición/creación org. Avatar en tabla muestra logo si existe. `useRef` para file inputs. |
-| `apps/web-admin/lib/api.ts` | Modificado | Función `uploadImage()` añadida para subir logos desde el admin. |
-
----
-
-## 6. 📝 Notas Técnicas Para el Desarrollador
-
-- **NX Daemon**: Activo (`useDaemonProcess: true`). Usar `npx nx serve api --no-dte` para desarrollo — recompila y reinicia automáticamente al guardar cambios.
+- **NX Daemon**: Activo (`useDaemonProcess: true`). `npx nx serve api --no-dte` para desarrollo — hot-reload automático.
 - **Puertos**: PostgreSQL en **5435**, Redis en **6380** (no estándar para evitar conflictos).
-- **Prisma**: Versión **5.22.0** (bloqueada — v7+ tiene incompatibilidades de CLI). Al cambiar el schema correr `npx prisma db push --schema=libs/shared/prisma/schema.prisma` con la API **detenida** para poder regenerar el cliente.
+- **Prisma**: Versión **5.22.0** bloqueada. Al cambiar schema: `npx prisma db push` con la API detenida.
 - **JWT**: Tokens duran **24 horas** (`auth.module.ts` → `expiresIn: '24h'`).
-- **Web Host**: Usar `npx next dev --port=4201` desde `apps/web-host/`.
-- **Web Client**: Usar `npx next dev --port=4200` desde `apps/web-client/`.
-- **Web Admin**: Usar `npx next dev --port=4202` desde `apps/web-admin/`.
-- **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento está codificada en el QR JWT.
-- **Pagos Mock**: El sistema de pagos es una simulación (`PaymentsModule`). Para producción: configurar `STRIPE_SECRET_KEY` en `.env`.
-- **API URL en Móvil**: La app detecta automáticamente tu IP local si usas Expo Go.
-- **ValidationPipe Global**: `main.ts` tiene `whitelist: true` y `transform: true`. Para el PATCH de eventos se usa `@Request()` para evitar que se filtren los campos de zona.
-- **Directorios de uploads**: `uploads/organizers/{id}/logo|events/` para organizadores. `uploads/users/{id}/avatar/` para fotos de perfil de clientes. Directorio raíz servido como estático por NestJS.
+- **Ticket sin relación a Seat**: La info del asiento está codificada en el QR JWT. Para encontrar compradores de un evento hay que decodificar todos los tokens.
+- **Pagos Mock**: `PaymentsModule` siempre retorna `true`. Para producción: configurar `STRIPE_SECRET_KEY`.
+- **Emails fire-and-forget**: Todos los envíos de email usan `.catch(() => null)` — nunca bloquean el flujo.
+- **Anti-enumeración**: `forgot-password` y `resend-verification` siempre retornan el mismo mensaje (200) independientemente de si el email existe o no.
+- **ValidationPipe Global**: `main.ts` tiene `whitelist: true`. Para el PATCH de eventos se usa `@Request()` para evitar que se filtren los campos de zona.
+- **Directorios de uploads**:
+  - `uploads/organizers/{id}/logo/` — logo de la organización
+  - `uploads/organizers/{id}/events/{eventId}/` — imágenes de eventos
+  - `uploads/organizers/{orgId}/members/{memberId}/avatar/` — avatares de miembros
+  - `uploads/users/{id}/avatar/` — fotos de perfil de clientes
 
 ---
 
-## 7. 🔐 Reglas de Negocio de Edición de Zonas
+## 8. Reglas de Negocio — Edición de Zonas
 
-| Campo       | ¿Editable si hay ventas? | Restricción                                     |
-| :---------- | :----------------------- | :---------------------------------------------- |
-| Nombre      | ❌ No                    | Bloqueado si `soldCount > 0`                    |
-| Descripción | ✅ Sí                    | Siempre editable                                |
-| Precio      | ❌ No                    | Bloqueado si `soldCount > 0`                    |
-| Capacidad   | ✅ Sí                    | No puede ser menor a `soldCount` (vendidos)     |
-| Nueva Zona  | ✅ Sí                    | Se puede agregar zonas nuevas siempre            |
-| Eliminar Zona | ❌ (con ventas)        | Solo si la zona no tiene tickets vendidos        |
+| Campo       | ¿Editable si hay ventas? | Restricción                                 |
+| :---------- | :----------------------- | :------------------------------------------ |
+| Nombre      | No                       | Bloqueado si `soldCount > 0`                |
+| Descripción | Sí                       | Siempre editable                            |
+| Precio      | No                       | Bloqueado si `soldCount > 0`                |
+| Capacidad   | Sí                       | No puede ser menor a `soldCount` (vendidos) |
+| Nueva Zona  | Sí                       | Se puede agregar zonas nuevas siempre       |
+| Eliminar Zona | No (con ventas)        | Solo si la zona no tiene tickets vendidos   |
 
 ---
 
-## 8. 🗺️ Próximos Pasos de Desarrollo
+## 9. Próximos Pasos de Desarrollo
 
 ### Prioridad Alta
 
 - [ ] Integración real con Stripe (reemplazar el mock)
-- [ ] Emails transaccionales (confirmación de registro, aprobación y compra)
 - [ ] Reportes financieros para organizadores
-- [x] ~~Sección de "Eventos Destacados" en la página principal del web-client~~ ✅ (20 May 2026)
-- [x] ~~Automatización de expiración de destacados (cron job `@nestjs/schedule` cada hora)~~ ✅ (20 May 2026)
-- [x] ~~Migración robusta del logo temporal en registro: copia archivo + actualiza BD + limpia carpeta temp (23 May 2026)~~ ✅
-- [x] ~~Eliminar logo anterior al subir nuevo en Panel Host: borrado automático antes de guardar (23 May 2026)~~ ✅
-- [x] ~~Avatar del HOST usaba tipo `logo` incorrecto — corregido a `user-avatar` para guardar en ruta correcta (23 May 2026)~~ ✅
+- [ ] Paginación en endpoints (eventos, órdenes, organizadores)
 
 ### Prioridad Media
 
-- [ ] Paginación en endpoints (eventos, órdenes, organizadores)
 - [ ] Sistema de categorías de eventos
 - [ ] Optimizar queries de findAll (no traer todos los seats si no es necesario)
-- [ ] CDN para imágenes (actualmente servidas estáticamente desde el servidor NestJS)
+- [ ] CDN para imágenes (actualmente servidas estáticamente desde NestJS)
+- [ ] Galería de imágenes en edición: evitar acumulación de imágenes al reeditar
 
 ### Prioridad Baja
 
@@ -661,144 +427,43 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 - [ ] CI/CD pipeline
 - [ ] Tests unitarios e integración
 
-### Completado ✅
+### Completado
 
-- [x] ~~Generar imagen QR real con librería `qrcode`~~ ✅
-- [x] ~~Búsqueda y filtrado de eventos~~ ✅
-- [x] ~~Upload de imágenes para eventos~~ ✅
-- [x] ~~Edición y eliminación de eventos~~ ✅
-- [x] ~~Gestión de estados (Draft/Published/Inactive)~~ ✅
-- [x] ~~Desactivación automática de eventos pasados~~ ✅
-- [x] ~~Edición de descripciones de zonas~~ ✅ (31 Mar 2026)
-- [x] ~~Protección de capacidad (no reducir bajo vendidos)~~ ✅ (31 Mar 2026)
-- [x] ~~Gestión dinámica de asientos al cambiar capacidad~~ ✅ (31 Mar 2026)
-- [x] ~~Registro de organizadores con campos Ecuador (provincia/ciudad)~~ ✅ (5 Abr 2026)
-- [x] ~~Panel Global Admin: aprobar, editar, eliminar organizadores~~ ✅ (5 Abr 2026)
-- [x] ~~Modal de edición completo en Global Admin~~ ✅ (5 Abr 2026)
-- [x] ~~Bloqueo de acceso en Host si cuenta no está APROBADA~~ ✅ (5 Abr 2026)
-- [x] ~~Arquitectura correcta de rutas Next.js (page.tsx) en web-host~~ ✅ (5 Abr 2026)
-- [x] ~~Logout con redirección automática al login~~ ✅ (5 Abr 2026)
-- [x] ~~Corrección de Login Automático tras Registro de Host~~ ✅ (1 May 2026)
-- [x] ~~Dashboard de Host aislado a sus propios eventos (/events/me)~~ ✅ (1 May 2026)
-- [x] ~~Gestión de Planes en Global Admin (CRUD completo)~~ ✅ (2 May 2026)
-- [x] ~~Planes dinámicos en registro de Host (cargados desde BD)~~ ✅ (2 May 2026)
-- [x] ~~Gestión de Usuarios del Dashboard (Admins y Editores)~~ ✅ (2 May 2026)
-- [x] ~~Reset de contraseña de organizadores desde Global Admin~~ ✅ (2 May 2026)
-- [x] ~~Logo de organización: subida en registro + edición admin + avatar en tabla~~ ✅ (2 May 2026)
-- [x] ~~Estructura de directorios organizada por organizador y evento~~ ✅ (2 May 2026)
-- [x] ~~Bloqueo de login para PENDING/REJECTED con mensaje descriptivo~~ ✅ (2 May 2026)
-- [x] ~~Botón "Cerrar Sesión" en pantalla Cuenta en Revisión~~ ✅ (2 May 2026)
-- [x] ~~Endpoint público GET /api/plans para formulario de registro~~ ✅ (2 May 2026)
-- [x] ~~Gestión de Planes en Global Admin (CRUD completo)~~ ✅ (2 May 2026)
-- [x] ~~Planes dinámicos en registro de Host (cargados desde BD)~~ ✅ (2 May 2026)
-- [x] ~~Gestión de Usuarios del Dashboard (Admins y Editores con roles)~~ ✅ (2 May 2026)
-- [x] ~~Reset de contraseña de organizadores desde Global Admin~~ ✅ (2 May 2026)
-- [x] ~~Logo de organización: subida en registro, edición admin y tabla con avatar~~ ✅ (2 May 2026)
-- [x] ~~Estructura de directorios organizada por organizador/evento~~ ✅ (2 May 2026)
-- [x] ~~Bloqueo de login para cuentas PENDING/REJECTED con mensaje descriptivo~~ ✅ (2 May 2026)
-- [x] ~~Botón "Cerrar Sesión" en pantalla de Cuenta en Revisión~~ ✅ (2 May 2026)
-- [x] ~~Página Mi Perfil para usuarios (Portal Cliente): foto avatar, datos personales, identificación, dirección~~ ✅ (3 May 2026)
-- [x] ~~Página Asistentes en Panel Host: compradores por evento, tickets comprados/usados, estado de asistencia, expandible~~ ✅ (8 May 2026)
-- [x] ~~Escáner de Tickets en Panel Host: cámara QR (jsQR), búsqueda por ID corto, token manual, Escanear/Detener~~ ✅ (8 May 2026)
-- [x] ~~Endpoint GET /orders/attendees/me para lista de asistentes del organizador~~ ✅ (8 May 2026)
-- [x] ~~Endpoint POST /tickets/validate-by-id para validar por ID corto~~ ✅ (8 May 2026)
-- [x] ~~Botón "Eliminar zona" oculto cuando la zona tiene ventas activas~~ ✅ (8 May 2026)
-- [x] ~~Tickets USED en rojo en Portal Cliente: badge, borde, timestamp escaneado, "Ticket ya utilizado"~~ ✅ (8 May 2026)
-- [x] ~~Endpoints GET/PATCH /api/auth/me para perfil de usuario~~ ✅ (3 May 2026)
-- [x] ~~Upload de foto de perfil en directorio independiente uploads/users/{id}/avatar/~~ ✅ (3 May 2026)
-- [x] ~~Toast de login al intentar seleccionar asientos sin autenticación (auto-cierre 4s)~~ ✅ (3 May 2026)
-- [x] ~~Campos de perfil extendidos en User (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)~~ ✅ (3 May 2026)
-- [x] ~~Sistema de Eventos Destacados: modelo BD (isFeatured/featuredUntil), endpoints API, UI admin con toggle~~ ✅ (17 May 2026)
-- [x] ~~Gestión Global de Eventos en Admin: vista con tabs Activos/Inactivos/Borrador~~ ✅ (17 May 2026)
-- [x] ~~Edición de eventos por Admin Global (formulario completo idéntico al de organizadores)~~ ✅ (17 May 2026)
-- [x] ~~Eliminación de eventos por Admin (con protección de tickets vendidos)~~ ✅ (17 May 2026)
-- [x] ~~Limpieza de página principal web-client: eliminación de hero, stats, botones redundantes~~ ✅ (17 May 2026)
-- [x] ~~Buscador colapsable integrado en Navbar (icono lupa → campo de texto)~~ ✅ (17 May 2026)
-- [x] ~~Eliminación de campo "Imagen General" en formularios de evento (reemplazado por Imagen Cuadrada 1:1)~~ ✅ (17 May 2026)
-- [x] ~~Página Usuarios en Panel Host: gestión de OrganizerMembers (ADMIN/STAFF), avatar, contraseña, estado~~ ✅ (17 May 2026)
-- [x] ~~Página Perfil en Panel Host: info personal, org (solo HOST), cambio de contraseña con verificación~~ ✅ (18 May 2026)
-- [x] ~~Ruta de avatar de miembros bajo directorio del organizador correspondiente~~ ✅ (18 May 2026)
-- [x] ~~Hero Section en Web Client: split DICE.fm con fuente Anton, titular bold, CTA, imagen evento próximo full-bleed~~ ✅ (18 May 2026)
-- [x] ~~Endpoints GET/PATCH /api/auth/me/organizer, /basic, /password, /organizer-profile para perfil de organizador/miembro~~ ✅ (18 May 2026)
-- [x] ~~Carrusel Hero coverflow interactivo con 3 próximos eventos: circular motion (teleport doble rAF), auto-avance, dots, pausa hover~~ ✅ (19 May 2026)
-- [x] ~~Aspecto 1:1 en tarjetas del carrusel (corregido de 2:3), contenedor transparente sin borde visible~~ ✅ (19 May 2026)
-- [x] ~~Fade lateral en bordes del carrusel: gradiente var(--bg-primary)→transparent via ::before/::after~~ ✅ (19 May 2026)
-- [x] ~~Reducción 10% del contenido izquierdo del hero (scale 0.9 transform-origin top left)~~ ✅ (19 May 2026)
-- [x] ~~Equalización de espaciado: titular→subtítulo = subtítulo→botones (eliminado margin-bottom del headline)~~ ✅ (19 May 2026)
-- [x] ~~Icono búsqueda SVG outlined (circle + line) en lugar de emoji 🔍 en SearchBar~~ ✅ (19 May 2026)
-- [x] ~~Sección Eventos Destacados en web-client: condicional (solo si hay destacados activos), tarjetas 1:1 con badge dorado, eventos destacados excluidos del catálogo general~~ ✅ (20 May 2026)
-- [x] ~~Cron job de expiración automática de destacados (`@nestjs/schedule`, cada hora, desactiva cuando `featuredUntil < now`)~~ ✅ (20 May 2026)
-- [x] ~~Campo `portraitImageUrl` (3:4): schema Prisma, backend, formularios CreateEvent/EditEvent (web-host y web-admin), usado en carrusel hero~~ ✅ (20 May 2026)
-- [x] ~~Carrusel hero usa `portraitImageUrl` (3:4) como imagen principal, aspect-ratio 3:4, posición vertical ajustada~~ ✅ (20 May 2026)
-- [x] ~~EventCard general usa `squareImageUrl` (1:1), placeholder SVG oscuro cuando no hay imagen~~ ✅ (20 May 2026)
-- [x] ~~Banner del evento: `aspect-ratio: 289/111` (exacto 2023×777px), `object-fit: contain`, `border-radius: 15px`, sin recorte~~ ✅ (20 May 2026)
+- Generar imagen QR real con librería `qrcode` ✅
+- Búsqueda y filtrado de eventos ✅
+- Upload de imágenes para eventos ✅
+- Edición y eliminación de eventos ✅
+- Gestión de estados (Draft/Published/Inactive) ✅
+- Desactivación automática de eventos pasados ✅
+- Edición de descripciones de zonas ✅
+- Protección de capacidad (no reducir bajo vendidos) ✅
+- Panel Global Admin: aprobar, editar, eliminar organizadores ✅
+- Gestión de Planes en Global Admin (CRUD completo) ✅
+- Planes dinámicos en registro de Host ✅
+- Gestión de Usuarios del Dashboard (Admins y Editores con roles) ✅
+- Página Mi Perfil para usuarios (Portal Cliente) ✅
+- Página Asistentes en Panel Host ✅
+- Escáner de Tickets en Panel Host (cámara, ID corto, token manual) ✅
+- Gestión de OrganizerMembers en Panel Host ✅
+- Página Perfil en Panel Host ✅
+- Hero Section con carrusel coverflow 3:4 ✅
+- Sección Eventos Destacados (web-client) ✅
+- Cron job de expiración de destacados ✅
+- Campo portraitImageUrl (imagen retrato 3:4) ✅
+- Logo oficial SVG AfroEventos en todas las apps ✅
+- Footer rediseñado con redes sociales ✅
+- Páginas legales (políticas de privacidad, términos y condiciones) ✅
+- URL Slugs amigables para eventos ✅
+- Rebrand completo a AfroEventos ✅
+- NX Daemon hot-reload activo ✅
+- **Emails transaccionales — sistema completo (13 templates)** ✅ (24 May 2026)
+- **Auth flow: verify email, forgot/reset password en 3 paneles** ✅ (24 May 2026)
+- **URL frontend `/eventos/` en español (migración de `/events/`)** ✅ (24 May 2026)
 
 ---
 
-## 9. 🐛 Bugs Conocidos / Deuda Técnica
+## 10. Bugs Conocidos / Deuda Técnica
 
-- **Lint warnings `any`**: Múltiples archivos usan `any` type (especialmente `events.service.ts` y `EditEventForm.tsx`). Funcional pero debería tiparse mejor.
-- **Console.log en create**: `events.service.ts` línea 10 tiene un `console.log` de debug que debería removerse.
-- **NX Daemon**: RESUELTO (23 May 2026) — `useDaemonProcess: true` + `watch: true` en serve target.
-- **Galería de imágenes en edición**: Las imágenes de galería existentes se acumulan en vez de reemplazarse (al editar, se suman las nuevas a las anteriores).
-
----
-
-## 10. 📋 Sesión del 22-23 de Mayo 2026 — UX/UI Web Client + URL Slugs + Rebrand AfroEventos
-
-### Cambios en Backend (API)
-
-| Archivo | Cambio |
-| :--- | :--- |
-| `nx.json` | `"useDaemonProcess": true` — daemon reactivado |
-| `apps/api/project.json` | `watch: true` en target `serve` (dev y producción) — hot-reload automático |
-| `apps/api/src/app/events/events.service.ts` | `findAll` y `findOne` ahora incluyen `organizer.organizerProfile.organizationLogo/Name`. Función `generateUniqueSlug()` y `backfillSlugs()`. `create` genera slug automático. `findOne` acepta slug o UUID. |
-| `apps/api/src/app/events/events.controller.ts` | Nuevo endpoint `GET /events/backfill-slugs` |
-| `libs/shared/prisma/schema.prisma` | Campo `slug String? @unique` agregado al modelo `Event` |
-
-**Comando ejecutado:** `GET /api/events/backfill-slugs` — 17 eventos existentes recibieron slug.
-
-### Cambios en Web Client (Puerto 4200)
-
-| Archivo | Cambio |
-| :--- | :--- |
-| `src/components/EventCard.tsx` | Badge "🔥 En Venta" eliminado. Solo muestra "🚫 Agotado" (rojo) cuando todos los seats tienen `isSold: true`. Link usa `event.slug \|\| event.id`. |
-| `src/components/FeaturedEventsSection.tsx` | Link usa `event.slug \|\| event.id` |
-| `src/components/HeroCarousel.tsx` | Interface `CarouselEvent` agrega campo `slug?`. Link usa `event.slug \|\| event.id` |
-| `src/components/Navbar.tsx` | "OpenTicket" → "AfroEventos" |
-| `src/components/Footer.tsx` | "OpenTicket" → "AfroEventos" (marca + copyright) |
-| `src/lib/api.ts` | `EventItem`: nuevos campos `slug?`, `category?`. `EventOrganizer`: nuevos campos `organizerProfile.organizationLogo/Name`. |
-| `src/app/layout.tsx` | `<title>` → "AfroEventos — Descubre Eventos Increíbles" |
-| `src/app/page.tsx` | Header "🎵 Próximos Eventos / No te pierdas..." eliminado. Añadido header "🗓 Próximos Eventos" con `.featured-header` solo en vista sin búsqueda. Espaciado reducido entre secciones. Hero text: "MÚSICA, BAILE / Y CULTURA QUE / TE PRENDE". Subtítulo actualizado. |
-| `src/app/global.css` | `.event-card-badge--sold-out` (rojo). `.organizer-avatar` circular 40px. `.upcoming-icon` con glow verde. `.hero-split-headline` font-size reducido a `clamp(2.97rem, 5.3vw, 5.3rem)`, `line-height: 1.05`, `.accent` cambiado a `display: inline`. `.ticket-purchase-action` sin `border-top`. Espaciado sección ajustado. `.featured-section padding-bottom: 0`. |
-| `src/app/events/[id]/EventDetailClient.tsx` | Avatar circular del organizador (logo o inicial fallback). Categoría real en lugar de "General". Total y botón Comprar ocultos si no hay sesión. Línea continua quitada de purchase action. "GRATIS" para zonas con precio 0. Selectores y contadores ocultos en zonas GRATIS. Total + Comprar + texto ayuda ocultos cuando todas las zonas son GRATIS (`allZonesFree`). Links del toast de login usan slug. |
-
-### Cambios en Web Host (Puerto 4201)
-
-| Archivo | Cambio |
-| :--- | :--- |
-| `src/components/Sidebar.tsx` | "OpenTicket" → "AfroEventos" |
-| `src/app/login/page.tsx` | "OpenTicket Host" → "AfroEventos Host" |
-| `src/app/dashboard/page.tsx` | Mensaje cuenta en revisión → "AfroEventos" |
-
-### Cambios en Web Admin (Puerto 4202)
-
-| Archivo | Cambio |
-| :--- | :--- |
-| `components/Sidebar.tsx` | "OpenTicket" → "AfroEventos" |
-| `app/layout.tsx` | `<title>` → "AfroEventos" |
-| `app/login/page.tsx` | Subtítulo → "AfroEventos" |
-| `app/dashboard/page.tsx` | Mensaje bienvenida → "AfroEventos" |
-
-### Cambios en Mobile App
-
-| Archivo | Cambio |
-| :--- | :--- |
-| `src/app/screens/Login.tsx` | "OpenTicket Validator" → "AfroEventos Validator" |
-
-### Notas importantes de esta sesión
-
-- **Comando para iniciar el backend ahora:** `npx nx serve api --no-dte` (hot-reload automático, no más rebuild manual)
-- **URLs de eventos ahora son amigables:** `/events/fiestas-de-san-luis-de-salinas` en lugar de UUID. Backend acepta slug o UUID (compatibilidad hacia atrás).
-- **Rebrand completo:** El proyecto se llama **AfroEventos**. Los imports internos `@open-ticket/shared` NO se cambiaron (son identificadores del monorepo).
-- **Zonas GRATIS:** Precio $0.00 muestra "GRATIS", oculta selectores/contadores y oculta Total+Comprar si todas las zonas son gratuitas.
+- **Lint warnings `any`**: Múltiples archivos usan `any` type. Funcional pero debería tiparse mejor.
+- **Galería de imágenes en edición**: Las imágenes de galería se acumulan en vez de reemplazarse.
+- **Ticket sin relación a Seat en BD**: Requiere decodificar todos los JWTs para encontrar compradores de un evento (costoso con muchos tickets). Mejora futura: agregar `eventId` al modelo `Order`.

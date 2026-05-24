@@ -35,7 +35,7 @@ export function FeaturedEventsSection({ events }: { events: EventItem[] }) {
           {events.map((event) => {
             const img = event.squareImageUrl || event.imageUrl || event.bannerImageUrl;
             return (
-              <Link key={event.id} href={`/events/${event.slug || event.id}`} className="featured-card">
+              <Link key={event.id} href={`/eventos/${event.slug || event.id}`} className="featured-card">
                 <div className="featured-card-img">
                   {img ? (
                     <img src={img} alt={event.title} />

@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class OrganizerMembersService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService, private mail: MailService) {}
 
     private async getProfileOrFail(userId: string) {
         const profile = await this.prisma.organizerProfile.findUnique({ where: { userId } });
@@ -28,7 +29,7 @@ export class OrganizerMembersService {
         if (existing) throw new ConflictException('Este email ya está registrado');
 
         const hashedPassword = await bcrypt.hash(data.password, 10);
-        return this.prisma.organizerMember.create({
+        const member = await this.prisma.organizerMember.create({
             data: {
                 name: data.name,
                 email: data.email,
@@ -40,6 +41,12 @@ export class OrganizerMembersService {
             },
             select: { id: true, name: true, email: true, phone: true, avatarUrl: true, memberRole: true, createdAt: true },
         });
+
+        this.mail.sendMemberInvitation(
+            member.email, member.name, profile.organizationName, member.memberRole, member.email, data.password,
+        ).catch(() => null);
+
+        return member;
     }
 
     async updateMember(userId: string, memberId: string, data: { name?: string; phone?: string; avatarUrl?: string; memberRole?: 'ADMIN' | 'STAFF'; password?: string }) {

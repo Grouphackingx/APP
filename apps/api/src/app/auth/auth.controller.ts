@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, HttpCode, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, HttpCode, UseGuards, Request, ForbiddenException, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto, UpdateBasicInfoDto, UpdateOrganizerProfileInfoDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -58,5 +58,29 @@ export class AuthController {
     updateOrganizerProfile(@Request() req: any, @Body() dto: UpdateOrganizerProfileInfoDto) {
         if (req.user.isMember) throw new ForbiddenException('Solo el organizador principal puede actualizar el perfil de la organización');
         return this.authService.updateOrganizerProfileInfo(req.user.userId, dto);
+    }
+
+    @Get('verify-email')
+    @HttpCode(200)
+    verifyEmail(@Query('token') token: string) {
+        return this.authService.verifyEmail(token);
+    }
+
+    @Post('resend-verification')
+    @HttpCode(200)
+    resendVerification(@Body('email') email: string) {
+        return this.authService.resendVerification(email);
+    }
+
+    @Post('forgot-password')
+    @HttpCode(200)
+    forgotPassword(@Body('email') email: string) {
+        return this.authService.forgotPassword(email);
+    }
+
+    @Post('reset-password')
+    @HttpCode(200)
+    resetPassword(@Body('token') token: string, @Body('password') password: string) {
+        return this.authService.resetPassword(token, password);
     }
 }

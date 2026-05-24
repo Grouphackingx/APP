@@ -9,6 +9,7 @@ import { RedisService } from '../redis/redis.service';
 import { PaymentsService } from '../payments/payments.service';
 import { JwtService } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrdersService {
@@ -17,6 +18,7 @@ export class OrdersService {
         private redis: RedisService,
         private jwtService: JwtService,
         private payments: PaymentsService,
+        private mail: MailService,
     ) { }
 
     /**
@@ -197,6 +199,36 @@ export class OrdersService {
 
         // Release Redis locks
         await this.redis.unlockSeats(seatIds, userId);
+
+        // Send purchase confirmation email (fire-and-forget)
+        try {
+            const buyer = await this.prisma.user.findUnique({
+                where: { id: userId },
+                select: { email: true, name: true },
+            });
+            const event = await this.prisma.event.findUnique({
+                where: { id: eventId },
+                select: { title: true, date: true, location: true, city: true },
+            });
+            if (buyer && event) {
+                const ticketInfos = seats.map((seat, i) => ({
+                    ticketId: order.tickets[i]?.id || '',
+                    eventTitle: event.title,
+                    eventDate: event.date.toISOString(),
+                    eventLocation: event.location,
+                    eventCity: (event as any).city || '',
+                    zoneName: seat.zone.name,
+                    seatNumber: seat.number ?? null,
+                }));
+                this.mail.sendPurchaseConfirmation(
+                    buyer.email,
+                    buyer.name,
+                    ticketInfos,
+                    totalAmount,
+                    order.id,
+                ).catch(() => null);
+            }
+        } catch { /* email failure must never break the purchase */ }
 
         return {
             orderId: order.id,

@@ -1,5 +1,7 @@
 'use client';
 
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -13,20 +15,20 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [unverified, setUnverified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [redirectTo, setRedirectTo] = useState('/');
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const redirect = urlParams.get('redirect');
-    if (redirect) {
-      setRedirectTo(redirect);
-    }
+    if (redirect) setRedirectTo(redirect);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setUnverified(false);
     setLoading(true);
 
     try {
@@ -34,7 +36,11 @@ export default function LoginPage() {
       loginUser(result.access_token, result.user);
       router.push(redirectTo);
     } catch (err: any) {
-      setError(err.message || 'Credenciales inválidas');
+      if (err.message === 'EMAIL_NOT_VERIFIED') {
+        setUnverified(true);
+      } else {
+        setError(err.message || 'Credenciales inválidas');
+      }
     } finally {
       setLoading(false);
     }
@@ -49,6 +55,26 @@ export default function LoginPage() {
         {error && (
           <div className="alert alert-error" id="login-error">
             ⚠️ {error}
+          </div>
+        )}
+
+        {unverified && (
+          <div className="alert" style={{
+            background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+            borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1rem',
+          }}>
+            <p style={{ margin: '0 0 0.5rem', fontWeight: 600, color: '#f59e0b' }}>
+              📧 Correo no verificado
+            </p>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada o solicita un nuevo enlace.
+            </p>
+            <Link
+              href={`/verify-email?resend=1&email=${encodeURIComponent(email)}`}
+              style={{ fontSize: '0.875rem', color: '#f59e0b', fontWeight: 600 }}
+            >
+              Reenviar correo de verificación →
+            </Link>
           </div>
         )}
 
@@ -67,7 +93,12 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Contraseña</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <label htmlFor="password" style={{ margin: 0 }}>Contraseña</label>
+              <Link href="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: 500 }}>
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"

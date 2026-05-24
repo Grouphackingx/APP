@@ -185,7 +185,7 @@ export default function MyTicketsPage() {
           eventSlug = ev?.slug || null;
         } catch { /* usa eventId como fallback */ }
       }
-      const eventUrl = `${window.location.origin}/events/${eventSlug || group.eventId}`;
+      const eventUrl = `${window.location.origin}/eventos/${eventSlug || group.eventId}`;
       const entradaLabel = ticket.hasSeatingChart !== false ? 'Asiento' : 'Entrada';
       const entradaVal = ticket.hasSeatingChart !== false ? (ticket.seatNumber || '-') : '#' + ticket.seatNumber;
       const shareTextBase = [
@@ -541,7 +541,7 @@ export default function MyTicketsPage() {
                                 
                                 {group.eventId && (
                                   <Link
-                                    href={`/events/${group.eventId}`}
+                                    href={`/eventos/${group.eventId}`}
                                     className="ticket-link"
                                     style={{
                                       fontSize: '0.8rem',

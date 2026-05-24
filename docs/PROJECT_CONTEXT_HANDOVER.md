@@ -1,92 +1,115 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
 **Última Actualización:** 24 de Mayo de 2026
-**Estado del Proyecto:** ✅ Fases 1-4 Completas + Perfil Usuario + Toast autenticación + Asistentes y Escáner (Host) + Tickets USED gris (Client) + Eventos Destacados (Admin) + Gestión Global Eventos (Admin) + Usuarios OrganizerMembers (Host) + Página Perfil Host + Hero Section con Carrusel Coverflow 1:1 + Logo oficial SVG aplicado en todas las apps + Footer rediseñado + Páginas legales
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
 
-## 1. VisiÃ³n del Proyecto
+## 1. Visión del Proyecto
 
-**OpenTicket** es un sistema de venta y gestiÃ³n de entradas para eventos (marketplace de dos lados), que replica la funcionalidad de `buenplan.com.ec`.
+**AfroEventos** es un marketplace de venta y gestión de entradas para eventos de cultura afroecuatoriana. Sistema de dos lados (organizadores y asistentes), similar a `buenplan.com.ec`.
 
 ### Actores del Sistema
 
-| Rol                    | DescripciÃ³n                                                                                 | Interface          |
-| :--------------------- | :------------------------------------------------------------------------------------------ | :----------------- |
-| **Host (Organizador)** | Crea eventos, gestiona zonas/asientos, ve reportes financieros                              | Web Host (:4201)   |
-| **User (Asistente)**   | Descubre eventos, compra tickets (selecciona asientos), recibe QR dinÃ¡micos, ve sus tickets | Web Client (:4200) |
-| **Staff (Validador)**  | Escanea cÃ³digos QR en la puerta usando la App MÃ³vil                                         | Mobile App (Expo)  |
-| **Admin**              | GestiÃ³n global de la plataforma                                                             | Web Admin (:4202)  |
+| Rol                    | Descripción                                                                                  | Interface          |
+| :--------------------- | :------------------------------------------------------------------------------------------- | :----------------- |
+| **Host (Organizador)** | Crea eventos, gestiona zonas/asientos, ve reportes, gestiona su equipo                       | Web Host (:4201)   |
+| **User (Asistente)**   | Descubre eventos, compra tickets, recibe QR dinámicos, ve sus tickets                        | Web Client (:4200) |
+| **Staff (Validador)**  | Escanea códigos QR en la puerta usando la App Móvil                                          | Mobile App (Expo)  |
+| **Admin**              | Gestión global de la plataforma: organizadores, planes, eventos, usuarios del sistema        | Web Admin (:4202)  |
 
 ---
 
-## 2. Stack TecnolÃ³gico
+## 2. Stack Tecnológico
 
-| Capa                | TecnologÃ­a                         | Detalle                                      |
-| :------------------ | :--------------------------------- | :------------------------------------------- |
-| **Monorepo**        | Nx (Integrated Repo)               | GestiÃ³n de workspace, builds y dev servers   |
-| **Lenguaje**        | TypeScript                         | Modo estricto con decoradores experimentales |
-| **Backend**         | NestJS (Node.js)                   | API RESTful en puerto 3000                   |
-| **Frontend (User)** | Next.js 16 (App Router, Turbopack) | Portal de usuario en puerto 4200             |
-| **Frontend (Host)** | Next.js 16 (App Router, Turbopack) | Dashboard de organizador en puerto 4201      |
-| **Frontend (Admin)**| Next.js 16 (App Router, Turbopack) | Dashboard de administrador en puerto 4202    |
-| **Mobile**          | React Native (Expo)                | App de validaciÃ³n QR para staff              |
-| **Base de Datos**   | PostgreSQL 15                      | Containerizado en puerto 5435                |
-| **Cache/Locks**     | Redis 7                            | Containerizado en puerto 6380                |
-| **ORM**             | Prisma 5.22.0                      | Schema como fuente de verdad                 |
-| **Infra**           | Docker Compose                     | PostgreSQL + Redis                           |
-| **Pagos**           | Stripe (simulado)                  | MÃ³dulo mock, siempre aprueba                 |
+| Capa                | Tecnología                          | Detalle                                      |
+| :------------------ | :---------------------------------- | :------------------------------------------- |
+| **Monorepo**        | Nx (Integrated Repo)                | Gestión de workspace, builds y dev servers   |
+| **Lenguaje**        | TypeScript                          | Modo estricto con decoradores experimentales |
+| **Backend**         | NestJS (Node.js)                    | API RESTful en puerto 3000                   |
+| **Frontend (User)** | Next.js 16 (App Router, Turbopack)  | Portal de usuario en puerto 4200             |
+| **Frontend (Host)** | Next.js 16 (App Router, Turbopack)  | Dashboard de organizador en puerto 4201      |
+| **Frontend (Admin)**| Next.js 16 (App Router, Turbopack)  | Dashboard de administrador en puerto 4202    |
+| **Mobile**          | React Native (Expo)                 | App de validación QR para staff              |
+| **Base de Datos**   | PostgreSQL 15                       | Containerizado en puerto 5435                |
+| **Cache/Locks**     | Redis 7                             | Containerizado en puerto 6380                |
+| **ORM**             | Prisma 5.22.0                       | Schema como fuente de verdad                 |
+| **Infra**           | Docker Compose                      | PostgreSQL + Redis                           |
+| **Pagos**           | Stripe (simulado)                   | Módulo mock, siempre aprueba                 |
+| **Email**           | Nodemailer + @nestjs/mailer         | SMTP configurable (Gmail / Resend / cualquier SMTP) |
+| **Scheduler**       | @nestjs/schedule                    | Cron job de expiración de eventos destacados |
 
 ---
 
-## 3. Arquitectura Actual (Fases 1-4 Completas)
+## 3. Arquitectura Actual
 
 ### Estructura de Carpetas
 
 ```text
 /
-â”œâ”€â”€ apps/
-â”‚   â”œâ”€â”€ api/                     # âœ… Port 3000. NestJS Backend.
-â”‚   â”‚   â””â”€â”€ src/app/
-â”‚   â”‚       â”œâ”€â”€ auth/            # Login JWT, Registro, Guards
-â”‚   â”‚       â”œâ”€â”€ events/          # CRUD de Eventos con Zonas y Asientos
-â”‚   â”‚       â”œâ”€â”€ orders/          # Lock de asientos, Compra, Tickets QR
-â”‚   â”‚       â”œâ”€â”€ payments/        # Stripe simulado
-â”‚   â”‚       â”œâ”€â”€ tickets/         # ValidaciÃ³n de QR (VALID â†’ USED)
-â”‚   â”‚       â”œâ”€â”€ prisma/          # PrismaService
-â”‚   â”‚       â””â”€â”€ redis/           # RedisService (ioredis)
-â”‚   â”‚
-â”‚   â”œâ”€â”€ web-client/              # âœ… Port 4200. Next.js Portal de Usuario.
-â”‚   â”‚
-â”‚   â”œâ”€â”€ web-host/                # âœ… Port 4201. Next.js Dashboard Organizador.
-â”‚   â”‚
-â”‚   â”œâ”€â”€ web-admin/               # âœ… Port 4202. Next.js Dashboard Admin.
-â”‚   â”‚
-â”‚   â””â”€â”€ mobile-app/              # âœ… Expo App. Validador de QR para Staff.
-â”‚
-â”œâ”€â”€ libs/
-â”‚   â”œâ”€â”€ shared/                  # âœ… LibrerÃ­a compartida
-â”‚   â””â”€â”€ ui-kit/                  # ðŸ“  Scaffolded (sin uso aÃºn)
-â”‚
-â”œâ”€â”€ scripts/
-â”‚   â””â”€â”€ seed-roles.js            # Script para asignar roles HOST/STAFF
-â”‚
-â”œâ”€â”€ docs/
-â”‚   â”œâ”€â”€ PROJECT_CONTEXT_HANDOVER.md  # Este archivo
-â”‚   â””â”€â”€ CHECKPOINT_RESTORE.md        # GuÃ­a rÃ¡pida de inicio
-â”‚
-â”œâ”€â”€ docker-compose.yml           # PostgreSQL 15 + Redis 7
-â”œâ”€â”€ .env                         # Variables de entorno
-â””â”€â”€ tsconfig.base.json           # Paths: @open-ticket/shared, @open-ticket/ui-kit
+├── apps/
+│   ├── api/                     # Port 3000. NestJS Backend.
+│   │   └── src/app/
+│   │       ├── auth/            # Login JWT, Registro, Guards, Verify/Reset Password
+│   │       ├── events/          # CRUD de Eventos con Zonas, Asientos, Slugs
+│   │       ├── orders/          # Lock de asientos, Compra, Tickets QR, Asistentes
+│   │       ├── payments/        # Stripe simulado
+│   │       ├── tickets/         # Validación de QR (VALID → USED), validate-by-id
+│   │       ├── admin/           # Gestión global: orgs, planes, usuarios, eventos
+│   │       ├── organizer-members/ # CRUD OrganizerMember (ADMIN/STAFF)
+│   │       ├── mail/            # MailModule @Global() — 13 templates, 12 métodos
+│   │       ├── scheduler/       # Cron job expiración eventos destacados (cada hora)
+│   │       ├── upload/          # Multer disk storage, rutas dinámicas por tipo
+│   │       ├── prisma/          # PrismaService
+│   │       └── redis/           # RedisService (ioredis)
+│   │
+│   ├── web-client/              # Port 4200. Next.js Portal de Usuario.
+│   │   └── src/app/
+│   │       ├── eventos/[id]/    # Detalle de evento (ruta en español)
+│   │       ├── my-tickets/      # Tickets del usuario con QR
+│   │       ├── my-profile/      # Perfil: avatar, datos, ID, dirección Ecuador
+│   │       ├── verify-email/    # Verificación de email con token
+│   │       ├── forgot-password/ # Solicitar reset de contraseña
+│   │       └── reset-password/  # Nueva contraseña con token
+│   │
+│   ├── web-host/                # Port 4201. Next.js Dashboard Organizador.
+│   │   └── src/app/
+│   │       ├── forgot-password/ # Solicitar reset (panel host)
+│   │       └── reset-password/  # Nueva contraseña (panel host)
+│   │
+│   ├── web-admin/               # Port 4202. Next.js Dashboard Admin.
+│   │   └── app/
+│   │       ├── forgot-password/ # Solicitar reset (panel admin)
+│   │       └── reset-password/  # Nueva contraseña (panel admin)
+│   │
+│   └── mobile-app/              # Expo App. Validador de QR para Staff.
+│
+├── libs/
+│   ├── shared/                  # Librería compartida
+│   │   ├── prisma/schema.prisma # Schema único de base de datos
+│   │   └── src/lib/dto/         # DTOs compartidos (auth, events)
+│   └── ui-kit/                  # Scaffolded (sin uso aún)
+│
+├── scripts/
+│   └── seed-roles.js            # Script para asignar roles HOST/STAFF
+│
+├── docs/
+│   ├── PROJECT_CONTEXT_HANDOVER.md  # Este archivo
+│   └── CHECKPOINT_RESTORE.md        # Guía rápida de inicio + funcionalidades completas
+│
+├── docker-compose.yml           # PostgreSQL 15 + Redis 7
+├── .env                         # Variables de entorno
+├── start-all.bat                # Script para iniciar los 4 servicios
+└── tsconfig.base.json           # Paths: @open-ticket/shared, @open-ticket/ui-kit
 ```
 
 ### Infraestructura (Docker)
 
 | Servicio          | Puerto             | Credenciales                                  |
 | :---------------- | :----------------- | :-------------------------------------------- |
-| **PostgreSQL 15** | 5435 (no estÃ¡ndar) | `postgres` / `password` / DB: `openticket_db` |
-| **Redis 7**       | 6380 (no estÃ¡ndar) | Sin password                                  |
+| **PostgreSQL 15** | 5435 (no estándar) | `postgres` / `password` / DB: `openticket_db` |
+| **Redis 7**       | 6380 (no estándar) | Sin password                                  |
 
 ### Variables de Entorno (`.env`)
 
@@ -97,146 +120,215 @@ JWT_SECRET=superSecretKey123
 PORT=3000
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
 NEXT_PUBLIC_SITE_URL=http://localhost:4200
+NEXT_PUBLIC_HOST_URL=http://localhost:4201
+NEXT_PUBLIC_ADMIN_URL=http://localhost:4202
+
+# Email (SMTP — dejar vacío para modo silencioso)
+MAIL_HOST=
+MAIL_PORT=587
+MAIL_SECURE=false
+MAIL_USER=
+MAIL_PASS=
+MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
 ```
 
 ---
 
-## 4. Funcionalidades Implementadas
-
-### A. Backend (NestJS API) â€” 7 mÃ³dulos
-
-| MÃ³dulo       | Endpoints                                                         | Estado | DescripciÃ³n                                                        |
-| :----------- | :---------------------------------------------------------------- | :----- | :----------------------------------------------------------------- |
-| **Auth**     | `POST /auth/login`, `POST /auth/register`                         | âœ…     | JWT Bearer tokens, bcrypt hashing                                  |
-| **Events**   | `GET /events?q=...`, `GET /events/:id`, `POST /events`            | âœ…     | CRUD con zonas, asientos auto-generados, bÃºsqueda por tÃ­tulo/lugar |
-| **Upload**   | `POST /api/upload`, `GET /uploads/:file`                          | âœ…     | Multer disk storage, ServeStatic root `/uploads`                   |
-| **Orders**   | `POST /orders/lock-seats`, `POST /orders/purchase`, `GET /orders` | âœ…     | Redis locking (10min TTL), transacciones Prisma                    |
-| **Payments** | Interno (no HTTP)                                                 | âœ…     | SimulaciÃ³n Stripe, siempre aprueba                                 |
-| **Tickets**  | `POST /tickets/validate`                                          | âœ…     | Decodifica QR JWT, marca USED, previene doble uso                  |
-| **Prisma**   | Servicio global                                                   | âœ…     | PrismaClient inyectable                                            |
-| **Redis**    | Servicio global                                                   | âœ…     | ioredis, lock/unlock/getSeatLockHolder                             |
-
-### B. Frontend Web Client (Next.js) â€” 5 pÃ¡ginas
-
-| Ruta           | Componente             | Estado       | DescripciÃ³n                                                |
-| :------------- | :--------------------- | :----------- | :--------------------------------------------------------- |
-| `/`            | `page.tsx`             | ✅           | Hero split: titular izq (Anton, scale 0.9) + carrusel coverflow der (3 próximos eventos, 1:1, fade lateral) + catálogo en grid + búsqueda SVG en navbar |
-| `/login`       | `login/page.tsx`       | âœ…           | Formulario de login con JWT                                |
-| `/register`    | `register/page.tsx`    | âœ…           | Formulario de registro                                     |
-| `/events/[id]` | `events/[id]/page.tsx` | âœ…           | Detalle del evento + mapa de asientos interactivo + compra |
-- Tema oscuro con sidebar lateral
-- Stats cards (Eventos Creados, Tickets Vendidos, Asientos Totales, Ingresos)
-- Tabla de eventos con estado (Publicado/Borrador)
-
-### D. Frontend Web Admin (Next.js) - 3 Vistas
-
-| Vista                 | Componente                    | Estado      | Descripción                                                           |
-| :-------------------- | :---------------------------- | :---------- | :-------------------------------------------------------------------- |
-| Login                 | `login/page.tsx`              | Completado  | Inicia sesión como administrador del sistema global.                  |
-| Dashboard Inicio      | `dashboard/page.tsx`          | Completado  | Panel maestro principal con resumen operativo.                        |
-| Gestión Organizadores | `dashboard/page.tsx` (view)   | Completado  | Tabla con control maestro de los estados de organizadores.            |
-| Gestión Usuarios      | `dashboard/page.tsx` (view)   | Esqueleto   | Placeholder para lista de usuarios compradores.                       |
-
-**Características UI:**
-
-- Completamente diseñado en modo oscuro CSS nativo utilizando los mismos tokens del host.
-- Libre de dependencias dinámicas como Tailwind Utils para evitar overhead o bloqueos de Webpack Turbopack.
-### D. Mobile App (React Native / Expo) â€” 2 pantallas
-
-| Pantalla | Archivo             | Estado | DescripciÃ³n                       |
-| :------- | :------------------ | :----- | :-------------------------------- |
-| Login    | `LoginScreen.tsx`   | âœ…     | AutenticaciÃ³n para staff          |
-| Scanner  | `ScannerScreen.tsx` | âœ…     | CÃ¡mara QR + validaciÃ³n contra API |
-
----
-
-## 5. Schema de Base de Datos (Prisma)
+## 4. Schema de Base de Datos (Prisma)
 
 ```prisma
-enum Role      { USER, HOST, ADMIN, STAFF }
+enum Role      { USER, HOST, ADMIN, EDITOR, STAFF }
 enum EventStatus { DRAFT, PUBLISHED, CANCELLED, COMPLETED }
 enum TicketStatus { VALID, USED, REFUNDED }
+enum OrganizerStatus { PENDING, APPROVED, REJECTED }
+enum MemberRole { ADMIN, STAFF }
 
 model User {
-  id, email (unique), password (bcrypt), name, phone?, role (default USER)
-  // Perfil extendido (3 Mayo 2026):
-  avatarUrl?, idType? ("cedula"|"ruc"|"pasaporte"), idNumber?
-  address?, province?, city?, birthDate?, citizenship?
-  â†’ eventsOwned Event[], orders Order[], organizerProfile OrganizerProfile?
+  id, email (unique), password (bcrypt), name, phone?
+  role (default USER)
+  // Auth
+  emailVerified        Boolean   @default(true)  // false para nuevos registros web-client
+  resetPasswordToken   String?   @unique
+  resetPasswordExpires DateTime?
+  // Perfil extendido
+  avatarUrl?, idType?, idNumber?, address?, province?, city?, birthDate?, citizenship?
+  → eventsOwned Event[], orders Order[], organizerProfile OrganizerProfile?
+}
+
+model OrganizerProfile {
+  id, userId → User (unique)
+  organizationName, organizationDescription?, organizationLogo?
+  address?, province?, city?
+  status OrganizerStatus (default PENDING)
+  planId → Plan?
+  → members OrganizerMember[]
+}
+
+model OrganizerMember {
+  id, email (unique), password (bcrypt), name, phone?, avatarUrl?
+  memberRole MemberRole (ADMIN | STAFF)
+  isActive (default true)
+  organizerProfileId → OrganizerProfile
+}
+
+model Plan {
+  id, name, maxEvents (0 = ilimitado), price (Decimal)
+  → organizers OrganizerProfile[]
 }
 
 model Event {
-  id, title, description?, date, location, imageUrl?, status (default DRAFT)
-  â†’ organizer User, zones Zone[]
+  id, slug? (unique), title, description?, date, location, city?, province?
+  imageUrl?, bannerImageUrl?, squareImageUrl?, portraitImageUrl?
+  status (default DRAFT)
+  isFeatured (default false), featuredUntil?
+  category?
+  → organizer User, zones Zone[]
 }
 
 model Zone {
-  id, eventId â†’ Event, name, price (Decimal), capacity, isReservedSeating
-  â†’ seats Seat[]
+  id, eventId → Event, name, price (Decimal), capacity, isReservedSeating
+  description?
+  → seats Seat[]
 }
 
 model Seat {
-  id, zoneId â†’ Zone, row?, number?, isSold (default false)
+  id, zoneId → Zone, row?, number?, isSold (default false)
 }
 
 model Order {
-  id, userId â†’ User, totalAmount (Decimal), status, paymentRef?
-  â†’ tickets Ticket[]
+  id, userId → User, totalAmount (Decimal), status, paymentRef?
+  → tickets Ticket[]
 }
 
 model Ticket {
-  id, orderId â†’ Order, qrCodeToken (unique), status (default VALID), scannedAt?
+  id, orderId → Order, qrCodeToken (unique JWT), status (default VALID), scannedAt?
 }
 ```
 
-**Nota:** El `Ticket` no tiene relaciÃ³n directa con `Seat`. La informaciÃ³n del asiento (zona, nÃºmero, evento) se codifica dentro del QR JWT token y se decodifica en el endpoint `GET /orders` para enriquecer la respuesta.
+**Nota crítica**: El `Ticket` no tiene relación directa con `Seat` ni `Event`. La información del asiento y el `eventId` se codifican dentro del QR JWT y se decodifican en runtime para el endpoint `GET /orders` y para notificaciones de cambio de evento.
+
+---
+
+## 5. Módulo de Email (MailModule)
+
+### Arquitectura
+
+- `@Global()` + `MailModule` importado en `AppModule` — inyectable en todos los módulos sin importarlo explícitamente.
+- Configuración SMTP desde variables de entorno (`MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURE`, `MAIL_USER`, `MAIL_PASS`, `MAIL_FROM`).
+- Si `MAIL_HOST` está vacío, el transport se ignora y los emails fallan silenciosamente.
+- Patrón fire-and-forget en todos los callers: `.catch(() => null)` — nunca bloquea el flujo del usuario.
+
+### Métodos del MailService
+
+| Método | Template | Descripción |
+| :--- | :--- | :--- |
+| `sendWelcomeUser(to, name)` | `welcome-user` | Bienvenida al portal de clientes |
+| `sendWelcomeHost(to, name, orgName)` | `welcome-host` | Bienvenida al portal de organizadores |
+| `sendEmailVerification(to, name, token)` | `verify-email` | Token de verificación de email |
+| `sendPasswordReset(to, name, token)` | `reset-password` | Token de reset de contraseña |
+| `sendPasswordChanged(to, name)` | `password-changed` | Confirmación de cambio de contraseña |
+| `sendPurchaseConfirmation(to, buyerName, eventTitle, eventDate, eventLocation, tickets, totalAmount, orderId)` | `purchase-confirmation` | Confirmación de compra con todos los tickets |
+| `sendHostApproved(to, name, orgName)` | `host-approved` | Aprobación del organizador |
+| `sendHostRejected(to, name, orgName, reason?)` | `host-rejected` | Rechazo del organizador con motivo |
+| `sendAccountCreatedByAdmin(to, name, email, password, role, orgName?)` | `account-created-by-admin` | Credenciales de cuenta creada por admin |
+| `sendMemberInvitation(to, memberName, orgName, memberRole, email, password)` | `member-invitation` | Invitación a miembro con credenciales |
+| `sendEventCanceled(to, buyerName, eventTitle, eventDate, eventLocation, eventCity, orderId)` | `event-canceled` | Aviso de cancelación a comprador |
+| `sendEventRescheduled(to, buyerName, eventTitle, oldDate, newDate, newLocation, newCity)` | `event-rescheduled` | Aviso de reprogramación a comprador |
 
 ---
 
 ## 6. Flujos de Negocio Verificados
 
-### Flujo de Compra (End-to-End) âœ…
+### Flujo de Compra (End-to-End)
 
 ```
-Usuario selecciona asientos â†’ POST /orders/lock-seats (Redis TTL 10min)
-â†’ POST /orders/purchase â†’ Stripe mock â†’ Prisma transaction:
+Usuario selecciona asientos → POST /orders/lock-seats (Redis TTL 10min)
+→ POST /orders/purchase → Stripe mock → Prisma transaction:
   [Seats marked sold + Order created + Tickets with QR JWT created]
-â†’ Redis locks released â†’ Response with tickets & QR tokens
+→ Redis locks released
+→ MailService.sendPurchaseConfirmation() .catch(() => null)
+→ Response with tickets & QR tokens
 ```
 
-### Flujo de ValidaciÃ³n QR âœ…
+### Flujo de Validación QR
 
 ```
-Staff escanea QR â†’ POST /tickets/validate (token JWT)
-â†’ JWT decoded â†’ Ticket found in DB â†’ Status check:
-  - VALID â†’ Mark as USED, set scannedAt â†’ âœ… "Acceso Permitido"
-  - USED â†’ âŒ "Este ticket YA FUE USADO anteriormente"
+Staff escanea QR → POST /tickets/validate (token JWT)
+→ JWT decoded → Ticket found in DB → Status check:
+  - VALID → Mark as USED, set scannedAt → "Acceso Permitido"
+  - USED → "Este ticket YA FUE USADO anteriormente"
+
+Alternativa: POST /tickets/validate-by-id { partialId: '#c288f2ae' }
+→ Busca ticket por id.startsWith(partialId, insensible a #)
+→ Misma lógica de validación
 ```
 
-### Flujo de "Mis Tickets" âœ…
+### Flujo de "Mis Tickets"
 
 ```
-Usuario logueado â†’ GET /orders (JWT)
-â†’ Backend: Fetch orders + tickets â†’ Decode cada QR JWT
-â†’ Fetch event info (tÃ­tulo, fecha, ubicaciÃ³n) desde DB
-â†’ Response enriquecida con eventTitle, zoneName, seatNumber por ticket
+Usuario logueado → GET /orders (JWT)
+→ Backend: Fetch orders + tickets → Decode cada QR JWT
+→ Fetch event info (título, fecha, ubicación) desde DB
+→ Response enriquecida con eventTitle, zoneName, seatNumber por ticket
+```
+
+### Flujo de Notificación de Cambio de Evento
+
+```
+Host edita evento → PATCH /events/:id
+→ EventsService.update() detecta si status === CANCELLED o fecha/lugar cambiaron
+→ Si hay cambio relevante: EventsService.notifyBuyersOfChange()
+  → Carga todos los tickets con su order.user
+  → Decodifica cada JWT con JwtService.verify()
+  → Filtra tickets donde decoded.eventId === eventId
+  → Deduplica por userId
+  → Envía email event-canceled o event-rescheduled a cada comprador único
+→ Todo fire-and-forget: .catch(() => null)
+```
+
+### Flujo de Verificación de Email
+
+```
+POST /auth/register
+→ Crea User con emailVerified: false
+→ Genera token JWT (24h) → guarda en resetPasswordToken
+→ Envía verify-email con link: SITE_URL/verify-email?token=JWT
+→ Usuario abre link → GET /auth/verify-email?token=JWT
+→ Verifica JWT → emailVerified: true → limpia token
+```
+
+### Flujo de Reset de Contraseña
+
+```
+POST /auth/forgot-password { email }
+→ Anti-enumeración: siempre responde "Si el email existe..."
+→ Si existe: token JWT (1h) → resetPasswordToken + resetPasswordExpires
+→ Envía reset-password con link correcto según dominio de origen:
+  - SITE_URL/reset-password (web-client)
+  - HOST_URL/reset-password (web-host)
+  - ADMIN_URL/reset-password (web-admin)
+
+POST /auth/reset-password { token, newPassword }
+→ Verifica JWT + compara token + verifica no expirado
+→ bcrypt.hash(newPassword) → actualiza password → limpia token/expires
 ```
 
 ---
 
 ## 7. Datos de Prueba
 
-| Rol       | Email                    | Password     | FunciÃ³n                  |
-| :-------- | :----------------------- | :----------- | :----------------------- |
-| **Host**  | `admin@openticket.com`   | `admin123`   | Crear eventos en `:4201` |
-| **User**  | `cliente@openticket.com` | `cliente123` | Comprar en `:4200`       |
-| **Staff** | `staff@openticket.com`   | `staff123`   | Validar QR en Mobile App |
-
-**Script de seed:** `node scripts/seed-roles.js` (actualiza roles de USER â†’ HOST/STAFF)
+| Rol                 | Email                      | Password       | Dónde usarlo        |
+| :------------------ | :------------------------- | :------------- | :------------------ |
+| Admin Global        | `admin@admin.com`          | `admin123`     | `:4202` (web-admin) |
+| Host (Organizador)  | `admin@openticket.com`     | (restablecer)  | `:4201` (web-host)  |
+| Host (Organizador)  | `grouphackingx@gmail.com`  | (restablecer)  | `:4201` (web-host)  |
+| Cliente             | `dmxwilly@gmail.com`       | `willy2024`    | `:4200` (web-client)|
+| Cliente             | `cliente@openticket.com`   | `cliente123`   | `:4200` (web-client)|
+| Staff (Validador)   | `staff@openticket.com`     | `staff123`     | Mobile App          |
 
 ---
 
-## 8. GuÃ­a Operativa (CÃ³mo Iniciar)
+## 8. Guía Operativa (Cómo Iniciar)
 
 ```powershell
 # 1. Infraestructura
@@ -246,503 +338,238 @@ docker-compose up -d
 npx prisma generate --schema=libs/shared/prisma/schema.prisma
 npx prisma db push --schema=libs/shared/prisma/schema.prisma
 
-# 3. API (Terminal 1)
+# 3. API (Terminal 1) — hot-reload activo
 npx nx serve api --no-dte
 
 # 4. Web Client (Terminal 2)
-npx nx dev web-client --no-dte
+cd apps/web-client && npx next dev --port=4200
 
-# 5. Web Host (Terminal 3 â€” desde apps/web-host/)
-npx next dev --port=4201
+# 5. Web Host (Terminal 3)
+cd apps/web-host && npx next dev --port=4201
 
-# 6. Mobile App (Terminal 4 â€” opcional)
-cd apps/mobile-app && npx expo start
+# 6. Web Admin (Terminal 4)
+cd apps/web-admin && npx next dev --port=4202
+
+# Alternativa: script todo-en-uno
+start-all.bat
 ```
 
 ---
 
-## 9. Roadmap (PrÃ³ximos Pasos)
+## 9. Roadmap
 
-### Fase 4: Mejoras de ProducciÃ³n
+### Prioridad Alta
 
-- [ ] IntegraciÃ³n real con Stripe (configurar `STRIPE_SECRET_KEY`)
-- [ ] Panel de Admin (gestiÃ³n global)
+- [ ] Integración real con Stripe
 - [ ] Reportes financieros para organizadores
-- [ ] Emails transaccionales (confirmaciÃ³n de compra)
-- [x] ~~Generar imagen QR real (librerÃ­a `qrcode`) en la pÃ¡gina "Mis Tickets"~~ âœ…
-- [x] ~~BÃºsqueda y filtrado de eventos (por fecha, ubicaciÃ³n, categorÃ­a)~~ âœ…
-- [ ] PaginaciÃ³n en endpoints (eventos, Ã³rdenes)
-- [x] ~~Upload de imÃ¡genes de eventos~~ âœ…
-- [ ] Sistema de categorÃ­as de eventos
+- [ ] Paginación en endpoints
 
-### Fase 5: Escalabilidad
+### Prioridad Media
 
+- [ ] Sistema de categorías de eventos
+- [ ] Optimizar queries de findAll (sin traer todos los seats)
+- [ ] CDN para imágenes
+
+### Prioridad Baja
+
+- [ ] Websockets para mapa de asientos en tiempo real
 - [ ] Rate limiting en API
-- [ ] Websockets para actualizaciones en tiempo real del mapa de asientos
-- [ ] CDN para imÃ¡genes
 - [ ] CI/CD pipeline
-- [ ] Tests unitarios e integraciÃ³n
+- [ ] Tests unitarios e integración
 
 ---
 
-## 10. Problemas Conocidos / Notas
+## 10. Problemas Conocidos / Notas Técnicas
 
-- **Puertos no estÃ¡ndar**: PostgreSQL en 5435, Redis en 6380 (para evitar conflictos).
-- **Prisma 5.22.0**: VersiÃ³n bloqueada por incompatibilidades de CLI con v7+.
-- **Pagos simulados**: El mÃ³dulo `PaymentsService` siempre retorna `true`. Necesita integraciÃ³n real con Stripe para producciÃ³n.
-- **Web Host TUI**: `npx nx dev web-host` puede fallar en la TUI interactiva de Nx. Usar `npx next dev --port=4201` directamente desde `apps/web-host/`.
-- **Webpack NestJS**: Usa `npx -y webpack-cli` en `project.json` para asegurar que el build encuentra el CLI.
-- **Ticket sin relaciÃ³n a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento se codifica en el QR JWT y se decodifica en runtime para el endpoint `GET /orders`.
-- **Evento "Borrador"**: Los eventos se crean con status `DRAFT` excepto cuando se especifica `PUBLISHED` en el body.
-
----
-
-## 11. Registro de Cambios Recientes (13-14 Feb 2026)
-
-### Frontend (User Portal)
-
-- **Feature "My Tickets" Finalizada:**
-  - Implementada pÃ¡gina `/my-tickets` con listado de Ã³rdenes y detalle de tickets.
-  - GeneraciÃ³n de QR en cliente usando librerÃ­a `qrcode`.
-  - Estilos especÃ­ficos en `my-tickets.css` para evitar conflictos globales.
-  - DiseÃ±o responsive y "tear-line" visual.
-  - QR optimizado para legibilidad (dots negros, fondo blanco, centrado).
-- **Mejoras Visuales (Polishing):**
-  - **Auth Pages:** Nuevos estilos (`auth.css`) para Login y Register, corrigiendo layout y tarjetas.
-  - **Event Detail:** Eliminado estilo de "tarjeta flotante" para integraciÃ³n seamless con la pÃ¡gina.
-  - **Grid de Tickets:** Ajustado ancho de tarjetas (max 240px) y mÃ¡rgenes para mejor UX.
-  - **Global CSS:** Limpieza de reglas conflictivas y duplicadas.
-
-### Backend (API)
-
-- **Orders Endpoint Updated:** `GET /orders` ahora decodifica el token QR para devolver `eventTitle`, `eventDate`, `eventLocation` y detalles de asiento (`zoneName`, `seatNumber`) directamente, facilitando el renderizado en frontend.
-
-## 12. Registro de Cambios Recientes (15-16 Feb 2026)
-
-### Sistema de Pagos
-
-- **ReversiÃ³n de Stripe:** Se ha revertido la integraciÃ³n de Stripe para priorizar la estabilidad del desarrollo.
-  - El sistema usa actualmente el **Mock Payment Service** (siempre aprueba).
-  - Eliminada dependencia `@stripe/stripe-js` del flujo principal por ahora.
-
-### Frontend (User Portal)
-
-- **RediseÃ±o de Marca:**
-  - Actualizado color primario a un verde mÃ¡s vibrante: `#6AC44D`.
-  - Ajustados todos los componentes (botones, badges, links) para usar la nueva paleta.
-
-- **PÃ¡gina de Detalle de Evento (`/events/[id]`):**
-  - **Layout de 2 Columnas:** SeparaciÃ³n clara entre informaciÃ³n del evento (izquierda) y selecciÃ³n de tickets (derecha sticky).
-  - **Experiencia Inmersiva:** Eliminado el contenedor tipo "tarjeta" para que el contenido fluya en la pÃ¡gina completa.
-  - **Mejoras de UI:** TÃ­tulos mÃ¡s grandes, grid de informaciÃ³n con iconos, y alertas de estado mejoradas.
-
-- **PÃ¡gina de Inicio (Landing):**
-  - **Tarjetas de Evento:** Ahora tienen bordes redondeados (`border-radius-lg`), padding interno (`1.5rem`), y efectos de hover/zoom en la imagen.
-  - **TipografÃ­a:** Mejor jerarquÃ­a visual en tÃ­tulos y metadatos.
-
-- **PÃ¡gina "Mis Tickets" (`/my-tickets`):**
-  - **AgrupaciÃ³n por Evento:** Las Ã³rdenes ahora se agrupan por `eventId`.
-    - Si un usuario compra varias veces para el mismo evento, se muestra una sola tarjeta consolidada.
-    - El total ($) y la cantidad de tickets se suman automÃ¡ticamente.
-  - **VisualizaciÃ³n Unificada:** Al expandir, se muestran todos los tickets de todas las Ã³rdenes asociadas a ese evento en una sola grid.
-# #   1 3 .   R e g i s t r o   d e   C a m b i o s   R e c i e n t e s   ( 1 6   F e b   2 0 2 6   -   S e s i Ã ³ n   d e   T a r d e / N o c h e ) 
- 
- 
- 
- # # #   C a r a c t e r Ã ­ s t i c a s   A g r e g a d a s 
- 
- 
- 
- -   * * D e s c r i p c i Ã ³ n   d e   Z o n a s   d e   E n t r a d a s : * * 
- 
-     -   * * S c h e m a : * *   A c t u a l i z a d o   m o d e l o   ` Z o n e `   e n   P r i s m a   p a r a   i n c l u i r   c a m p o   ` d e s c r i p t i o n `   o p c i o n a l . 
- 
-     -   * * B a c k e n d : * *   ` E v e n t s S e r v i c e `   a c t u a l i z a d o   p a r a   g u a r d a r   y   r e t o r n a r   l a   d e s c r i p c i Ã ³ n . 
- 
-     -   * * H o s t   ( C r e a t e   E v e n t ) : * *   F o r m u l a r i o   a c t u a l i z a d o   p a r a   p e r m i t i r   i n g r e s a r   d e s c r i p c i o n e s   p o r   z o n a   ( e j :   " I n c l u y e   b e b i d a " ,   " V i s t a   p a r c i a l " ) . 
- 
-     -   * * C l i e n t   ( E v e n t   D e t a i l ) : * *   M u e s t r a   l a   d e s c r i p c i Ã ³ n   d e b a j o   d e l   n o m b r e   d e   l a   z o n a   e n   e l   s e l e c t o r   d e   e n t r a d a s . 
- 
- 
- 
- # # #   M e j o r a s   d e   E x p e r i e n c i a   d e   U s u a r i o   ( U X / U I ) 
- 
- 
- 
- -   * * I d e n t i d a d   V i s u a l   p o r   Z o n a : * * 
- 
-     -   * * C Ã ³ d i g o   d e   C o l o r e s   E s t Ã ¡ t i c o : * *   I m p l e m e n t a d a   p a l e t a   d e   2 0   c o l o r e s   d e   a l t o   c o n t r a s t e   q u e   s e   a s i g n a n   d e t e r m i n Ã ­ s t i c a m e n t e   s e g Ã º n   e l   n o m b r e   d e   l a   z o n a . 
- 
-     -   * * E v e n t   D e t a i l : * *   C Ã ­ r c u l o s   d e   c o l o r   i n d i c a d o r e s   j u n t o   a l   n o m b r e   d e   l a   z o n a   y   a s i e n t o s   s e l e c c i o n a d o s   s e   p i n t a n   d e l   c o l o r   d e   s u   z o n a . 
- 
-     -   * * M y   T i c k e t s : * *   L a s   t a r j e t a s   d e   t i c k e t s   t i e n e n   u n   b o r d e   s u p e r i o r   d e   c o l o r   y   u n   b a d g e   c o n   e l   c o l o r   d e   s u   z o n a   p a r a   r Ã ¡ p i d a   i d e n t i f i c a c i Ã ³ n . 
- 
- 
- 
- -   * * M a n e j o   d e   " A g o t a d o "   ( S o l d   O u t ) : * * 
- 
-     -   * * L Ã ³ g i c a   V i s u a l : * *   L a s   z o n a s   s i n   a s i e n t o s   d i s p o n i b l e s   s e   m u e s t r a n   c o n   o p a c i d a d   r e d u c i d a . 
- 
-     -   * * I n d i c a d o r e s : * *   B a d g e   r o j o   " A G O T A D O "   j u n t o   a l   n o m b r e   y   m e n s a j e   " Â ¡ N o   q u e d a n   e n t r a d a s ! "   e n   l u g a r   d e   l o s   c o n t r o l e s   d e   s e l e c c i Ã ³ n . 
- 
-     -   * * B l o q u e o : * *   D e s h a b i l i t a c i Ã ³ n   d e   b o t o n e s   d e   c o m p r a   p a r a   z o n a s   a g o t a d a s . 
- 
- 
- 
- -   * * S e l e c t o r   d e   C a n t i d a d   I n t e l i g e n t e : * * 
- 
-     -   P a r a   z o n a s   c o n   c a p a c i d a d   >   5 0   ( G e n e r a l ) ,   s e   m u e s t r a   a u t o m Ã ¡ t i c a m e n t e   u n   s e l e c t o r   n u m Ã © r i c o   ( + / - )   e n   l u g a r   d e   i n t e n t a r   r e n d e r i z a r   t o d o s   l o s   a s i e n t o s   i n d i v i d u a l e s . 
- 
-     -   P a r a   z o n a s   c o n   c a p a c i d a d   < =   5 0   ( N u m e r a d a s ) ,   s e   m a n t i e n e   e l   m a p a   d e   s e l e c c i Ã ³ n   d e   a s i e n t o s   i n d i v i d u a l . 
- 
- 
- 
- -   * * M i c r o - c o p y : * * 
- 
-     -   A c t u a l i z a d o   t e x t o   C T A   a   " S e l e c c i o n a   t u s   e n t r a d a s / a s i e n t o s   a r r i b a "   p a r a   m a y o r   c l a r i d a d . 
- 
- 
- 
- # #   1 4 .   R e g i s t r o   d e   C a m b i o s   R e c i e n t e s   ( 2 4   F e b   2 0 2 6 ) 
- 
- # # #   M e j o r a   e n   V i s u a l i z a c i ó n   d e   C i u d a d   e n   Ó r d e n e s 
- -   * * B a c k e n d * * :   E n d p o i n t   G E T   / a p i / o r d e r s   a h o r a   i n c l u y e   e l   c a m p o   c i t y   d e l   E v e n t o   a s o c i a d o   u s a n d o   e l   P r i s m a C l i e n t . 
- -   * * F r o n t e n d * * :   E n r i c h e d T i c k e t   m o d i f i c a d o   p a r a   a l m a c e n a r   e v e n t C i t y .   E l   c o m p o n e n t e   d e   l a   l i s t a   d e   ó r d e n e s   ( m y - t i c k e t s / p a g e . t s x )   f u e   a c t u a l i z a d o   p a r a   m o s t r a r   s i e m p r e   e n   l a   v i s t a   d e t a l l a d a   l a   c i u d a d   ( e j .     L u g a r ,   C i u d a d ) . 
- 
-## 15. Registro de Cambios (26 Marzo 2026)
-
-### GestiÃ³n de Estado de Eventos
-- **Tabs en Dashboard**: Implementadas pestaÃ±as "Activos", "Inactivos" y "Borrador" en el dashboard del Host para filtrar eventos por estado.
-- **Fix de Estado en CreaciÃ³n**: Corregido bug donde los nuevos eventos se creaban como 'DRAFT' (Borrador) aun cuando se seleccionaba 'PUBLISHED' (Activo). Se integrÃ³ `status` en el DTO de validaciÃ³n.
-- **DesactivaciÃ³n AutomÃ¡tica**: Los eventos con fecha pasada se marcan automÃ¡ticamente como 'INACTIVE' al consultar la lista de eventos.
-
-## 16. Registro de Cambios (31 Marzo 2026)
-
-### EdiciÃ³n Completa de Zonas de Eventos (Fix Mayor)
-
-**Problema resuelto**: Las descripciones y capacidades de las zonas no se guardaban al editar eventos desde el dashboard del Host.
-
-**Causa raÃ­z**: Tres problemas interconectados:
-1. **NX Daemon no funciona**: Los cambios al backend no se recompilaban automÃ¡ticamente. Cada modificaciÃ³n requiere `npx nx build api` + `node dist/apps/api/main.js`.
-2. **Datos no sanitizados para Prisma**: El `basicData` pasado a `prisma.event.update()` podÃ­a contener campos con tipos incorrectos (ej: `date` como string), causando que la transacciÃ³n Prisma se revirtiera silenciosamente.
-3. **Falta de gestiÃ³n de asientos al cambiar capacidad**: No se creaban ni eliminaban asientos al cambiar la capacidad de una zona.
-
-**Archivos modificados**:
-- `apps/api/src/app/events/events.service.ts`  MÃ©todo `update` reescrito con:
-  - Filtrado de campos permitidos para el modelo Event
-  - ConversiÃ³n de `date` string  `Date` object
-  - ProtecciÃ³n de capacidad (no permite reducir bajo el # de vendidos)
-  - CreaciÃ³n/eliminaciÃ³n automÃ¡tica de asientos al cambiar capacidad
-  - `findAll` ahora incluye `seats` en las zonas
-- `apps/api/src/app/events/events.controller.ts`  PATCH usa `@Request()` para evitar whitelist del ValidationPipe
-- `apps/web-host/src/components/EditEventForm.tsx`  ProtecciÃ³n visual de campos, validaciÃ³n de capacidad, soldCount
-- `libs/shared/src/lib/dto/events.dto.ts`  `id` opcional en CreateZoneDto, `zones` opcional, nuevo `UpdateEventDto`
-
-**Reglas de negocio implementadas**:
-| Campo | Â¿Editable con ventas activas? | RestricciÃ³n |
-| :--- | :--- | :--- |
-| Nombre de zona |  No | Bloqueado si hay tickets vendidos |
-| DescripciÃ³n |  SÃ­ | Siempre editable |
-| Precio |  No | Bloqueado si hay tickets vendidos |
-| Capacidad |  SÃ­ | MÃ­nimo = nÃºmero de tickets vendidos |
-| Agregar zona |  SÃ­ | Siempre permitido |
-| Eliminar zona |  (con ventas) | Solo si 0 tickets vendidos en esa zona |
-
-**ValidaciÃ³n de fecha pasada**: REMOVIDA del mÃ©todo `update` (se mantiene solo en `create`). Permite editar metadatos de eventos activos/pasados.
-
-
-## 14. Registro de Cambios Recientes (04 Abril 2026)
-
-### Global Admin Dashboard (NUEVO)
-- **Inicializacion:** Se creo la aplicacion web-admin corriendo en puerto 4202.
-- **UI/UX:** Diseno basado en CSS nativo (Dark Mode) sin dependencias de Tailwind, garantizando paridad visual con el panel de Organizadores.
-- **SideBar:** Opciones de Inicio (Comandos), Organizadores (Gestion de estados) y Usuarios (Placeholder).
-
-### Portal Organizadores (Host)
-- **Onboarding:** Integracion del formulario multi-paso en /register nativo. 
-- **Planes:** Incorporacion del selector visual de planes (Free, Plus, Elite).
-- **Autenticacion:** Fix critico al enrutador en Next.js para redirigir al /dashboard una vez logrado el log-in.
-
-## 17. Registro de Cambios Recientes (02 Mayo 2026)
-
-### Gestión Global de Organizadores y Planes (Admin)
-- **Creación Manual de Organizadores:** Implementado el flujo completo en el Global Admin Dashboard (`web-admin`) para registrar organizaciones y establecer su plan y estado inicial sin intervención externa.
-- **Planes Dinámicos en Base de Datos:** Eliminado el Enum estático de planes (`FREE`, `PLUS`, `ELITE`) en `schema.prisma`.
-- **Modelo Plan (CRUD):** Creado nuevo modelo `Plan` (Nombre, Límite de Publicaciones y Valor) con CRUD completo y vistas en el Dashboard Administrativo.
-- **Sincronización de Planes:** Al editar o crear organizadores desde el Admin Dashboard, los planes seleccionables se pueblan dinámicamente desde la base de datos.
-- **Eventos Ilimitados:** Lógica implementada en `EventsService`; si un organizador posee un plan con `maxEvents: 0`, se interpreta universalmente como "♾️ Ilimitados", eludiendo las barreras de bloqueo en la creación de eventos.
-
-## 18. Registro de Cambios Recientes (02 Mayo 2026 - Sesión Nocturna)
-
-### Mejoras de Arquitectura y Limpieza
-- **Unificación de API:** Eliminada duplicación de la función `uploadImage` en `web-admin/lib/api.ts` que causaba errores de compilación en Next.js.
-- **Sesiones Extendidas:** La duración del token JWT se aumentó de **1h a 24h** (`auth.module.ts`) para mejorar la experiencia de desarrollo y evitar errores de "Unauthorized" frecuentes.
-
-### Portal Organizadores (Web Host)
-- **Identidad de Marca:** El logo de la organización ahora se visualiza dinámicamente en el avatar del Sidebar (esquina inferior izquierda).
-- **Reorganización del Dashboard:**
-    - Renombrado "Dashboard" a **"Inicio"** (icono 🏠).
-    - Creada nueva vista **"Mis Eventos"** (icono 🎪) separada de las estadísticas, permitiendo una gestión de tabla más limpia.
-    - Nuevo orden de menú: Inicio ➔ Crear Evento ➔ Mis Eventos.
-    - Los botones "Volver" en los formularios de creación/edición ahora redirigen correctamente a "Mis Eventos".
-- **UI Polishing:** Reemplazados emojis de logout por **iconos SVG** profesionales con feedback visual (rojo suave) en todos los paneles.
-
-### Portal Compradores (Web Client)
-- **Captura de Datos Críticos:** El campo **Teléfono** ahora es **obligatorio** en el formulario de registro de clientes.
-- **Internacionalización Local:** Se agregó el prefijo 🇪🇨 +593 visualmente en el campo de teléfono para guiar al usuario.
-- **Validación de Datos:** El `RegisterDto` en la librería shared ahora requiere estrictamente el campo `phone`, preparando el terreno para la futura integración de facturación electrónica.
-
-## 20. Registro de Cambios (08 Mayo 2026)
-
-### Panel Host (web-host :4201) — Asistentes y Escáner de Tickets
-
-**Contexto:** Los organizadores no tenían visibilidad de quién compró entradas ni si asistió al evento. Tampoco tenían herramienta de validación QR integrada en su panel web.
-
-#### Backend
-- **`orders.service.ts`:** Nuevo método `getMyEventAttendees(organizerId)`. Obtiene todos los eventos del organizador → busca todos los tickets → decodifica cada QR JWT → filtra los que pertenecen al organizador → agrupa por `{userId}-{eventId}` → retorna `{ user, eventId, eventTitle, ticketsBought, ticketsUsed, tickets[] }`.
-- **`orders.controller.ts`:** `GET /orders/attendees/me` — requiere JWT de HOST.
-- **`tickets.service.ts`:** Nuevo método `validateByTicketId(partialId, staffId)` — busca ticket por `id startsWith partialId` (insensible a mayúsculas, ignora `#`), luego delega a `validateTicket`.
-- **`tickets.controller.ts`:** `POST /tickets/validate-by-id` — permite validar con el ID corto mostrado bajo el QR (ej: `#c288f2ae`).
-
-#### Frontend — Panel Host
-- **`AttendeesList.tsx`** (nuevo): Stats cards (Compradores únicos, Entradas vendidas, Asistencias, Sin asistir). Dropdown de filtro por evento. Búsqueda local por nombre/email. Tabla expandible: al hacer click en una fila se muestran los tickets individuales con zona, asiento, estado y hora de escaneo. Iconos de asistencia: ✅ Completa / 🔶 Parcial / 🔴 Sin asistir.
-- **`TicketScanner.tsx`** (nuevo): 3 tabs:
-  - **📷 Cámara**: `getUserMedia` → canvas → `jsQR` (cacheado al nivel de módulo). Botones **"▶ Escanear"** / **"⏹ Detener"** con overlay de pausa. Marco animado con esquinas verdes al escanear. Mensajes de error de cámara específicos por `DOMException.name`. Deduplicación de tokens con `lastTokenRef`.
-  - **🔍 Buscar por ID**: Input del ID corto → `POST /tickets/validate-by-id`.
-  - **⌨️ Token manual**: Textarea para pegar el JWT completo → `POST /tickets/validate`.
-- **`EditEventForm.tsx`:** Botón "Eliminar zona" oculto cuando `zone.hasSold === true` (ya calculado en `soldCount`).
-- **`Sidebar.tsx`:** Entradas "👥 Asistentes" y "📷 Escáner de Tickets" en el menú de navegación.
-- **`dashboard/page.tsx`:** Vistas `'attendees'` y `'scanner'` añadidas al tipo union, imports y bloques de render correspondientes.
-
-### Portal Cliente (web-client :4200) — Tickets Usados en Rojo
-
-**Contexto:** Los tickets ya escaneados (USED) eran visualmente indistinguibles de los válidos a primera vista.
-
-**Cambios en `my-tickets.css`:**
-- `.badge-used`: Fondo rojo semitransparente + borde rojo. Emoji cambiado a 🔒.
-- `.ticket-used`: Tinte rojo sutil en la tarjeta + borde rojo.
-- `.ticket-scanned` (nuevo): Franja izquierda roja + fondo rojo tenue + texto en rojo negrita. Muestra la fecha/hora del escaneo.
-- `.qr-used .qr-label-text`: Color rojo + negrita para "Ticket ya utilizado".
-
-**Color unificado:** `#ef4444` en todos los elementos del ticket USED para coherencia visual.
+- **Puertos no estándar**: PostgreSQL en 5435, Redis en 6380.
+- **Prisma 5.22.0**: Versión bloqueada por incompatibilidades de CLI con v7+.
+- **Pagos simulados**: El módulo `PaymentsService` siempre retorna `true`.
+- **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento se codifica en el QR JWT.
+- **eventId no en Ticket DB**: Para notificar compradores de un evento hay que decodificar todos los JWT de tickets — costoso con muchos tickets. Mejora futura: agregar `eventId` al modelo `Order`.
+- **ValidationPipe Global**: `main.ts` tiene `whitelist: true`. PATCH de eventos usa `@Request()` para evitar filtrado de campos de zona.
+- **NX Daemon**: Activo con `useDaemonProcess: true` y `watch: true` en `project.json`. Hot-reload automático.
+- **Emails vacíos**: Si `MAIL_HOST` está vacío en `.env`, los emails fallan silenciosamente (no bloquean el flujo).
+- **Anti-enumeración**: `forgot-password` y `resend-verification` siempre retornan 200 con el mismo mensaje.
+- **Galería de imágenes**: Al editar un evento, las imágenes de galería se acumulan (no se reemplazan las anteriores).
 
 ---
 
-## 19. Registro de Cambios (03 Mayo 2026)
+## 11. Registro de Cambios
 
-### Página "Mi Perfil" — Portal de Clientes (web-client)
+### Sesión del 24 de Mayo de 2026 — Emails Transaccionales + Auth Flow + URL /eventos/
 
-**Contexto:** Los usuarios compradores no tenían forma de actualizar sus datos personales después del registro.
+#### Sistema de Emails Transaccionales (Backend)
 
-#### Backend
-- **Schema Prisma `User`:** Agregados 8 nuevos campos opcionales: `avatarUrl`, `idType`, `idNumber`, `address`, `province`, `city`, `birthDate`, `citizenship`.
-- **`UpdateProfileDto`** (`libs/shared/src/lib/dto/auth.dto.ts`): DTO con todos los campos opcionales y validaciones `class-validator`.
-- **`AuthService`:** Métodos `getProfile(userId)` y `updateProfile(userId, dto)`. El update hashea el password con bcrypt si se provee, valida duplicado de email, convierte `birthDate` string → `Date`. Usa `select` de Prisma para nunca devolver el campo `password`.
-- **`AuthController`:** Endpoints `GET /api/auth/me` y `PATCH /api/auth/me`, protegidos con `JwtAuthGuard`.
-- **`UploadController`** (reescritura): Nuevo tipo `user-avatar` → directorio `uploads/users/{userId}/avatar/`. Completamente separado de `uploads/organizers/`. El `userId` se extrae del JWT si está autenticado, o del query param `userId` si no.
+**`apps/api/src/app/mail/mail.service.ts`** — Añadidos 5 métodos nuevos:
+- `sendPasswordChanged(to, name)` — confirmación de cambio de contraseña con alerta "¿No fuiste tú?"
+- `sendEventCanceled(to, buyerName, ...)` — aviso de cancelación a compradores del evento
+- `sendEventRescheduled(to, buyerName, ...)` — aviso de reprogramación con comparación anterior vs. nueva
+- `sendMemberInvitation(to, memberName, orgName, role, email, password)` — invitación con credenciales
+- `sendAccountCreatedByAdmin(to, name, email, password, role, orgName?)` — credenciales para HOST/ADMIN/EDITOR
 
-#### Frontend
-- **`AuthContext.tsx`:** Interfaz `User` extendida con todos los campos de perfil. Nueva función `updateUser(user)` para sincronizar el contexto en memoria y localStorage sin necesidad de re-login.
-- **`lib/api.ts`:** Interfaces `UserProfile` y `UpdateProfileData`. Funciones `getProfile(token)`, `updateProfile(data, token)` y `uploadUserAvatar(file, userId, token?)`.
-- **Navbar:** Botón `👤 Mi Perfil` insertado entre "Mis Tickets" y "Salir".
-- **`/my-profile/page.tsx`** (nuevo): Página con 3 secciones:
-  - *Datos de acceso:* nombre, email, teléfono, nueva contraseña con toggle de visibilidad.
-  - *Identificación:* tipo documento (Cédula/RUC/Pasaporte), número, fecha de nacimiento, ciudadanía/nacionalidad.
-  - *Dirección:* provincia (24 provincias del Ecuador) + ciudad dependiente de la provincia, dirección completa.
-- **Avatar:** Circular 80px en el header. Botón ✏️ sobre la foto abre el selector de archivo. Preview local instantáneo antes de completar el upload. Upload guarda en `uploads/users/{id}/avatar/` y persiste la URL en BD con `PATCH /auth/me`. Sincroniza el `AuthContext` para que el avatar aparezca sin recargar.
-- **`/my-profile/my-profile.css`** (nuevo): Estilos de la página: grid responsive, avatar con overlay, secciones con título uppercase, selects personalizados con flecha, estados de hover/focus.
+**Templates nuevos** (`apps/api/src/app/mail/templates/`):
+- `password-changed.template.ts` — timestamp, alerta roja con link reset, tips de seguridad
+- `event-canceled.template.ts` — tema rojo urgente, detalle del evento, info de reembolso amber
+- `event-rescheduled.template.ts` — tema amber, tabla comparativa fecha/lugar, aviso "tickets siguen válidos"
+- `member-invitation.template.ts` — badge de rol (ADMIN/STAFF), credenciales en monoespaciado, tips seguridad
+- `account-created-by-admin.template.ts` — ícono por rol (HOST/ADMIN/EDITOR), credenciales, URL del panel correcto
 
-### Toast de Login en Selección de Localidades
+**`apps/api/src/app/auth/auth.service.ts`** — Modificado:
+- Después de `changePassword()`: envía `sendPasswordChanged()` (busca en User o OrganizerMember según `isMember`)
 
-**Contexto:** Los usuarios no logueados veían los asientos deshabilitados (grises) sin entender por qué no podían seleccionarlos.
+**`apps/api/src/app/admin/admin.service.ts`** — Modificado:
+- `createOrganizer()`: captura `rawPassword` antes del `bcrypt.hash()` → envía `sendAccountCreatedByAdmin()` con role HOST
+- `createAdminUser()`: ídem con role ADMIN/EDITOR → URL del panel admin
 
-**Cambios en `EventDetailClient.tsx`:**
-- Asientos numerados: quitado `disabled={!user}` — ahora son clicables para todos.
-- Botones GA (`+`/`-`): ahora se muestran incluso para usuarios no autenticados.
-- Nueva función `showLoginToast()` llamada en `toggleSeat()` y en los handlers de GA cuando `!user`.
-- **Toast:** Banner amarillo 🔒 que aparece sobre la lista de zonas. Contiene mensaje descriptivo + link directo a `/login?redirect=/events/{id}` + botón ✕ para cerrar. Auto-cierre a los 4 segundos con `setTimeout` limpiado en el `useEffect` de desmontaje.
+**`apps/api/src/app/organizer-members/organizer-members.service.ts`** — Modificado:
+- Añadido `MailService` en constructor
+- Después de `createMember()`: envía `sendMemberInvitation()` con credenciales en claro
 
----
+**`apps/api/src/app/events/events.service.ts`** — Modificado:
+- Añadidos `MailService` y `JwtService` en constructor
+- Nuevo método privado `notifyBuyersOfChange(eventId, type, ...)`:
+  - Carga todos los tickets → decodifica JWT → filtra por `eventId` → deduplicación por userId
+  - Envía `sendEventCanceled` o `sendEventRescheduled` según `type`
+- En `update()`: detecta cambios de status/fecha/lugar antes del bloque de zonas → dispara notificación
 
-## 21. Registro de Cambios (17-18 Mayo 2026)
+**`apps/api/src/app/events/events.module.ts`** — Modificado:
+- Añadido `JwtModule` en `imports` para poder inyectar `JwtService` en `EventsService`
 
-### Página Usuarios — Panel Host (web-host :4201)
+**`apps/api/src/app/orders/orders.service.ts`** — Modificado:
+- Después de `purchase()`: envía `sendPurchaseConfirmation()` con resumen completo de la compra
 
-**Contexto:** Los organizadores necesitaban poder gestionar los miembros de su equipo (staff de validación y administradores adicionales) sin intervención del Admin Global.
+#### Auth Flow — Verificación y Reset (Backend)
 
-**Funcionalidades:**
-- Listado de `OrganizerMember` del organizador con nombre, email, rol (ADMIN/STAFF), estado y avatar.
-- Crear nuevo miembro con generación de contraseña inicial.
-- Editar miembro: nombre, email, rol, contraseña, estado activo/inactivo.
-- Eliminar miembro con confirmación.
-- Upload de avatar por miembro desde el panel web.
-- Solo visible para el HOST principal (`isMainHost = !user?.isMember` → `navLink('users', '👤', 'Usuarios')`).
+**Schema Prisma** (`libs/shared/prisma/schema.prisma`) — Añadidos a `User`:
+- `emailVerified Boolean @default(true)` (true grandfathers usuarios existentes)
+- `resetPasswordToken String? @unique`
+- `resetPasswordExpires DateTime?`
 
-### Ruta de Almacenamiento de Avatares de Miembros Corregida
+**Templates nuevos**:
+- `verify-email.template.ts` — botón de verificación, aviso de expiración 24h, nota de seguridad
+- `reset-password.template.ts` — aviso de expiración 1h, botón de reset, nota "si no fuiste tú, ignora"
 
-**Archivo:** `apps/api/src/app/upload/upload.controller.ts`
+**`apps/api/src/app/auth/auth.service.ts`** — Nuevos métodos:
+- `verifyEmail(token)` — verifica JWT, busca por resetPasswordToken, actualiza emailVerified: true
+- `resendVerification(email)` — anti-enum, genera nuevo token, reenvía email
+- `forgotPassword(email, panel?)` — anti-enum, genera token 1h, guarda en BD, envía email con URL del panel correcto
+- `resetPassword(token, newPassword)` — verifica JWT + campo BD + expiry → hash + update + limpia token
 
-El tipo `member-avatar` cambia su destino de un directorio plano (`uploads/members/{id}/avatar/`) a una ruta jerárquica bajo el organizador:
-```
-uploads/organizers/{orgUserId}/members/{memberId}/avatar/
-```
-donde `orgUserId` se extrae del JWT del HOST autenticado (`req.user.sub`). La URL retornada al frontend también refleja la nueva ruta.
+**`apps/api/src/app/auth/auth.controller.ts`** — 4 endpoints nuevos:
+- `GET /auth/verify-email?token=` — verifica email
+- `POST /auth/resend-verification { email }` — reenvía verificación
+- `POST /auth/forgot-password { email, panel? }` — solicita reset
+- `POST /auth/reset-password { token, newPassword }` — restablece contraseña
 
-### Página Perfil — Panel Host (web-host :4201)
+**`apps/api/src/app/mail/templates/welcome-user.template.ts`** — Modificado: menciona verificación de email en el email de bienvenida.
 
-**Contexto:** Los organizadores y sus miembros (ADMIN) necesitaban una forma de actualizar su información personal y cambiar su contraseña sin intervención del Admin Global.
+**`apps/web-client/src/lib/api.ts`** — Funciones nuevas:
+- `verifyEmail(token)`, `resendVerification(email)`, `forgotPassword(email)`, `resetPassword(token, newPassword)`
 
-#### Backend — Nuevos DTOs (`libs/shared/src/lib/dto/auth.dto.ts`)
+**`apps/web-host/src/lib/api.ts`** — Funciones nuevas:
+- `forgotPassword(email)`, `resetPassword(token, newPassword)`
 
-- `UpdateBasicInfoDto`: `name?`, `email?`, `phone?`, `avatarUrl?`
-- `ChangePasswordDto`: `currentPassword` (required), `newPassword` (min 6)
-- `UpdateOrganizerProfileInfoDto`: `organizationName?`, `organizationDescription?`, `organizationLogo?`, `address?`, `province?`, `city?`
+**`apps/web-admin/lib/api.ts`** — Funciones nuevas:
+- `forgotPassword(email)`, `resetPassword(token, newPassword)`
 
-#### Backend — Nuevos Métodos (`apps/api/src/app/auth/auth.service.ts`)
+#### Auth Flow — Páginas de Autenticación (Frontend)
 
-| Método | Descripción |
-| :--- | :--- |
-| `getOrganizerFullProfile(userId, isMember)` | Retorna `{ type: 'host', user }` o `{ type: 'member', member }` sin campo `password` |
-| `updateBasicInfo(userId, isMember, dto)` | Actualiza User o OrganizerMember según `isMember` |
-| `changePassword(userId, isMember, current, new)` | bcrypt.compare → bcrypt.hash → update |
-| `updateOrganizerProfileInfo(userId, dto)` | Solo para HOST: actualiza `OrganizerProfile` del userId |
+**Web Client** (nuevas páginas):
+- `apps/web-client/src/app/verify-email/page.tsx` — estados: verificando / éxito / token expirado + reenvío
+- `apps/web-client/src/app/forgot-password/page.tsx` — form email + pantalla éxito "Revisa tu correo"
+- `apps/web-client/src/app/reset-password/page.tsx` — nueva contraseña + confirmar + toggle + auto-redirect 3s
 
-#### Backend — Nuevos Endpoints (`apps/api/src/app/auth/auth.controller.ts`)
+**Web Client** (modificados):
+- `apps/web-client/src/app/register/page.tsx` — paso 2 muestra pantalla "Revisa tu correo"
+- `apps/web-client/src/app/login/page.tsx` — link "¿Olvidaste tu contraseña?" junto al label Password
 
-| Método | Ruta | Descripción |
-| :--- | :--- | :--- |
-| GET | `/auth/me/organizer` | Perfil completo HOST o MEMBER autenticado |
-| PATCH | `/auth/me/basic` | Nombre, email, teléfono, avatarUrl |
-| PATCH | `/auth/me/password` | Cambio de contraseña con verificación |
-| PATCH | `/auth/me/organizer-profile` | Datos de organización (403 si es miembro) |
+**Web Host** (nuevas páginas):
+- `apps/web-host/src/app/forgot-password/page.tsx` — solicitar reset con nota "válido 60 min"
+- `apps/web-host/src/app/reset-password/page.tsx` — nueva contraseña + auto-redirect 3s al login
 
-#### Frontend (`apps/web-host/`)
+**Web Host** (modificado):
+- `apps/web-host/src/app/login/page.tsx` — link "¿Olvidaste tu contraseña?"
 
-- **`AuthContext.tsx`:** Nueva función `updateUser(updates: Partial<User>)` que sincroniza el contexto en memoria y en `localStorage` (`ot_host_user`) para que el Sidebar refleje cambios sin re-login.
-- **`lib/api.ts`:** Cuatro funciones nuevas que wrappean los endpoints anteriores.
-- **`OrganizerProfile.tsx`** (nuevo componente): Tres secciones en tarjetas:
-  1. *Información Personal* — nombre, email, teléfono + avatar circular con preview y upload.
-  2. *Datos de Organización* — solo visible para HOST: nombre org, descripción, logo (upload circular), dirección, provincia, ciudad.
-  3. *Cambiar Contraseña* — campos actual/nueva/confirmar con toggle de visibilidad individual. Valida coincidencia antes de llamar al API.
-- **`Sidebar.tsx`:** Orden final del menú: Inicio → Crear Evento → Mis Eventos → Asistentes → Usuarios (solo HOST) → Escáner de Tickets → Perfil.
-- **`dashboard/page.tsx`:** Vista `'profile'` añadida al tipo, import y bloque de render de `OrganizerProfile`.
+**Web Admin** (nuevas páginas):
+- `apps/web-admin/app/forgot-password/page.tsx` — menciona "cuenta de administrador"
+- `apps/web-admin/app/reset-password/page.tsx` — nueva contraseña + auto-redirect 3s al login
 
-## 22. Registro de Cambios (23-24 Mayo 2026)
+**Web Admin** (modificado):
+- `apps/web-admin/app/login/page.tsx` — link "¿Olvidaste tu contraseña?"
 
-### Tickets Usados — Portal de Clientes (`/my-tickets`)
+**.env** — Añadido `NEXT_PUBLIC_ADMIN_URL=http://localhost:4202`
 
-**Contexto:** Los tickets escaneados (USED) mostraban colores vivos idénticos a los válidos, lo que dificultaba distinguirlos.
+#### Migración de URL `/events/` → `/eventos/`
 
-**Cambios de UX/UI (efecto "apagado" completo):**
+**Contexto**: La ruta del Portal de Clientes para ver eventos pasó de `/events/[id]` (inglés) a `/eventos/[id]` (español).
 
-| Elemento | Antes | Ahora (USED) |
-| :--- | :--- | :--- |
-| Borde superior de tarjeta | `zoneColor` | `#4b5563` gris oscuro |
-| Badge de zona (pill top-right) | Color de zona | Gris `rgba(120,120,120,0.1)` |
-| Texto nombre zona | `zoneColor` | `#6b7280` |
-| Número de asiento | Color heredado | `#6b7280` |
-| Botón "Compartir" | Visible | Oculto completamente |
-| Link "Ver Evento →" | Verde primario | `#6b7280` (clickeable) |
-| Badge "✕ Usado" | 🔒 rojo | ✕ gris |
-| "Escaneado: fecha" | 📱 con emoji | Sin emoji |
-| `#ticketId` bajo QR | Verde acento | `#6b7280` |
-| "Ticket ya utilizado" | ✔️ con emoji | Sin emoji |
+**Archivos creados**:
+- `apps/web-client/src/app/eventos/[id]/page.tsx` — página SSR con OG metadata apuntando a `/eventos/`
+- `apps/web-client/src/app/eventos/[id]/EventDetailClient.tsx` — cliente completo con login redirect y toast apuntando a `/eventos/`
 
-**Archivos modificados:**
-- `apps/web-client/src/app/my-tickets/page.tsx` — estilos condicionales `ticket.status === 'USED'`
-- `apps/web-client/src/components/QRCode.tsx` — color ID y texto sin emoji
+**Archivos modificados** (href `/events/` → `/eventos/`):
+- `apps/web-client/src/components/EventCard.tsx`
+- `apps/web-client/src/components/FeaturedEventsSection.tsx`
+- `apps/web-client/src/components/HeroCarousel.tsx`
+- `apps/web-client/src/app/my-tickets/page.tsx`
 
----
+**Eliminado**: Carpeta `apps/web-client/src/app/events/[id]/` completa.
 
-### Logo Oficial SVG AfroEventos — Todas las Apps
-
-**Contexto:** El logo anterior era una aproximación SVG manual inexacta. Se integraron los archivos SVG oficiales exportados desde Adobe Illustrator.
-
-**Archivos SVG:**
-- `public/logo-blanco.svg` — ícono verde + texto blanco (para fondos oscuros)
-- `public/logo-negro.svg` — ícono verde + texto negro (para fondos claros)
-
-**Copiados a:** `web-client/public/`, `web-host/public/`, `web-admin/public/`
-
-**Componente `AfroEventosLogo`** creado en cada app:
-- Props: `variant` (`'light'` | `'dark'`), `height` (px), `className`
-- Usa `next/image` con ratio exacto del viewBox (blanco: 1890.4×677.3, negro: 1831.1×684.4)
-
-**Aplicado en:**
-
-| Lugar | Variante | Altura |
-| :--- | :--- | :--- |
-| Navbar (web-client) | light | 52px |
-| Footer (web-client) | light | 60px |
-| Login (web-host) | light | 68px |
-| Sidebar (web-host) | light | 50px + badge HOST |
-| Login (web-admin) | light | 68px |
-| Sidebar (web-admin) | light | 50px + badge ADMIN |
-
-**CSS ajustado:**
-- `.navbar` → `padding: 0.5rem 2rem` (reducido de 1rem para acomodar logo más grande)
-- `.navbar-logo` → simplificado, sin reglas de tipografía antiguas
-- `.sidebar-logo` → layout `flex-row` con `gap: 0.6rem`; badge con fondo verde translúcido
+**No modificado** (correcto así):
+- `apps/web-client/src/lib/api.ts:130` — llama a `/api/events/${id}` (backend NestJS, no ruta frontend)
+- `apps/web-host/src/lib/api.ts` y `apps/web-admin/lib/api.ts` — llaman al backend, no son rutas frontend
 
 ---
 
-### Footer Rediseñado — Portal de Clientes (web-client)
+### Sesión del 22-23 de Mayo de 2026 — UX/UI Web Client + URL Slugs + Rebrand AfroEventos
 
-**Estructura nueva (de arriba a abajo):**
-1. Logo AfroEventos centrado (60px)
-2. Iconos de redes sociales (Facebook, Instagram, WhatsApp)
-3. Tagline
-4. Links legales: "Políticas de privacidad | Términos y Condiciones"
-5. Copyright
+Ver detalle completo en CHECKPOINT_RESTORE.md sección "Sesión del 22-23 de Mayo 2026".
 
-**Iconos sociales (`footer-socials`):**
-- Círculos de 42px, fondo `var(--bg-card)`, borde `var(--border-color)`
-- Hover: fondo verde `var(--color-primary)`, ícono negro — sin efecto zoom
-- SVGs inline de cada red social
+**Resumen**:
+- NX Daemon reactivado (`useDaemonProcess: true` + `watch: true`)
+- Slugs amigables para eventos (`/eventos/fiestas-de-san-luis-de-salinas`)
+- Backend acepta slug o UUID indistintamente
+- Rebrand completo: OpenTicket → AfroEventos (navbar, footer, login, admin, mobile)
+- Zonas GRATIS: precio $0 muestra "GRATIS", oculta selectores/total/botón comprar
+- Avatar circular del organizador en página de detalle de evento
 
-**Links legales (`footer-legal-links`):**
-- Color `var(--text-muted)`, hover → `var(--color-primary)`
-- Separador `|` en `var(--border-color)`
+### Sesiones del 17-20 de Mayo de 2026 — Carrusel, Destacados, Imagen Retrato, Perfil Host, Logo SVG, Footer, Páginas Legales
 
----
+Ver detalle completo en CHECKPOINT_RESTORE.md secciones "Sesión del 17-20 de Mayo 2026".
 
-### Páginas Legales — Portal de Clientes
+**Resumen**:
+- Carrusel Hero coverflow con 3 tarjetas (circular motion via doble rAF teleport)
+- Sección Eventos Destacados (condicional, solo si hay eventos con `isFeatured: true`)
+- Cron job de expiración automática de destacados (cada hora)
+- Campo `portraitImageUrl` (imagen retrato 3:4) en schema, backend y formularios
+- Página Perfil en Panel Host (info personal, org, cambio contraseña)
+- Gestión de OrganizerMembers en Panel Host
+- Logo oficial SVG AfroEventos integrado en las 3 apps
+- Footer rediseñado con redes sociales y links legales
+- Páginas `/politicas-de-privacidad` y `/terminos-y-condiciones`
 
-**Rutas (slugs en español):**
-- `/politicas-de-privacidad` — 9 secciones: datos recopilados, uso, compartición, seguridad, cookies, derechos, retención, cambios, contacto
-- `/terminos-y-condiciones` — 12 secciones: aceptación, descripción, registro, compra, reembolsos, obligaciones de organizadores, propiedad intelectual, responsabilidad, conducta, modificaciones, ley aplicable, contacto
+### Sesión del 8 de Mayo de 2026 — Asistentes y Escáner (Host) + Tickets Usados Gris (Client)
 
-**CSS añadido (global.css):** `.legal-page`, `.legal-container`, `.legal-title`, `.legal-updated`, `.legal-section`, `.legal-back` — tema oscuro, títulos de sección en verde `var(--color-primary)`, botón de retorno al inicio.
+**Resumen**:
+- `AttendeesList.tsx`: vista de compradores por evento con tickets comprados/usados y estado de asistencia
+- `TicketScanner.tsx`: 3 tabs (cámara QR con jsQR, ID corto, token JWT manual)
+- Endpoint `GET /orders/attendees/me` (decodifica JWTs, agrupa por usuario+evento)
+- Endpoint `POST /tickets/validate-by-id` (busca por `id.startsWith`)
+- Tickets USED en el Portal Cliente: estilo "apagado" completo (colores grises, botones ocultos)
 
-**Metadata SEO** incluida en cada página con `generateMetadata`.
+### Sesión del 3 de Mayo de 2026 — Mi Perfil (Clientes), Toast de Login
 
----
+**Resumen**:
+- Página `/my-profile` con avatar, datos personales, identificación, dirección Ecuador
+- 8 campos nuevos en schema `User` (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)
+- Endpoints `GET/PATCH /api/auth/me` protegidos con JwtAuthGuard
+- Toast amarillo al intentar seleccionar asientos sin autenticación (auto-cierre 4s)
 
-### Otras mejoras
+### Sesión del 2 de Mayo de 2026 — Logo Organizaciones, Planes Dinámicos, CRUD Admin
 
-- **Web Host Login:** "Crea tu cuenta aquí" en verde `#6AC44D` (era color heredado neutro)
-- **Web Admin Login:** Eliminado título "Global Admin" y "de la Plataforma AfroEventos" del subtítulo → queda solo "Panel de Control General"
-- **Event Detail (web-client):** Etiqueta "Organizador" → **"Publicado por"**
-
----
-
-### Hero Section — Portal de Clientes (web-client :4200)
-
-**Contexto:** La página principal fue limpiada de hero/stats en la sesión anterior. Se necesitaba un nuevo hero visual estilo DICE.fm con fuerte identidad de marca.
-
-#### CSS (`apps/web-client/src/app/global.css`)
-
-- Fuente **Anton** (Google Fonts) añadida al `@import`.
-- Nuevo bloque `.hero-split`:
-  - Grid dos columnas `55fr / 45fr`, `min-height: 100vh`, `padding-top: 64px`.
-  - Izquierda (`.hero-split-left`): fondo oscuro, flex column. Eyebrow verde con línea. Titular `.hero-split-headline` con Anton, `clamp(3.8rem, 7.5vw, 7.5rem)`, line-height 0.9, uppercase; `.accent` en verde (`var(--color-primary)`). Botones pill blanco (`.hero-split-cta`) y fantasma (`.hero-split-cta-ghost`).
-  - Derecha (`.hero-split-right`): `overflow: hidden`. `.hero-event-img` con `object-fit: cover; width: 100%; height: 100%` — imagen a pantalla completa sin padding ni bordes. Hover: `scale(1.04)` en 0.6s.
-  - Responsive 960px: colapsa a 1 columna, panel der. `min-height: 55vw`. Responsive 480px: `min-height: 80vw`.
-
-#### Page (`apps/web-client/src/app/page.tsx`)
-
-- `nextEvent`: primer evento futuro con `status === 'PUBLISHED'` ordenado por fecha ascendente; fallback al `events[0]`.
-- Hero visible solo si `!query` (no hay búsqueda activa).
-- Panel derecho: `<Link>` wrapping `<img src={squareImageUrl || imageUrl || bannerImageUrl || undefined}>` con clases `hero-event-img-wrap` / `hero-event-img`.
-- Fallback si no hay eventos: `.hero-no-event` con ícono 🎵.
-
+**Resumen**:
+- Logo de organización en registro, edición y tabla del admin
+- Planes cargados desde BD (no hardcoded) en registro de Host
+- CRUD completo de Planes en Admin (`Plan` model, endpoints `/api/admin/plans`)
+- CRUD de Usuarios Admin/Editor con roles diferenciados
+- Bloqueo de login para cuentas PENDING/REJECTED con mensajes descriptivos

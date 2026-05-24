@@ -43,6 +43,15 @@ model User {
   role        Role      @default(USER)
   createdAt   DateTime  @default(now())
 
+  // Email verification
+  emailVerified        Boolean   @default(true)  // true = grandfathered existing users
+  emailVerifyToken     String?   @unique
+  emailVerifyExpires   DateTime?
+
+  // Password reset
+  resetPasswordToken   String?   @unique
+  resetPasswordExpires DateTime?
+
   // Profile fields
   avatarUrl   String?
   idType      String?   // "cedula" | "ruc" | "pasaporte"

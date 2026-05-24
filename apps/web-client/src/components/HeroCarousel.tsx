@@ -124,7 +124,7 @@ export function HeroCarousel({ events }: { events: CarouselEvent[] }) {
               aria-hidden={!isActive}
             >
               <Link
-                href={`/events/${event.slug || event.id}`}
+                href={`/eventos/${event.slug || event.id}`}
                 onClick={e => !isActive && e.preventDefault()}
                 tabIndex={isActive ? 0 : -1}
                 className="hcc-link"

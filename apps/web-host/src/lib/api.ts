@@ -201,3 +201,11 @@ export async function updateMyOrganizerProfileInfo(data: {
 }, token: string) {
   return fetchAPI<any>('/auth/me/organizer-profile', { method: 'PATCH', body: JSON.stringify(data), token });
 }
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  return fetchAPI('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+}
+
+export async function resetPassword(token: string, password: string): Promise<{ message: string }> {
+  return fetchAPI('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
+}

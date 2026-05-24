@@ -1,15 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
-import { register, login } from '../../lib/api';
-import { useAuth } from '../../lib/AuthContext';
+import { register, resendVerification } from '../../lib/api';
 import '../login/auth.css';
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const { loginUser } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -17,15 +13,9 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [redirectTo, setRedirectTo] = useState('/');
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const redirect = urlParams.get('redirect');
-    if (redirect) {
-      setRedirectTo(redirect);
-    }
-  }, []);
+  const [registered, setRegistered] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMsg, setResendMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,19 +27,67 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-
     try {
       await register(name, email, password, phone);
-      // Auto-login after registration
-      const result = await login(email, password);
-      loginUser(result.access_token, result.user);
-      router.push(redirectTo);
+      setRegistered(true);
     } catch (err: any) {
       setError(err.message || 'Error al registrarse');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleResend = async () => {
+    setResendLoading(true);
+    setResendMsg('');
+    try {
+      await resendVerification(email);
+      setResendMsg('¡Correo reenviado! Revisa tu bandeja de entrada.');
+    } catch {
+      setResendMsg('Hubo un error. Inténtalo de nuevo.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  if (registered) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card animate-fade-in-up" style={{ textAlign: 'center' }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%',
+            background: 'rgba(106,196,77,0.1)', border: '2px solid var(--color-primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 32, margin: '0 auto 1.5rem',
+          }}>✉️</div>
+          <h1 style={{ fontSize: '1.6rem' }}>¡Revisa tu correo!</h1>
+          <p className="auth-subtitle" style={{ marginBottom: '1.5rem' }}>
+            Enviamos un enlace de verificación a<br/>
+            <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
+          </p>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+            Haz clic en el enlace del correo para activar tu cuenta. Si no lo ves, revisa la carpeta de spam.
+          </p>
+          <button
+            onClick={handleResend}
+            disabled={resendLoading}
+            className="btn btn-secondary btn-full"
+            style={{ marginBottom: '0.75rem' }}
+          >
+            {resendLoading ? 'Reenviando...' : 'Reenviar correo de verificación'}
+          </button>
+          {resendMsg && (
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-primary)', marginTop: '0.5rem' }}>
+              {resendMsg}
+            </p>
+          )}
+          <div className="auth-link" style={{ marginTop: '1.25rem' }}>
+            <Link href="/login">← Volver al inicio de sesión</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-container">
@@ -169,7 +207,7 @@ export default function RegisterPage() {
         </form>
 
         <div className="auth-link">
-          ¿Ya tienes cuenta? <Link href={redirectTo !== '/' ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login'}>Inicia sesión</Link>
+          ¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link>
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:4200';
   const title = `${event.title} — AfroEventos`;
   const description = (event.description || 'Descubre y compra tickets para este evento en AfroEventos.').slice(0, 200);
-  const pageUrl = `${siteUrl}/events/${event.slug || event.id}`;
+  const pageUrl = `${siteUrl}/eventos/${event.slug || event.id}`;
   const image = event.bannerImageUrl || event.squareImageUrl || event.portraitImageUrl || event.imageUrl;
 
   return {

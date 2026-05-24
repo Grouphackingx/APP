@@ -1,5 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
+import { JwtService } from '@nestjs/jwt';
 import { CreateEventDto, UpdateEventDto, CreateZoneDto } from '@open-ticket/shared';
 import { Prisma } from '@prisma/client';
 
@@ -16,7 +18,7 @@ function toSlug(text: string): string {
 
 @Injectable()
 export class EventsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private mail: MailService, private jwt: JwtService) { }
 
     private async generateUniqueSlug(title: string, excludeId?: string): Promise<string> {
         const base = toSlug(title);
@@ -164,6 +166,42 @@ export class EventsService {
         return { updated: events.length };
     }
 
+    private async notifyBuyersOfChange(
+        eventId: string,
+        type: 'canceled' | 'rescheduled',
+        eventTitle: string,
+        oldDate: string,
+        newDate: string,
+        newLocation: string,
+        newCity: string,
+    ) {
+        // eventId is stored only in the ticket JWT — decode all tickets to find buyers
+        const allTickets = await this.prisma.ticket.findMany({
+            include: { order: { include: { user: { select: { id: true, email: true, name: true } } } } },
+        });
+
+        const notified = new Set<string>();
+        for (const ticket of allTickets) {
+            try {
+                const decoded = this.jwt.verify(ticket.qrCodeToken) as { eventId: string };
+                if (decoded.eventId !== eventId) continue;
+                const user = ticket.order?.user;
+                if (!user || notified.has(user.id)) continue;
+                notified.add(user.id);
+                const orderId = ticket.order.id;
+                if (type === 'canceled') {
+                    this.mail.sendEventCanceled(
+                        user.email, user.name, eventTitle, oldDate, newLocation, newCity, orderId,
+                    ).catch(() => null);
+                } else {
+                    this.mail.sendEventRescheduled(
+                        user.email, user.name, eventTitle, oldDate, newDate, newLocation, newCity,
+                    ).catch(() => null);
+                }
+            } catch { /* invalid token, skip */ }
+        }
+    }
+
     async update(id: string, updateData: UpdateEventDto) {
         const { zones, ...rawBasicData } = updateData;
 
@@ -182,6 +220,31 @@ export class EventsService {
         // Convert date string to Date object for Prisma
         if (basicData.date && typeof basicData.date === 'string') {
             basicData.date = new Date(basicData.date);
+        }
+
+        // Notify buyers of cancellation or reschedule (fire-and-forget, before any DB write)
+        const isStatusChange = basicData.status !== undefined;
+        const isDateChange = basicData.date !== undefined;
+        const isLocationChange = basicData.location !== undefined || basicData.city !== undefined;
+
+        if (isStatusChange || isDateChange || isLocationChange) {
+            const currentEvent = await this.prisma.event.findUnique({ where: { id } });
+            if (currentEvent) {
+                const oldDateStr = currentEvent.date.toISOString();
+                const newDateStr = isDateChange ? (basicData.date as Date).toISOString() : oldDateStr;
+                const newLocation = (basicData.location as string) || currentEvent.location;
+                const newCity = (basicData.city as string) || currentEvent.city;
+
+                if (isStatusChange && basicData.status === 'CANCELLED') {
+                    this.notifyBuyersOfChange(
+                        id, 'canceled', currentEvent.title, oldDateStr, newDateStr, currentEvent.location, currentEvent.city,
+                    ).catch(() => null);
+                } else if ((isDateChange || isLocationChange) && currentEvent.status === 'PUBLISHED') {
+                    this.notifyBuyersOfChange(
+                        id, 'rescheduled', currentEvent.title, oldDateStr, newDateStr, newLocation, newCity,
+                    ).catch(() => null);
+                }
+            }
         }
 
         if (zones && zones.length > 0) {
