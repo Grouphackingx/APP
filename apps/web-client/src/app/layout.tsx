@@ -4,10 +4,15 @@ import { Footer } from '../components/Footer';
 import { Providers } from '../components/Providers';
 
 export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:4200'),
   title: 'AfroEventos — Descubre Eventos Increíbles',
   description:
     'Encuentra y compra tickets para los mejores eventos, conciertos y festivales. Selecciona tus asientos y recibe tu entrada digital al instante.',
   keywords: 'eventos, tickets, conciertos, festivales, entradas, boletos',
+  openGraph: {
+    siteName: 'AfroEventos',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({

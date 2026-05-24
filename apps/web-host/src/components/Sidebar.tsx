@@ -1,5 +1,7 @@
 'use client';
 
+import { AfroEventosLogo } from './AfroEventosLogo';
+
 interface SidebarProps {
   user: { name: string; email: string; role: string; organizerProfile?: { organizationLogo?: string }; isMember?: boolean; memberRole?: 'ADMIN' | 'STAFF' } | null;
   activeView: string;
@@ -26,8 +28,7 @@ export function Sidebar({ user, activeView, onNavigate, onLogout }: SidebarProps
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <span className="logo-icon">🎫</span>
-        AfroEventos
+        <AfroEventosLogo variant="light" height={50} />
         <span className="logo-badge">HOST</span>
       </div>
 

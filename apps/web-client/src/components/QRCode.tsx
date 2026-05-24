@@ -65,10 +65,15 @@ export default function QRCode({
         <span className="qr-label-text">
           {ticketStatus === 'VALID'
             ? '📱 Presenta este QR en la entrada'
-            : '✔️ Ticket ya utilizado'}
+            : 'Ticket ya utilizado'}
         </span>
         {ticketId && (
-          <span className="qr-ticket-id">#{ticketId.slice(0, 8)}</span>
+          <span
+            className="qr-ticket-id"
+            style={ticketStatus === 'USED' ? { color: '#6b7280' } : undefined}
+          >
+            #{ticketId.slice(0, 8)}
+          </span>
         )}
       </div>
     </div>

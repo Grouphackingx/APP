@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '../lib/AuthContext';
 import SearchBar from './SearchBar';
+import { AfroEventosLogo } from './AfroEventosLogo';
 
 export function Navbar() {
   const { user, logout, isLoading } = useAuth();
@@ -11,8 +12,7 @@ export function Navbar() {
     <nav className="navbar" id="main-navbar">
       <div className="navbar-inner">
         <Link href="/" className="navbar-logo" id="navbar-logo">
-          <span className="logo-icon">🎫</span>
-          AfroEventos
+          <AfroEventosLogo variant="light" height={52} />
         </Link>
 
         <div className="navbar-links">

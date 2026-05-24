@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
+import { AfroEventosLogo } from '../../components/AfroEventosLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,15 +35,14 @@ export default function LoginPage() {
       <div className="auth-card animate-fade-in-up">
         <div
           style={{
-            textAlign: 'center',
-            marginBottom: '0.5rem',
-            fontSize: '2.5rem',
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '1rem',
           }}
         >
-          🎫
+          <AfroEventosLogo variant="light" height={68} />
         </div>
-        <h1 className="text-3xl font-black text-slate-800 mb-2">Global Admin</h1>
-        <p className="auth-subtitle mb-6 text-slate-500">Panel de Control General de la Plataforma AfroEventos</p>
+        <p className="auth-subtitle mb-6 text-slate-500">Panel de Control General</p>
 
         {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
 

@@ -61,7 +61,7 @@ export async function createEvent(data: any, token: string) {
   });
 }
 
-export async function uploadImage(file: File, token: string, type?: 'logo' | 'event', eventId?: string, organizerId?: string): Promise<string> {
+export async function uploadImage(file: File, token: string, type?: 'logo' | 'event' | 'user-avatar', eventId?: string, organizerId?: string): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 

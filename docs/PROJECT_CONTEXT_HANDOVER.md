@@ -1,7 +1,7 @@
-# PROJECT CONTEXT & HANDOVER: OpenTicket (BuenPlan Clone)
+# PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 19 de Mayo de 2026
-**Estado del Proyecto:** ✅ Fases 1-4 Completas + Perfil Usuario + Toast autenticación + Asistentes y Escáner (Host) + Tickets USED rojo (Client) + Eventos Destacados (Admin) + Gestión Global Eventos (Admin) + Usuarios OrganizerMembers (Host) + Página Perfil Host + Hero Section con Carrusel Coverflow 1:1
+**Última Actualización:** 24 de Mayo de 2026
+**Estado del Proyecto:** ✅ Fases 1-4 Completas + Perfil Usuario + Toast autenticación + Asistentes y Escáner (Host) + Tickets USED gris (Client) + Eventos Destacados (Admin) + Gestión Global Eventos (Admin) + Usuarios OrganizerMembers (Host) + Página Perfil Host + Hero Section con Carrusel Coverflow 1:1 + Logo oficial SVG aplicado en todas las apps + Footer rediseñado + Páginas legales
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -96,6 +96,7 @@ REDIS_URL=redis://localhost:6380
 JWT_SECRET=superSecretKey123
 PORT=3000
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_SITE_URL=http://localhost:4200
 ```
 
 ---
@@ -625,6 +626,105 @@ donde `orgUserId` se extrae del JWT del HOST autenticado (`req.user.sub`). La UR
   3. *Cambiar Contraseña* — campos actual/nueva/confirmar con toggle de visibilidad individual. Valida coincidencia antes de llamar al API.
 - **`Sidebar.tsx`:** Orden final del menú: Inicio → Crear Evento → Mis Eventos → Asistentes → Usuarios (solo HOST) → Escáner de Tickets → Perfil.
 - **`dashboard/page.tsx`:** Vista `'profile'` añadida al tipo, import y bloque de render de `OrganizerProfile`.
+
+## 22. Registro de Cambios (23-24 Mayo 2026)
+
+### Tickets Usados — Portal de Clientes (`/my-tickets`)
+
+**Contexto:** Los tickets escaneados (USED) mostraban colores vivos idénticos a los válidos, lo que dificultaba distinguirlos.
+
+**Cambios de UX/UI (efecto "apagado" completo):**
+
+| Elemento | Antes | Ahora (USED) |
+| :--- | :--- | :--- |
+| Borde superior de tarjeta | `zoneColor` | `#4b5563` gris oscuro |
+| Badge de zona (pill top-right) | Color de zona | Gris `rgba(120,120,120,0.1)` |
+| Texto nombre zona | `zoneColor` | `#6b7280` |
+| Número de asiento | Color heredado | `#6b7280` |
+| Botón "Compartir" | Visible | Oculto completamente |
+| Link "Ver Evento →" | Verde primario | `#6b7280` (clickeable) |
+| Badge "✕ Usado" | 🔒 rojo | ✕ gris |
+| "Escaneado: fecha" | 📱 con emoji | Sin emoji |
+| `#ticketId` bajo QR | Verde acento | `#6b7280` |
+| "Ticket ya utilizado" | ✔️ con emoji | Sin emoji |
+
+**Archivos modificados:**
+- `apps/web-client/src/app/my-tickets/page.tsx` — estilos condicionales `ticket.status === 'USED'`
+- `apps/web-client/src/components/QRCode.tsx` — color ID y texto sin emoji
+
+---
+
+### Logo Oficial SVG AfroEventos — Todas las Apps
+
+**Contexto:** El logo anterior era una aproximación SVG manual inexacta. Se integraron los archivos SVG oficiales exportados desde Adobe Illustrator.
+
+**Archivos SVG:**
+- `public/logo-blanco.svg` — ícono verde + texto blanco (para fondos oscuros)
+- `public/logo-negro.svg` — ícono verde + texto negro (para fondos claros)
+
+**Copiados a:** `web-client/public/`, `web-host/public/`, `web-admin/public/`
+
+**Componente `AfroEventosLogo`** creado en cada app:
+- Props: `variant` (`'light'` | `'dark'`), `height` (px), `className`
+- Usa `next/image` con ratio exacto del viewBox (blanco: 1890.4×677.3, negro: 1831.1×684.4)
+
+**Aplicado en:**
+
+| Lugar | Variante | Altura |
+| :--- | :--- | :--- |
+| Navbar (web-client) | light | 52px |
+| Footer (web-client) | light | 60px |
+| Login (web-host) | light | 68px |
+| Sidebar (web-host) | light | 50px + badge HOST |
+| Login (web-admin) | light | 68px |
+| Sidebar (web-admin) | light | 50px + badge ADMIN |
+
+**CSS ajustado:**
+- `.navbar` → `padding: 0.5rem 2rem` (reducido de 1rem para acomodar logo más grande)
+- `.navbar-logo` → simplificado, sin reglas de tipografía antiguas
+- `.sidebar-logo` → layout `flex-row` con `gap: 0.6rem`; badge con fondo verde translúcido
+
+---
+
+### Footer Rediseñado — Portal de Clientes (web-client)
+
+**Estructura nueva (de arriba a abajo):**
+1. Logo AfroEventos centrado (60px)
+2. Iconos de redes sociales (Facebook, Instagram, WhatsApp)
+3. Tagline
+4. Links legales: "Políticas de privacidad | Términos y Condiciones"
+5. Copyright
+
+**Iconos sociales (`footer-socials`):**
+- Círculos de 42px, fondo `var(--bg-card)`, borde `var(--border-color)`
+- Hover: fondo verde `var(--color-primary)`, ícono negro — sin efecto zoom
+- SVGs inline de cada red social
+
+**Links legales (`footer-legal-links`):**
+- Color `var(--text-muted)`, hover → `var(--color-primary)`
+- Separador `|` en `var(--border-color)`
+
+---
+
+### Páginas Legales — Portal de Clientes
+
+**Rutas (slugs en español):**
+- `/politicas-de-privacidad` — 9 secciones: datos recopilados, uso, compartición, seguridad, cookies, derechos, retención, cambios, contacto
+- `/terminos-y-condiciones` — 12 secciones: aceptación, descripción, registro, compra, reembolsos, obligaciones de organizadores, propiedad intelectual, responsabilidad, conducta, modificaciones, ley aplicable, contacto
+
+**CSS añadido (global.css):** `.legal-page`, `.legal-container`, `.legal-title`, `.legal-updated`, `.legal-section`, `.legal-back` — tema oscuro, títulos de sección en verde `var(--color-primary)`, botón de retorno al inicio.
+
+**Metadata SEO** incluida en cada página con `generateMetadata`.
+
+---
+
+### Otras mejoras
+
+- **Web Host Login:** "Crea tu cuenta aquí" en verde `#6AC44D` (era color heredado neutro)
+- **Web Admin Login:** Eliminado título "Global Admin" y "de la Plataforma AfroEventos" del subtítulo → queda solo "Panel de Control General"
+- **Event Detail (web-client):** Etiqueta "Organizador" → **"Publicado por"**
+
+---
 
 ### Hero Section — Portal de Clientes (web-client :4200)
 

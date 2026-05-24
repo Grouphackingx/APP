@@ -42,6 +42,11 @@ export class UploadController {
             dir = `./uploads/organizers/${orgId}`;
             if (type === 'logo') {
               dir += '/logo';
+              if (fs.existsSync(dir)) {
+                for (const f of fs.readdirSync(dir)) {
+                  try { fs.unlinkSync(`${dir}/${f}`); } catch { /* ignore */ }
+                }
+              }
             } else if (type === 'event' && eventId) {
               dir += `/events/${eventId}`;
             } else {

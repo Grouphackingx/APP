@@ -121,7 +121,7 @@ export function OrganizerProfile({ token }: Props) {
         if (isMember && user?.id) {
           avatarUrl = await uploadMemberAvatar(avatarFile, user.id, token);
         } else {
-          avatarUrl = await uploadImage(avatarFile, token, 'logo');
+          avatarUrl = await uploadImage(avatarFile, token, 'user-avatar');
         }
         setUploadingAvatar(false);
         setAvatarFile(null);

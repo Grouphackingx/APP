@@ -250,18 +250,24 @@ export class AuthService {
         });
 
         if (dto.organizationLogo) {
-            const tempIdMatch = dto.organizationLogo.match(/[/]uploads[/]organizers[/]([^/]+)[/]/);
+            const tempIdMatch = dto.organizationLogo.match(/\/uploads\/organizers\/([^/]+)\//);
             const tempId = tempIdMatch ? tempIdMatch[1] : null;
-            
+
             if (tempId && tempId !== user.id) {
                 const fs = require('fs');
-                const tempDir = `./uploads/organizers/${tempId}`;
-                const newDir = `./uploads/organizers/${user.id}`;
-                
-                if (fs.existsSync(tempDir)) {
+                const tempLogoDir = `./uploads/organizers/${tempId}/logo`;
+                const newLogoDir = `./uploads/organizers/${user.id}/logo`;
+
+                if (fs.existsSync(tempLogoDir)) {
                     try {
-                        fs.renameSync(tempDir, newDir);
-                        const newLogoUrl = dto.organizationLogo.replace(`/organizers/${tempId}/`, `/organizers/${user.id}/`);
+                        fs.mkdirSync(newLogoDir, { recursive: true });
+                        for (const filename of fs.readdirSync(tempLogoDir)) {
+                            fs.copyFileSync(`${tempLogoDir}/${filename}`, `${newLogoDir}/${filename}`);
+                        }
+                        const newLogoUrl = dto.organizationLogo.replace(
+                            `/organizers/${tempId}/`,
+                            `/organizers/${user.id}/`
+                        );
                         await this.prisma.organizerProfile.update({
                             where: { userId: user.id },
                             data: { organizationLogo: newLogoUrl }
@@ -269,8 +275,11 @@ export class AuthService {
                         if (user.organizerProfile) {
                             user.organizerProfile.organizationLogo = newLogoUrl;
                         }
+                        try {
+                            fs.rmSync(`./uploads/organizers/${tempId}`, { recursive: true, force: true });
+                        } catch { /* ignore cleanup errors */ }
                     } catch (e) {
-                        console.error('Failed to move logo directory', e);
+                        console.error('Failed to migrate logo directory', e);
                     }
                 }
             }

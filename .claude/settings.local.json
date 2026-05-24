@@ -12,7 +12,8 @@
       "Bash(docker-compose start *)",
       "Bash(npx next *)",
       "Bash(echo \"Web Client PID: $!\")",
-      "Bash(echo \"Web Host PID: $!\")"
+      "Bash(echo \"Web Host PID: $!\")",
+      "Bash(echo \"Web Admin PID: $!\")"
     ]
   }
 }

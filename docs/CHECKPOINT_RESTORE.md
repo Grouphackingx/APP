@@ -643,8 +643,9 @@ Se eliminó el campo "Imagen del evento (General)" del formulario de creación/e
 - [ ] Reportes financieros para organizadores
 - [x] ~~Sección de "Eventos Destacados" en la página principal del web-client~~ ✅ (20 May 2026)
 - [x] ~~Automatización de expiración de destacados (cron job `@nestjs/schedule` cada hora)~~ ✅ (20 May 2026)
-- [ ] Mover carpeta temporal del logo (se guarda en `uploads/organizers/{email_safe}/` en el registro, debería moverse a `uploads/organizers/{userId}/` tras crearse el usuario)
-- [ ] Reemplazar foto de perfil anterior al subir una nueva (actualmente se acumulan archivos en `uploads/users/{id}/avatar/`)
+- [x] ~~Migración robusta del logo temporal en registro: copia archivo + actualiza BD + limpia carpeta temp (23 May 2026)~~ ✅
+- [x] ~~Eliminar logo anterior al subir nuevo en Panel Host: borrado automático antes de guardar (23 May 2026)~~ ✅
+- [x] ~~Avatar del HOST usaba tipo `logo` incorrecto — corregido a `user-avatar` para guardar en ruta correcta (23 May 2026)~~ ✅
 
 ### Prioridad Media
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/AuthContext';
-import { getUserOrders } from '../../lib/api';
+import { getUserOrders, getEventById } from '../../lib/api';
 import Link from 'next/link';
 import QRCode from '../../components/QRCode';
 import './my-tickets.css';
@@ -13,6 +13,7 @@ interface EnrichedTicket {
   status: string;
   scannedAt: string | null;
   eventId: string | null;
+  eventSlug?: string | null;
   eventTitle: string;
   eventDate: string;
   eventLocation: string;
@@ -138,6 +139,7 @@ export default function MyTicketsPage() {
       if (!acc[eventId]) {
         acc[eventId] = {
           eventId,
+          eventSlug: firstTicket.eventSlug || null,
           eventTitle: firstTicket.eventTitle || 'Evento Desconocido',
           eventDate: firstTicket.eventDate,
           eventLocation: firstTicket.eventLocation,
@@ -176,8 +178,27 @@ export default function MyTicketsPage() {
   const handleShare = async (ticket: EnrichedTicket, group: any) => {
     setSharingId(ticket.id);
     try {
-      const eventUrl = `${window.location.origin}/events/${group.eventId}`;
-      const shareTextBase = `\uD83C\uDFAB ¡Aquí tienes tu entrada para *${group.eventTitle}*!\n\uD83D\uDD17 Ver evento: ${eventUrl}\n\n\uD83D\uDCC5 Fecha: ${formatDate(group.eventDate)}\n\u23F0 Hora: ${formatTime(group.eventDate)}\n\uD83D\uDCCD Lugar: ${group.eventLocation}${group.eventCity ? `, ${group.eventCity}` : ''}\n\uD83C\uDF9F\uFE0F Zona: ${ticket.zoneName}\n\uD83D\uDCBA ${ticket.hasSeatingChart !== false ? 'Asiento' : 'Entrada'}: ${ticket.hasSeatingChart !== false ? ticket.seatNumber || '-' : `#${ticket.seatNumber}`}`;
+      let eventSlug = ticket.eventSlug || group.eventSlug || null;
+      if (!eventSlug && group.eventId) {
+        try {
+          const ev = await getEventById(group.eventId);
+          eventSlug = ev?.slug || null;
+        } catch { /* usa eventId como fallback */ }
+      }
+      const eventUrl = `${window.location.origin}/events/${eventSlug || group.eventId}`;
+      const entradaLabel = ticket.hasSeatingChart !== false ? 'Asiento' : 'Entrada';
+      const entradaVal = ticket.hasSeatingChart !== false ? (ticket.seatNumber || '-') : '#' + ticket.seatNumber;
+      const shareTextBase = [
+        '*' + group.eventTitle + '*',
+        '',
+        'Fecha: ' + formatDate(group.eventDate),
+        'Hora: ' + formatTime(group.eventDate),
+        'Lugar: ' + group.eventLocation + (group.eventCity ? ', ' + group.eventCity : ''),
+        'Zona: ' + ticket.zoneName,
+        entradaLabel + ': ' + entradaVal,
+        '',
+        'Ver evento: ' + eventUrl,
+      ].join('\n');
 
       const longUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${ticket.qrCodeToken}`;
       let shortUrl = longUrl;
@@ -385,7 +406,7 @@ export default function MyTicketsPage() {
                                 : 'ticket-valid'
                             }`}
                             style={{
-                              borderTop: `6px solid ${zoneColor}`,
+                              borderTop: `6px solid ${ticket.status === 'USED' ? '#4b5563' : zoneColor}`,
                               position: 'relative',
                             }}
                           >
@@ -414,7 +435,7 @@ export default function MyTicketsPage() {
                                   {ticket.status === 'VALID'
                                     ? '✅ Válido'
                                     : ticket.status === 'USED'
-                                      ? '🔒 Usado'
+                                      ? '✕ Usado'
                                       : ticket.status}
                                 </span>
                                 <div
@@ -423,11 +444,11 @@ export default function MyTicketsPage() {
                                     fontWeight: 700,
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
-                                    color: zoneColor,
-                                    background: `${zoneColor}15`, // 15 = ~8% opacity
+                                    color: ticket.status === 'USED' ? '#6b7280' : zoneColor,
+                                    background: ticket.status === 'USED' ? 'rgba(120,120,120,0.1)' : `${zoneColor}15`,
                                     padding: '0.2rem 0.6rem',
                                     borderRadius: '12px',
-                                    border: `1px solid ${zoneColor}40`,
+                                    border: ticket.status === 'USED' ? '1px solid rgba(120,120,120,0.25)' : `1px solid ${zoneColor}40`,
                                   }}
                                 >
                                   {ticket.zoneName}
@@ -440,7 +461,7 @@ export default function MyTicketsPage() {
                                   </span>
                                   <span
                                     className="ticket-info-value"
-                                    style={{ color: zoneColor }}
+                                    style={{ color: ticket.status === 'USED' ? '#6b7280' : zoneColor }}
                                   >
                                     {ticket.zoneName}
                                   </span>
@@ -451,7 +472,10 @@ export default function MyTicketsPage() {
                                       ? 'Asiento'
                                       : 'Entrada'}
                                   </span>
-                                  <span className="ticket-info-value">
+                                  <span
+                                    className="ticket-info-value"
+                                    style={ticket.status === 'USED' ? { color: '#6b7280' } : undefined}
+                                  >
                                     {ticket.hasSeatingChart !== false
                                       ? ticket.seatNumber || '-'
                                       : `#${ticket.seatNumber}`}
@@ -460,7 +484,7 @@ export default function MyTicketsPage() {
                               </div>
                               {ticket.scannedAt && (
                                 <div className="ticket-scanned">
-                                  📱 Escaneado:{' '}
+                                  Escaneado:{' '}
                                   {formatDateTime(ticket.scannedAt)}
                                 </div>
                               )}
@@ -483,6 +507,7 @@ export default function MyTicketsPage() {
                             <div className="ticket-tear-line" />
                             <div className="ticket-footer" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                               <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                                {ticket.status !== 'USED' && (
                                 <button
                                   onClick={() => handleShare(ticket, group)}
                                   disabled={sharingId === ticket.id}
@@ -512,12 +537,16 @@ export default function MyTicketsPage() {
                                   )}
                                   <span>Compartir</span>
                                 </button>
+                                )}
                                 
                                 {group.eventId && (
                                   <Link
                                     href={`/events/${group.eventId}`}
                                     className="ticket-link"
-                                    style={{ fontSize: '0.8rem' }}
+                                    style={{
+                                      fontSize: '0.8rem',
+                                      color: ticket.status === 'USED' ? '#6b7280' : undefined,
+                                    }}
                                   >
                                     Ver Evento →
                                   </Link>

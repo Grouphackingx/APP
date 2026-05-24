@@ -314,11 +314,12 @@ export class OrdersService {
                             let eventDate = '';
                             let eventLocation = '';
                             let eventCity = '';
+                            let eventSlug: string | null = null;
                             let hasSeatingChart = true; // Default to true for backward compatibility
                             if (decoded.eventId) {
                                 const event = await this.prisma.event.findUnique({
                                     where: { id: decoded.eventId },
-                                    select: { title: true, date: true, location: true, city: true, hasSeatingChart: true },
+                                    select: { title: true, date: true, location: true, city: true, hasSeatingChart: true, slug: true },
                                 });
                                 if (event) {
                                     eventTitle = event.title;
@@ -326,11 +327,13 @@ export class OrdersService {
                                     eventLocation = event.location;
                                     eventCity = event.city || '';
                                     hasSeatingChart = event.hasSeatingChart ?? true;
+                                    eventSlug = event.slug || null;
                                 }
                             }
                             return {
                                 ...ticket,
                                 eventId: decoded.eventId || null,
+                                eventSlug,
                                 eventTitle,
                                 eventDate,
                                 eventLocation,

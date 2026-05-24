@@ -1,5 +1,7 @@
 'use client';
 
+import { AfroEventosLogo } from './AfroEventosLogo';
+
 interface SidebarProps {
   user: { name: string; email: string; role: string } | null;
   activeView: string;
@@ -16,9 +18,8 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <span className="logo-icon" style={{color: '#8b5cf6'}}>⚡</span>
-        AfroEventos
-        <span className="logo-badge" style={{color: '#8b5cf6', borderColor: '#8b5cf6'}}>ADMIN</span>
+        <AfroEventosLogo variant="light" height={50} />
+        <span className="logo-badge" style={{ color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.4)', background: 'rgba(139,92,246,0.1)' }}>ADMIN</span>
       </div>
 
       <nav className="sidebar-nav">

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
+import { AfroEventosLogo } from '../../components/AfroEventosLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,14 +35,14 @@ export default function LoginPage() {
       <div className="auth-card animate-fade-in-up">
         <div
           style={{
-            textAlign: 'center',
-            marginBottom: '0.5rem',
-            fontSize: '2.5rem',
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '1rem',
           }}
         >
-          🎫
+          <AfroEventosLogo variant="light" height={68} />
         </div>
-        <h1>AfroEventos Host</h1>
+        <h1>Host</h1>
         <p className="auth-subtitle">Panel de Organizador de Eventos</p>
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}
@@ -78,7 +79,7 @@ export default function LoginPage() {
           </button>
         </form>
         <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '14px' }}>
-            ¿Eres un organizador nuevo? <a href="/register" style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>Crea tu cuenta aquí</a>
+            ¿Eres un organizador nuevo? <a href="/register" style={{ fontWeight: 600, color: '#6AC44D', textDecoration: 'none' }}>Crea tu cuenta aquí</a>
         </div>
       </div>
     </div>
