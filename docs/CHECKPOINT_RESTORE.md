@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 24 de Mayo de 2026 (Sesión 2)
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack
+**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 3)
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado)
 
 ---
 
@@ -154,7 +154,7 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 | Ruta                        | Estado | Descripción                                                |
 | :-------------------------- | :----- | :--------------------------------------------------------- |
-| `/`                         | OK     | Hero split (Anton font) + Carrusel coverflow 3:4 + Sección Destacados + **Banner Slider 16:3** (si hay banners) + Catálogo en grid |
+| `/`                         | OK     | Hero split + Carrusel coverflow 3:4 + **Sección Destacados adaptativa** (1→horizontal / 2→side-by-side / 3+→FeaturedCarousel) + Catálogo con "Mostrar más" + **Banner Slider** (al final, si hay banners) |
 | `/login`                    | OK     | Login + link "¿Olvidaste tu contraseña?" |
 | `/register`                 | OK     | Registro + pantalla "Revisa tu correo" post-registro |
 | `/verify-email?token=`      | OK     | Verificación de email con estados: verificando / éxito / expirado |
@@ -513,6 +513,10 @@ Web Client (SSR) → getBanners() → GET /api/banners → [banners activos orde
 - **URL frontend `/eventos/` en español (migración de `/events/`)** ✅ (24 May 2026)
 - **Favicons AfroEventos en las 3 apps (SVG oficial)** ✅ (24 May 2026)
 - **Sistema de Banners Publicitarios full-stack (backend + admin CRUD + web-client slider)** ✅ (24 May 2026)
+- **FeaturedEventsSection — 3 layouts adaptativos (1 horizontal / 2 side-by-side / 3+ carrusel)** ✅ (25 May 2026)
+- **FeaturedCarousel — carrusel deslizante con scroll infinito, auto-avance y dots dorados** ✅ (25 May 2026)
+- **EventsGrid — grid paginado con botón "Mostrar más", última fila centrada** ✅ (25 May 2026)
+- **Header "Próximos Eventos" condicional (sobre destacados cuando no hay generales)** ✅ (25 May 2026)
 
 ---
 
@@ -522,4 +526,5 @@ Web Client (SSR) → getBanners() → GET /api/banners → [banners activos orde
 - **Galería de imágenes en edición**: Las imágenes de galería se acumulan en vez de reemplazarse.
 - **Ticket sin relación a Seat en BD**: Requiere decodificar todos los JWTs para encontrar compradores de un evento (costoso con muchos tickets). Mejora futura: agregar `eventId` al modelo `Order`.
 - **Límite de 3 banners no validado en backend**: El límite existe solo en la UI Admin. Un POST directo a `/api/banners` podría crear más de 3. Mejora futura: agregar validación en `BannersService.create()`.
-- **BannerSlider sin transición entre slides**: El cambio de imagen es abrupto (no hay fade ni slide animado). Mejora futura: añadir `opacity` transition o `translateX` entre slides.
+- **BannerSlider sin transición entre slides**: El cambio de imagen es abrupto (no hay fade ni slide). Mejora futura: añadir `opacity` o `translateX` entre slides (el FeaturedCarousel ya usa translateX como referencia).
+- **FeaturedCarousel — límite de 3 tarjetas visibles fijo**: En pantallas muy anchas podría mostrarse espacio vacío a los lados. Mejora futura: hacer `VISIBLE` responsivo (3 en desktop, 2 en tablet, 1 en móvil).

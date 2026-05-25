@@ -1,8 +1,8 @@
 import { getEvents, getBanners, type EventItem, type BannerItem } from '../lib/api';
-import { EventCard } from '../components/EventCard';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { FeaturedEventsSection } from '../components/FeaturedEventsSection';
 import { BannerSlider } from '../components/BannerSlider';
+import { EventsGrid } from '../components/EventsGrid';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -107,21 +107,10 @@ export default async function HomePage(props: {
       )}
 
       {/* ── Featured Events — only on main page (no search), only if there are featured events ── */}
-      {!query && <FeaturedEventsSection events={featuredEvents} />}
-
-      {/* ── Banner Slider — only on main page (no search) ── */}
-      {!query && banners.length > 0 && <BannerSlider banners={banners} />}
-
-      {/* ── Events Section ── */}
-      <section className="section" id="eventos">
-        <div className="section-inner">
-          {query ? (
-            <div className="section-header">
-              <h2>{`🔍 Resultados para "${query}"`}</h2>
-              <p>Explora los eventos que coinciden con tu búsqueda.</p>
-            </div>
-          ) : (
-            <div className="featured-header">
+      {!query && featuredEvents.length > 0 && (
+        <div id={generalEvents.length === 0 ? 'eventos' : undefined}>
+          {generalEvents.length === 0 && (
+            <div className="section-inner upcoming-header-standalone">
               <div className="featured-label">
                 <span className="upcoming-icon">🗓</span>
                 Próximos Eventos
@@ -129,6 +118,27 @@ export default async function HomePage(props: {
               <p className="featured-sub">Descubre lo que viene y asegura tu lugar</p>
             </div>
           )}
+          <FeaturedEventsSection events={featuredEvents} />
+        </div>
+      )}
+
+      {/* ── Events Section ── */}
+      <section className="section" id={generalEvents.length > 0 || !featuredEvents.length ? 'eventos' : undefined}>
+        <div className="section-inner">
+          {query ? (
+            <div className="section-header">
+              <h2>{`🔍 Resultados para "${query}"`}</h2>
+              <p>Explora los eventos que coinciden con tu búsqueda.</p>
+            </div>
+          ) : generalEvents.length > 0 ? (
+            <div className="featured-header">
+              <div className="featured-label">
+                <span className="upcoming-icon">🗓</span>
+                Próximos Eventos
+              </div>
+              <p className="featured-sub">Descubre lo que viene y asegura tu lugar</p>
+            </div>
+          ) : null}
 
           {error ? (
             <div className="empty-state">
@@ -154,14 +164,13 @@ export default async function HomePage(props: {
               )}
             </div>
           ) : generalEvents.length === 0 ? null : (
-            <div className="events-grid">
-              {generalEvents.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} />
-              ))}
-            </div>
+            <EventsGrid events={generalEvents} />
           )}
         </div>
       </section>
+
+      {/* ── Banner Slider — only on main page (no search) ── */}
+      {!query && banners.length > 0 && <BannerSlider banners={banners} />}
     </>
   );
 }

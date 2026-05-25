@@ -789,9 +789,46 @@ textarea {
 
 /* ===== Event Cards Grid ===== */
 .events-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 1.5rem;
+}
+
+.events-grid > * {
+  flex: 0 0 calc(33.333% - 1rem);
+}
+
+.show-more-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+.show-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted, #a0a0a0);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.6rem 1.5rem;
+  border-radius: 999px;
+  transition: color 0.2s ease, background 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.show-more-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-card-hover);
+}
+
+.show-more-icon {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 /* ... Event Cards ... */
@@ -1850,7 +1887,7 @@ textarea {
   .navbar-links a { padding: 0.4rem 0.6rem; font-size: 0.8rem; }
   .hero { padding: 7rem 1rem 3rem; }
   .hero-stats { gap: 1.5rem; }
-  .events-grid { grid-template-columns: 1fr; }
+  .events-grid > * { flex: 0 0 100%; }
   .section { padding: 3rem 1rem; }
   .auth-card { padding: 1.5rem; }
   .my-tickets-stats { grid-template-columns: repeat(2, 1fr); }
@@ -1869,53 +1906,71 @@ textarea {
 
 /* ===== Featured Events Section ===== */
 .featured-section {
-  padding: 4rem 0 0;
+  padding: 2.77rem 0 0;
   position: relative;
 }
 
 
 .featured-header {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.4rem;
+  text-align: center;
+}
+
+.upcoming-header-standalone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+  padding-top: 3.5rem;
+  padding-bottom: 1.02rem;
 }
 
 .featured-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   font-family: var(--font-heading);
-  font-size: 1.6rem;
+  font-size: clamp(2rem, 4vw, 2.8rem);
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .featured-star {
   color: #f59e0b;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   line-height: 1;
   filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
 }
 
 .upcoming-icon {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   line-height: 1;
   filter: drop-shadow(0 0 8px rgba(106, 196, 77, 0.5));
 }
 
 .featured-sub {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   margin: 0;
 }
 
-/* Grid: 1 card = full width, 2+ = 2 cols, clamps at 3 */
+/* Grid: cards centradas — 1, 2 o 3 columnas según cantidad */
 .featured-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 1.5rem;
+}
+
+.featured-grid > * {
+  flex: 0 0 min(340px, 100%);
 }
 
 /* ── Featured Card ── */
@@ -2048,17 +2103,330 @@ textarea {
   color: #fbbf24;
 }
 
+/* ── Panoramic layout (1 evento) — horizontal full-width ──────── */
+.featured-panoramic-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Featured Carousel — card slider (3+ eventos) ───────────── */
+.fcarousel {
+  position: relative;
+  width: 100%;
+  user-select: none;
+}
+
+.fcarousel-viewport {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.fcarousel-track {
+  display: flex;
+  will-change: transform;
+}
+
+.fcarousel-card-wrap {
+  flex-shrink: 0;
+  padding: 0 0.625rem;
+}
+
+.fcarousel-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid #2a2800;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+}
+
+.fcarousel-img {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #121314;
+  flex-shrink: 0;
+}
+
+.fcarousel-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.fcarousel-no-img {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.fcarousel-body {
+  padding: 1rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.fcarousel-title {
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.fcarousel-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Flechas — fuera del viewport para no recortar */
+.fcarousel-arrow {
+  position: absolute;
+  top: calc(50% - 1.5rem); /* centrado en la imagen, no en el total */
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  z-index: 10;
+  transform: translateY(-50%);
+}
+
+.fcarousel-arrow:hover {
+  background: rgba(245, 158, 11, 0.85);
+  border-color: transparent;
+}
+
+.fcarousel-arrow-prev { left: -1.25rem; }
+.fcarousel-arrow-next { right: -1.25rem; }
+
+/* Dots */
+.fcarousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.1rem;
+}
+
+.fcarousel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.25s ease, width 0.25s ease;
+}
+
+.fcarousel-dot.active {
+  background: var(--color-primary, #f59e0b);
+  width: 20px;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .fcarousel-arrow-prev { left: 0; }
+  .fcarousel-arrow-next { right: 0; }
+}
+
+/* ── Two-up layout (2 eventos) — 2 columnas, imagen arriba ────── */
+.featured-two-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.featured-card-v {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid #2a2800;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  transition: border-color 0.25s ease;
+}
+
+.featured-card-v::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition: border-color 0.25s ease;
+}
+
+.featured-card-v:hover::after {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.featured-card-v-img {
+  width: 100%;
+  aspect-ratio: 2000 / 576;
+  overflow: hidden;
+  position: relative;
+  background: #121314;
+  flex-shrink: 0;
+}
+
+.featured-card-v-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+.featured-card-v-body {
+  padding: 1rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+}
+
+.featured-card-h {
+  display: flex;
+  flex-direction: row;
+  background: var(--bg-card);
+  border: 1px solid #2a2800;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  min-height: 240px;
+  position: relative;
+  transition: border-color 0.25s ease;
+}
+
+.featured-card-h::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition: border-color 0.25s ease;
+}
+
+.featured-card-h:hover::after {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+/* Imagen panorámica — 60% del ancho */
+.featured-card-h-img {
+  flex: 0 0 60%;
+  position: relative;
+  overflow: hidden;
+  background: #121314;
+}
+
+.featured-card-h-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Info — 40% restante */
+.featured-card-h-body {
+  flex: 1;
+  padding: 2rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.featured-card-h-category {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f59e0b;
+  opacity: 0.85;
+}
+
+.featured-card-h-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.featured-card-h-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .featured-section { padding: 2.5rem 0 0; }
-  .featured-grid { grid-template-columns: 1fr; }
-  .featured-label { font-size: 1.3rem; }
+  .featured-grid > * { flex: 0 0 100%; }
+  .featured-label { font-size: 1.6rem; }
+
+  /* Panoramic → vertical en mobile */
+  .featured-card-h {
+    flex-direction: column;
+    min-height: unset;
+  }
+  .featured-card-h-img {
+    flex: 0 0 auto;
+    width: 100%;
+    aspect-ratio: 16 / 5;
+  }
+  .featured-card-h-body {
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+  .featured-card-h-title {
+    font-size: 1.2rem;
+  }
 }
 
 /* ── Banner Slider ────────────────────────────────────────────── */
 .banner-slider-section {
   width: 100%;
-  padding: 0;
+  padding: 0 2rem 2.5rem;
   background: transparent;
+}
+
+.banner-slider-inner {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .banner-slider-wrapper {
@@ -2067,6 +2435,7 @@ textarea {
   aspect-ratio: 16 / 3;
   overflow: hidden;
   background: #0f0f0f;
+  border-radius: 12px;
 }
 
 .banner-slider-track {

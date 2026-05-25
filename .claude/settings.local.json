@@ -26,7 +26,9 @@
       "Bash(findstr \":3000\")",
       "Bash(findstr LISTENING)",
       "Bash(taskkill /PID 25160 /F)",
-      "Bash(curl -s http://localhost:3000/api/banners)"
+      "Bash(curl -s http://localhost:3000/api/banners)",
+      "PowerShell(cd \"d:\\\\AFROEVENTOS\\\\APP\"; $env:DATABASE_URL=\"postgresql://postgres:password@localhost:5435/openticket_db?schema=public\"; npx prisma db push --schema=libs/shared/prisma/schema.prisma --accept-data-loss 2>&1)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue)"
     ]
   }
 }

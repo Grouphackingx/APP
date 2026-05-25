@@ -1,11 +1,14 @@
+'use client';
+
 import Link from 'next/link';
 import type { EventItem } from '../lib/api';
+import { FeaturedCarousel } from './FeaturedCarousel';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-EC', {
-    weekday: 'short',
+    weekday: 'long',
     day: 'numeric',
-    month: 'short',
+    month: 'long',
     year: 'numeric',
   });
 }
@@ -23,39 +26,76 @@ export function FeaturedEventsSection({ events }: { events: EventItem[] }) {
   return (
     <section className="featured-section" aria-label="Eventos Destacados">
       <div className="section-inner">
-        <div className="featured-header">
-          <div className="featured-label">
-            <span className="featured-star">★</span>
-            Destacados
-          </div>
-          <p className="featured-sub">Experiencias seleccionadas que no te puedes perder</p>
-        </div>
 
-        <div className="featured-grid">
-          {events.map((event) => {
-            const img = event.squareImageUrl || event.imageUrl || event.bannerImageUrl;
-            return (
-              <Link key={event.id} href={`/eventos/${event.slug || event.id}`} className="featured-card">
-                <div className="featured-card-img">
-                  {img ? (
-                    <img src={img} alt={event.title} />
-                  ) : (
-                    <div className="featured-card-no-img">🎵</div>
-                  )}
+        {/* ── 1 evento: tarjeta horizontal full-width ── */}
+        {events.length === 1 && (
+          <div className="featured-panoramic-grid">
+            {events.map((event) => {
+              const img = event.bannerImageUrl || event.squareImageUrl || event.imageUrl;
+              return (
+                <Link
+                  key={event.id}
+                  href={`/eventos/${event.slug || event.id}`}
+                  className="featured-card-h"
+                >
+                  <div className="featured-card-h-img">
+                    {img
+                      ? <img src={img} alt={event.title} />
+                      : <div className="featured-card-no-img">🎵</div>
+                    }
                     <span className="featured-badge">★ Destacado</span>
-                </div>
-                <div className="featured-card-body">
-                  <h3 className="featured-card-title">{event.title}</h3>
-                  <div className="featured-card-meta">
-                    <span>📅 {formatDate(event.date)}</span>
-                    <span>⏰ {formatTime(event.date)}</span>
-                    <span>📍 {event.location}{event.city ? `, ${event.city}` : ''}</span>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                  <div className="featured-card-h-body">
+                    <h3 className="featured-card-h-title">{event.title}</h3>
+                    <div className="featured-card-h-meta">
+                      <span>📅 {formatDate(event.date)}</span>
+                      <span>⏰ {formatTime(event.date)}</span>
+                      <span>📍 {event.location}{event.city ? `, ${event.city}` : ''}</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── 2 eventos: dos columnas, imagen panorámica arriba + info abajo ── */}
+        {events.length === 2 && (
+          <div className="featured-two-grid">
+            {events.map((event) => {
+              const img = event.bannerImageUrl || event.squareImageUrl || event.imageUrl;
+              return (
+                <Link
+                  key={event.id}
+                  href={`/eventos/${event.slug || event.id}`}
+                  className="featured-card-v"
+                >
+                  <div className="featured-card-v-img">
+                    {img
+                      ? <img src={img} alt={event.title} />
+                      : <div className="featured-card-no-img">🎵</div>
+                    }
+                    <span className="featured-badge">★ Destacado</span>
+                  </div>
+                  <div className="featured-card-v-body">
+                    <h3 className="featured-card-h-title">{event.title}</h3>
+                    <div className="featured-card-h-meta">
+                      <span>📅 {formatDate(event.date)}</span>
+                      <span>⏰ {formatTime(event.date)}</span>
+                      <span>📍 {event.location}{event.city ? `, ${event.city}` : ''}</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── 3+ eventos: carrusel horizontal ── */}
+        {events.length >= 3 && (
+          <FeaturedCarousel events={events} />
+        )}
+
       </div>
     </section>
   );

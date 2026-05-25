@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 24 de Mayo de 2026 (Sesión 2)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack)
+**Última Actualización:** 25 de Mayo de 2026 (Sesión 3)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -75,7 +75,10 @@
 │   │       │   ├── forgot-password/ # Solicitar reset de contraseña
 │   │       │   └── reset-password/  # Nueva contraseña con token
 │   │       └── components/
-│   │           ├── BannerSlider.tsx # Slider/carrusel full-width 16:3, auto-avance 5s
+│   │           ├── BannerSlider.tsx      # Slider/carrusel de banners publicitarios 16:3, auto-avance 5s
+│           ├── FeaturedEventsSection.tsx # 3 layouts adaptativos según cantidad de destacados
+│           ├── FeaturedCarousel.tsx  # Carrusel deslizante de tarjetas para 3+ destacados
+│           ├── EventsGrid.tsx        # Grid con botón "Mostrar más" (paginación client-side)
 │   │
 │   ├── web-host/                # Port 4201. Next.js Dashboard Organizador.
 │   │   └── src/app/
@@ -269,7 +272,7 @@ Banners son imágenes publicitarias de relación de aspecto **16:3** que aparece
 **`src/app/page.tsx`**:
 - Carga banners server-side con `getBanners()` (`.catch(() => [])` para no bloquear si falla)
 - `<BannerSlider banners={banners} />` se renderiza solo en la página principal (sin búsqueda) y solo si hay banners
-- Posición: **entre `<FeaturedEventsSection>` y `<section id="eventos">`**
+- Posición: **al final de la página principal, después del catálogo de eventos generales** (`<section id="eventos">`)
 
 **`src/app/global.css`** — estilos del slider: `.banner-slider-section`, `.banner-slider-wrapper`, `.banner-slide-img`, `.banner-nav`, `.banner-dots`, `.banner-dot`
 
@@ -472,6 +475,68 @@ start-all.bat
 ---
 
 ## 12. Registro de Cambios
+
+### Sesión del 25 de Mayo de 2026 — UI/UX Portal Cliente: Destacados Adaptativos + Carrusel + Grid con Paginación
+
+#### FeaturedEventsSection — 3 layouts adaptativos (`apps/web-client/src/components/FeaturedEventsSection.tsx`)
+
+La sección de eventos destacados ahora usa un layout diferente según la cantidad de eventos:
+
+| Cantidad | Layout | Imagen usada | Componente CSS |
+| :------- | :----- | :----------- | :------------- |
+| 1 evento | Tarjeta horizontal full-width (imagen 60% izquierda, info 40% derecha) | `bannerImageUrl` → `squareImageUrl` → `imageUrl` | `.featured-card-h` |
+| 2 eventos | Dos columnas side-by-side, imagen panorámica arriba, info abajo | `bannerImageUrl` → `squareImageUrl` → `imageUrl`, `aspect-ratio: 2000/576` | `.featured-two-grid` + `.featured-card-v` |
+| 3+ eventos | `FeaturedCarousel` (carrusel deslizante de tarjetas) | `squareImageUrl` → `imageUrl` → `bannerImageUrl`, `aspect-ratio: 1/1` | Ver sección siguiente |
+
+**Eliminado de tarjetas destacadas**: etiqueta de categoría (`FIESTAS Y BAILES`), botón "Ver evento →", zoom de imagen en hover, efecto lift (translateY) en hover.
+
+#### FeaturedCarousel — nuevo componente (`apps/web-client/src/components/FeaturedCarousel.tsx`)
+
+Carrusel de tarjetas deslizantes para 3+ eventos destacados. `'use client'`.
+
+- Muestra **3 tarjetas simultáneamente** usando flexbox + translateX
+- **Scroll infinito**: clona los últimos 3 items al inicio y los primeros 3 al final del track; al llegar a clon, hace jump sin animación al original
+- **Auto-avance** cada 4.5s, se pausa al hover
+- **Flechas ‹ ›** posicionadas fuera del `.fcarousel-viewport` (`left: -1.25rem` / `right: -1.25rem`) para no tapar las tarjetas
+- **Dots indicadores** dorados centrados debajo; activo se expande como píldora
+- Cada tarjeta: imagen cuadrada 1:1 en la parte superior + título + meta (fecha, hora, lugar)
+
+**Cálculo de translateX (corrección crítica)**: `translateX` opera en % del propio elemento (track). Fórmula correcta: `translateX(-${trackIndex * (100 / cloned.length)}%)`. Usar `100 / VISIBLE` en lugar de `100 / cloned.length` desplaza el track fuera de pantalla.
+
+#### EventsGrid — nuevo componente (`apps/web-client/src/components/EventsGrid.tsx`)
+
+Reemplaza el grid inline de `page.tsx`. `'use client'`.
+
+- Muestra **3 eventos inicialmente** (`PAGE_SIZE = 3`)
+- Botón **"Mostrar más ↓"** centrado debajo — agrega 3 eventos por clic con `setVisible(prev => prev + PAGE_SIZE)`
+- Botón desaparece automáticamente cuando `visible >= events.length`
+- Grid usa `display: flex; flex-wrap: wrap; justify-content: center` + `flex: 0 0 calc(33.333% - 1rem)` por tarjeta para centrar la última fila incompleta
+
+#### Lógica header "Próximos Eventos" (`apps/web-client/src/app/page.tsx`)
+
+| Escenario | Comportamiento |
+| :-------- | :------------- |
+| Solo eventos destacados (sin generales) | Header aparece **encima** de `<FeaturedEventsSection>` con clase `.upcoming-header-standalone` |
+| Con eventos generales | Header aparece encima del grid general (dentro de `<section id="eventos">`) |
+| Sin ningún evento | Header no aparece |
+
+El atributo `id="eventos"` (ancla del botón "Explorar Eventos" del hero) se asigna dinámicamente: al div padre de FeaturedEventsSection cuando no hay generales, o al `<section>` del catálogo cuando los hay.
+
+#### CSS nuevo (`apps/web-client/src/app/global.css`)
+
+| Clase(s) | Descripción |
+| :------- | :---------- |
+| `.fcarousel`, `.fcarousel-viewport`, `.fcarousel-track` | Contenedor y track deslizante del carrusel |
+| `.fcarousel-card-wrap`, `.fcarousel-card` | Tarjeta individual del carrusel |
+| `.fcarousel-img`, `.fcarousel-body`, `.fcarousel-title`, `.fcarousel-meta` | Partes de la tarjeta (imagen 1:1, info) |
+| `.fcarousel-arrow`, `.fcarousel-arrow-prev/next` | Flechas de navegación |
+| `.fcarousel-dots`, `.fcarousel-dot` | Indicadores de posición |
+| `.show-more-wrapper`, `.show-more-btn`, `.show-more-icon` | Botón "Mostrar más" del EventsGrid |
+| `.upcoming-header-standalone` | Header "Próximos Eventos" cuando aparece sobre destacados |
+| `.events-grid` (modificado) | Cambiado de CSS Grid a Flexbox para centrar última fila |
+| `.featured-two-grid`, `.featured-card-v`, `.featured-card-v-img`, `.featured-card-v-body` | Layout de 2 eventos side-by-side |
+
+---
 
 ### Sesión del 24 de Mayo de 2026 (Tarde) — Favicons + Banners Publicitarios full-stack
 

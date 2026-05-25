@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, type Banner } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -1379,20 +1380,23 @@ function BannersView({ token }: { token: string }) {
   return (
     <div style={{ position: 'relative' }}>
 
-      {/* Toast notification */}
-      {toast && (
+      {/* Toast notification — portal to avoid stacking context issues */}
+      {toast && typeof document !== 'undefined' && createPortal(
         <div style={{
-          position: 'fixed', top: '1.5rem', right: '1.5rem', zIndex: 2000,
-          padding: '0.85rem 1.25rem', borderRadius: '10px', fontSize: '0.875rem', fontWeight: 600,
-          display: 'flex', alignItems: 'center', gap: '0.6rem',
-          background: toast.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-          border: `1px solid ${toast.type === 'success' ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)'}`,
+          position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 10000,
+          padding: '0.9rem 1.25rem', borderRadius: '12px', fontSize: '0.875rem', fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: '0.65rem',
+          background: toast.type === 'success' ? 'rgba(17,24,17,0.97)' : 'rgba(24,17,17,0.97)',
+          border: `1px solid ${toast.type === 'success' ? 'rgba(34,197,94,0.45)' : 'rgba(239,68,68,0.45)'}`,
           color: toast.type === 'success' ? '#4ade80' : '#f87171',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          animation: 'fadeIn 0.2s ease',
+          minWidth: '240px', maxWidth: '360px',
         }}>
-          <span>{toast.type === 'success' ? '✓' : '⚠'}</span>
-          {toast.msg}
-        </div>
+          <span style={{ fontSize: '1rem', flexShrink: 0 }}>{toast.type === 'success' ? '✓' : '⚠'}</span>
+          <span>{toast.msg}</span>
+        </div>,
+        document.body
       )}
 
       {/* Header */}
@@ -1479,62 +1483,86 @@ function BannersView({ token }: { token: string }) {
             <div
               key={b.id}
               style={{
-                background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px',
-                overflow: 'hidden', display: 'flex', alignItems: 'stretch',
-                opacity: (!b.isActive) ? 0.65 : 1, transition: 'opacity 0.2s',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '14px',
+                overflow: 'hidden',
+                display: 'flex',
+                height: '88px',
+                opacity: b.isActive ? 1 : 0.55,
+                transition: 'opacity 0.2s',
               }}
             >
-              {/* Thumbnail (16:3 ratio) */}
-              <div style={{ width: '300px', minWidth: '300px', aspectRatio: '16/3', overflow: 'hidden', flexShrink: 0, background: '#111' }}>
+              {/* Thumbnail — ancho fijo, altura 100% del card (height heredada del padre flex) */}
+              <div style={{ width: '260px', flexShrink: 0, background: '#111', overflow: 'hidden' }}>
                 <img
                   src={resolveImg(b.imageUrl)}
                   alt={b.title || `Banner ${idx + 1}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               </div>
 
               {/* Info */}
-              <div style={{ flex: 1, padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.45rem', minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{b.title || `Banner ${idx + 1}`}</span>
+              <div style={{
+                flex: 1, minWidth: 0,
+                padding: '0.75rem 1.25rem',
+                display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.35rem',
+                borderLeft: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    {b.title || `Banner ${idx + 1}`}
+                  </span>
                   <span style={{
-                    padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.03em',
+                    padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700,
                     background: b.isActive ? 'rgba(34,197,94,0.12)' : 'rgba(100,116,139,0.15)',
-                    color: b.isActive ? '#4ade80' : 'var(--text-muted)',
+                    color: b.isActive ? '#4ade80' : '#94a3b8',
                     border: `1px solid ${b.isActive ? 'rgba(34,197,94,0.3)' : 'rgba(100,116,139,0.2)'}`,
                   }}>
                     {b.isActive ? '● Activo' : '○ Inactivo'}
                   </span>
                 </div>
-                {b.linkUrl ? (
-                  <div style={{ fontSize: '0.78rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.3rem', overflow: 'hidden' }}>
-                    <span>🔗</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.linkUrl}</span>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sin enlace de destino</div>
-                )}
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Posición #{b.order + 1}</div>
+                <div style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', overflow: 'hidden' }}>
+                  {b.linkUrl ? (
+                    <>
+                      <span style={{ color: '#a78bfa' }}>🔗</span>
+                      <span style={{ color: '#a78bfa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.linkUrl}</span>
+                    </>
+                  ) : (
+                    <span style={{ color: '#64748b' }}>Sin enlace de destino</span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#475569' }}>Pos. #{b.order + 1}</div>
               </div>
 
-              {/* Actions */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.875rem', justifyContent: 'center', borderLeft: '1px solid var(--border)', minWidth: '120px' }}>
+              {/* Actions — columna derecha, botones apilados */}
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: '0.4rem',
+                padding: '0.75rem 0.875rem', justifyContent: 'center', alignItems: 'stretch',
+                borderLeft: '1px solid var(--border)', flexShrink: 0, width: '120px',
+              }}>
                 <button
                   onClick={() => toggleActive(b)}
                   disabled={togglingId === b.id}
                   style={{
-                    padding: '0.4rem 0.6rem', borderRadius: '7px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer',
+                    padding: '0.45rem 0.5rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 600,
+                    cursor: togglingId === b.id ? 'not-allowed' : 'pointer',
                     background: b.isActive ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)',
                     color: b.isActive ? '#f87171' : '#4ade80',
                     border: `1px solid ${b.isActive ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.25)'}`,
-                    opacity: togglingId === b.id ? 0.6 : 1,
+                    opacity: togglingId === b.id ? 0.5 : 1,
+                    transition: 'opacity 0.15s',
                   }}
                 >
                   {togglingId === b.id ? '...' : b.isActive ? 'Desactivar' : 'Activar'}
                 </button>
                 <button
                   onClick={() => openEdit(b)}
-                  style={{ padding: '0.4rem 0.6rem', borderRadius: '7px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(139,92,246,0.1)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}
+                  style={{
+                    padding: '0.45rem 0.5rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 600,
+                    cursor: 'pointer', background: 'rgba(139,92,246,0.1)', color: '#a78bfa',
+                    border: '1px solid rgba(139,92,246,0.3)',
+                  }}
                 >
                   ✏ Editar
                 </button>
@@ -1542,9 +1570,12 @@ function BannersView({ token }: { token: string }) {
                   onClick={() => handleDelete(b.id)}
                   disabled={deletingId === b.id}
                   style={{
-                    padding: '0.4rem 0.6rem', borderRadius: '7px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer',
-                    background: 'rgba(239,68,68,0.07)', color: '#f87171', border: '1px solid rgba(239,68,68,0.18)',
-                    opacity: deletingId === b.id ? 0.6 : 1,
+                    padding: '0.45rem 0.5rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 600,
+                    cursor: deletingId === b.id ? 'not-allowed' : 'pointer',
+                    background: 'rgba(239,68,68,0.07)', color: '#f87171',
+                    border: '1px solid rgba(239,68,68,0.18)',
+                    opacity: deletingId === b.id ? 0.5 : 1,
+                    transition: 'opacity 0.15s',
                   }}
                 >
                   {deletingId === b.id ? '...' : '🗑 Eliminar'}
@@ -1555,10 +1586,10 @@ function BannersView({ token }: { token: string }) {
         </div>
       )}
 
-      {/* Create / Edit Modal */}
-      {showForm && (
+      {/* Create / Edit Modal — rendered via portal at document.body to avoid stacking context issues */}
+      {showForm && typeof document !== 'undefined' && createPortal(
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
           onClick={(e) => { if (e.target === e.currentTarget) closeForm(); }}
         >
           <div style={{ background: 'var(--surface)', borderRadius: '18px', padding: '2rem', width: '100%', maxWidth: '580px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1.25rem', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1702,7 +1733,8 @@ function BannersView({ token }: { token: string }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

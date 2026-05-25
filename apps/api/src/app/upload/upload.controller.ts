@@ -80,7 +80,8 @@ export class UploadController {
   ) {
     if (!file) throw new BadRequestException('File is required');
 
-    const serverUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+    const serverUrl = apiUrl.replace(/\/api$/, '');
     const user = req.user;
 
     let pathPart: string;

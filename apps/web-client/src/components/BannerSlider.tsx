@@ -42,6 +42,7 @@ export function BannerSlider({ banners }: BannerSliderProps) {
 
   return (
     <section className="banner-slider-section">
+      <div className="banner-slider-inner">
       <div className="banner-slider-wrapper">
         <div className="banner-slider-track">
           {banner.linkUrl ? (
@@ -89,6 +90,7 @@ export function BannerSlider({ banners }: BannerSliderProps) {
             </div>
           </>
         )}
+      </div>
       </div>
     </section>
   );
