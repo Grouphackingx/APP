@@ -9,6 +9,10 @@ export const metadata = {
   description:
     'Encuentra y compra tickets para los mejores eventos, conciertos y festivales. Selecciona tus asientos y recibe tu entrada digital al instante.',
   keywords: 'eventos, tickets, conciertos, festivales, entradas, boletos',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
   openGraph: {
     siteName: 'AfroEventos',
     type: 'website',

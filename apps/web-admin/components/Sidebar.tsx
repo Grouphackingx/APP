@@ -71,6 +71,18 @@ export function Sidebar({
           <span className="nav-icon">🌟</span>
           Eventos
         </a>
+        <a
+          href="#"
+          className={activeView === 'banners' ? 'active' : ''}
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('banners');
+          }}
+          style={activeView === 'banners' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+        >
+          <span className="nav-icon">📢</span>
+          Banners Publicitarios
+        </a>
         {user?.role === 'ADMIN' && (
           <a
             href="#"

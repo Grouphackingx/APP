@@ -4,6 +4,10 @@ import { AuthProvider } from '../lib/AuthContext';
 export const metadata = {
   title: 'Global Admin Dashboard | AfroEventos',
   description: 'Administración de Organizadores y Eventos',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({

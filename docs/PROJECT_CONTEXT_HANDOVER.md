@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 24 de Mayo de 2026
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español
+**Última Actualización:** 24 de Mayo de 2026 (Sesión 2)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -57,21 +57,25 @@
 │   │       ├── payments/        # Stripe simulado
 │   │       ├── tickets/         # Validación de QR (VALID → USED), validate-by-id
 │   │       ├── admin/           # Gestión global: orgs, planes, usuarios, eventos
+│   │       ├── banners/         # BannersModule — CRUD banners publicitarios (público + admin)
 │   │       ├── organizer-members/ # CRUD OrganizerMember (ADMIN/STAFF)
 │   │       ├── mail/            # MailModule @Global() — 13 templates, 12 métodos
 │   │       ├── scheduler/       # Cron job expiración eventos destacados (cada hora)
-│   │       ├── upload/          # Multer disk storage, rutas dinámicas por tipo
+│   │       ├── upload/          # Multer disk storage, rutas dinámicas por tipo (+ banner)
 │   │       ├── prisma/          # PrismaService
 │   │       └── redis/           # RedisService (ioredis)
 │   │
 │   ├── web-client/              # Port 4200. Next.js Portal de Usuario.
-│   │   └── src/app/
-│   │       ├── eventos/[id]/    # Detalle de evento (ruta en español)
-│   │       ├── my-tickets/      # Tickets del usuario con QR
-│   │       ├── my-profile/      # Perfil: avatar, datos, ID, dirección Ecuador
-│   │       ├── verify-email/    # Verificación de email con token
-│   │       ├── forgot-password/ # Solicitar reset de contraseña
-│   │       └── reset-password/  # Nueva contraseña con token
+│   │   └── src/
+│   │       ├── app/
+│   │       │   ├── eventos/[id]/    # Detalle de evento (ruta en español)
+│   │       │   ├── my-tickets/      # Tickets del usuario con QR
+│   │       │   ├── my-profile/      # Perfil: avatar, datos, ID, dirección Ecuador
+│   │       │   ├── verify-email/    # Verificación de email con token
+│   │       │   ├── forgot-password/ # Solicitar reset de contraseña
+│   │       │   └── reset-password/  # Nueva contraseña con token
+│   │       └── components/
+│   │           ├── BannerSlider.tsx # Slider/carrusel full-width 16:3, auto-avance 5s
 │   │
 │   ├── web-host/                # Port 4201. Next.js Dashboard Organizador.
 │   │   └── src/app/
@@ -80,8 +84,9 @@
 │   │
 │   ├── web-admin/               # Port 4202. Next.js Dashboard Admin.
 │   │   └── app/
-│   │       ├── forgot-password/ # Solicitar reset (panel admin)
-│   │       └── reset-password/  # Nueva contraseña (panel admin)
+│   │       ├── dashboard/page.tsx # Dashboard principal — vista Banners con CRUD completo
+│   │       ├── forgot-password/   # Solicitar reset (panel admin)
+│   │       └── reset-password/    # Nueva contraseña (panel admin)
 │   │
 │   └── mobile-app/              # Expo App. Validador de QR para Staff.
 │
@@ -176,6 +181,12 @@ model Plan {
   → organizers OrganizerProfile[]
 }
 
+model Banner {
+  id, imageUrl, linkUrl?, title?
+  isActive (default true), order (default 0)
+  createdAt, updatedAt
+}
+
 model Event {
   id, slug? (unique), title, description?, date, location, city?, province?
   imageUrl?, bannerImageUrl?, squareImageUrl?, portraitImageUrl?
@@ -209,7 +220,73 @@ model Ticket {
 
 ---
 
-## 5. Módulo de Email (MailModule)
+## 5. Sistema de Banners Publicitarios
+
+### Arquitectura
+
+Banners son imágenes publicitarias de relación de aspecto **16:3** que aparecen como slider en el Portal de Clientes (web-client), entre la sección de Eventos Destacados y la sección de Próximos Eventos. Se gestionan desde la vista **Banners Publicitarios** del Dashboard Global Admin (web-admin). El límite es de **1 a 3 banners activos**.
+
+### Backend (`apps/api/src/app/banners/`)
+
+| Archivo | Descripción |
+| :--- | :--- |
+| `banners.module.ts` | `BannersModule` — registrado en `AppModule` |
+| `banners.service.ts` | `findAll()` (solo activos, público), `findAllAdmin()`, `create()`, `update()`, `remove()` |
+| `banners.controller.ts` | Endpoints del controlador |
+
+**Endpoints:**
+
+| Método | Ruta | Auth | Descripción |
+| :----- | :--- | :--- | :---------- |
+| GET | `/api/banners` | No | Banners activos ordenados (público, para web-client) |
+| GET | `/api/banners/admin` | JWT (ADMIN/EDITOR) | Todos los banners incluyendo inactivos |
+| POST | `/api/banners` | JWT (ADMIN/EDITOR) | Crear banner |
+| PATCH | `/api/banners/:id` | JWT (ADMIN/EDITOR) | Editar banner (imagen, título, link, estado, orden) |
+| DELETE | `/api/banners/:id` | JWT (ADMIN/EDITOR) | Eliminar banner |
+| POST | `/api/upload?type=banner` | Opcional | Subir imagen de banner → `./uploads/banners/` |
+
+### Admin UI (`BannersView` en `apps/web-admin/app/dashboard/page.tsx`)
+
+- Lista de banners con preview 16:3, badge de estado (Activo/Inactivo), enlace y posición
+- Indicador visual de capacidad (barra de 3 segmentos: X/3 banners)
+- Acciones por banner: Activar/Desactivar, Editar, Eliminar — cada una con estado de carga propio
+- Modal de creación/edición: upload de imagen con preview en proporción 16:3, título, URL de destino, posición, checkbox "Publicar inmediatamente"
+- Toast notifications (esquina superior derecha) para éxito/error de cada acción
+- Estado de error de carga separado del empty state, con botón "Reintentar"
+- Al cerrar sesión o perder token, la vista muestra error sin colapsar
+
+### Web Client (`apps/web-client/`)
+
+**`src/components/BannerSlider.tsx`**:
+- Slider full-width, relación de aspecto `16/3` (CSS `aspect-ratio`)
+- Auto-avance cada 5 segundos con `setInterval`
+- Flechas prev/next visibles solo si hay más de 1 banner
+- Puntos indicadores interactivos en la parte inferior
+- Clic en banner redirige a `linkUrl` (target `_blank`) si existe
+- Reinicia el timer al navegar manualmente
+- Resuelve URLs relativas añadiendo `SERVER_URL` (sin `/api`)
+
+**`src/app/page.tsx`**:
+- Carga banners server-side con `getBanners()` (`.catch(() => [])` para no bloquear si falla)
+- `<BannerSlider banners={banners} />` se renderiza solo en la página principal (sin búsqueda) y solo si hay banners
+- Posición: **entre `<FeaturedEventsSection>` y `<section id="eventos">`**
+
+**`src/app/global.css`** — estilos del slider: `.banner-slider-section`, `.banner-slider-wrapper`, `.banner-slide-img`, `.banner-nav`, `.banner-dots`, `.banner-dot`
+
+**`src/lib/api.ts`** — función añadida: `getBanners(): Promise<BannerItem[]>` y tipo `BannerItem`
+
+**`lib/api.ts` (web-admin)** — funciones añadidas: `getBannersAdmin`, `createBanner`, `updateBanner`, `deleteBanner`, `uploadBannerImage`
+
+### Directorio de uploads
+
+```
+uploads/
+└── banners/          ← imágenes de banners publicitarios (uuid + extensión)
+```
+
+---
+
+## 6. Módulo de Email (MailModule)
 
 ### Arquitectura
 
@@ -237,7 +314,7 @@ model Ticket {
 
 ---
 
-## 6. Flujos de Negocio Verificados
+## 7. Flujos de Negocio Verificados
 
 ### Flujo de Compra (End-to-End)
 
@@ -315,7 +392,7 @@ POST /auth/reset-password { token, newPassword }
 
 ---
 
-## 7. Datos de Prueba
+## 8. Datos de Prueba
 
 | Rol                 | Email                      | Password       | Dónde usarlo        |
 | :------------------ | :------------------------- | :------------- | :------------------ |
@@ -328,7 +405,7 @@ POST /auth/reset-password { token, newPassword }
 
 ---
 
-## 8. Guía Operativa (Cómo Iniciar)
+## 9. Guía Operativa (Cómo Iniciar)
 
 ```powershell
 # 1. Infraestructura
@@ -356,7 +433,7 @@ start-all.bat
 
 ---
 
-## 9. Roadmap
+## 10. Roadmap
 
 ### Prioridad Alta
 
@@ -379,7 +456,7 @@ start-all.bat
 
 ---
 
-## 10. Problemas Conocidos / Notas Técnicas
+## 11. Problemas Conocidos / Notas Técnicas
 
 - **Puertos no estándar**: PostgreSQL en 5435, Redis en 6380.
 - **Prisma 5.22.0**: Versión bloqueada por incompatibilidades de CLI con v7+.
@@ -394,9 +471,90 @@ start-all.bat
 
 ---
 
-## 11. Registro de Cambios
+## 12. Registro de Cambios
 
-### Sesión del 24 de Mayo de 2026 — Emails Transaccionales + Auth Flow + URL /eventos/
+### Sesión del 24 de Mayo de 2026 (Tarde) — Favicons + Banners Publicitarios full-stack
+
+#### Favicons AfroEventos (las 3 apps)
+
+- `apps/web-client/public/favicon.svg` — AfroFavicon.svg oficial (ícono verde, sin texto)
+- `apps/web-host/public/favicon.svg` — ídem
+- `apps/web-admin/public/favicon.svg` — ídem
+- `apps/web-client/src/app/layout.tsx` — `icons: { icon: '/favicon.svg', shortcut: '/favicon.svg' }` en metadata
+- `apps/web-admin/app/layout.tsx` — ídem
+- `apps/web-host/src/app/layout.tsx` — `'use client'` → no puede exportar metadata → usa `<head><link rel="icon" ...></head>` directamente en JSX
+
+#### Dashboard Global Admin — Sidebar "Banners Publicitarios"
+
+- `apps/web-admin/components/Sidebar.tsx` — nuevo ítem `📢 Banners Publicitarios` entre Eventos y Planes; resalta con `#8b5cf6` cuando está activo
+- `apps/web-admin/app/dashboard/page.tsx` — `view` union type ampliado con `'banners'`; `{view === 'banners' && <BannersView token={token} />}` insertado dentro de `div.main-content`
+
+#### Sistema de Banners Publicitarios — Backend
+
+**`libs/shared/prisma/schema.prisma`** — nuevo modelo:
+```prisma
+model Banner {
+  id, imageUrl, linkUrl?, title?
+  isActive Boolean @default(true), order Int @default(0)
+  createdAt, updatedAt
+}
+```
+`npx prisma db push` ejecutado exitosamente.
+
+**`apps/api/src/app/upload/upload.controller.ts`** — nuevo tipo `banner`:
+- `destination`: `type === 'banner'` → `./uploads/banners/`
+- `pathPart`: `type === 'banner'` → `/banners`
+
+**`apps/api/src/app/banners/`** — módulo nuevo completo:
+- `banners.service.ts`: `findAll()` (activos, público), `findAllAdmin()` (todos), `create()`, `update()`, `remove()`
+- `banners.controller.ts`: `GET /banners` (público), `GET /banners/admin`, `POST /banners`, `PATCH /banners/:id`, `DELETE /banners/:id` — todos excepto el GET público requieren JWT (ADMIN/EDITOR)
+- `banners.module.ts`: registrado en `AppModule`
+
+**`apps/api/src/app/app.module.ts`** — `BannersModule` importado y registrado.
+
+**Build API**: `npx nx build api --skip-nx-cache` → ✅ `webpack compiled successfully`
+
+#### Sistema de Banners Publicitarios — Admin UI
+
+**`apps/web-admin/lib/api.ts`** — funciones nuevas:
+- `getBannersAdmin(token)`, `createBanner(data, token)`, `updateBanner(id, data, token)`, `deleteBanner(id, token)`, `uploadBannerImage(file, token)`
+- Tipo exportado: `Banner`
+
+**`BannersView` en `apps/web-admin/app/dashboard/page.tsx`** — componente completo:
+- Estado de **carga separado** (skeleton) del estado de error y del empty state
+- **Error de carga**: estado dedicado con ícono, mensaje amigable y botón "Reintentar" (nunca se superpone con el empty state)
+- **Empty state** con CTA "Crear primer banner"
+- **Lista de banners**: preview 16:3, badge Activo/Inactivo, enlace, posición
+- **Indicador de capacidad**: barra visual de 3 segmentos + texto "X / 3 banners"
+- **Acciones por banner**: Activar/Desactivar, Editar, Eliminar — cada botón muestra "..." durante la operación (previene doble clic)
+- **Modal crear/editar**: upload con preview en ratio 16:3, cierra al hacer clic fuera, botón guardar deshabilitado si no hay imagen
+- **Toast notifications** en esquina superior derecha: ✓ éxito / ⚠ error, auto-cierre en 3.5s
+- Banners inactivos se muestran con opacidad reducida para indicación visual
+
+#### Sistema de Banners Publicitarios — Web Client
+
+**`apps/web-client/src/lib/api.ts`** — funciones/tipos nuevos:
+- `getBanners(): Promise<BannerItem[]>` — GET `/banners` público, sin cache
+- Tipo `BannerItem { id, imageUrl, linkUrl?, title?, isActive, order }`
+
+**`apps/web-client/src/components/BannerSlider.tsx`** — nuevo componente:
+- Full-width, `aspect-ratio: 16/3` vía CSS
+- Auto-avance cada 5 segundos (setInterval, se resetea al navegar manualmente)
+- Flechas prev/next solo si hay más de 1 banner
+- Puntos indicadores interactivos
+- Clic en banner → redirige a `linkUrl` en nueva pestaña si existe
+- Resuelve URLs: si empieza con `http` la usa tal cual; si es ruta (`/uploads/...`) prepende `SERVER_URL`
+
+**`apps/web-client/src/app/page.tsx`** — modificado:
+- Importa `getBanners`, `BannerItem`, `BannerSlider`
+- `banners` cargado server-side con `.catch(() => [])` (no bloquea si la API falla)
+- `<BannerSlider banners={banners} />` insertado entre `<FeaturedEventsSection>` y `<section id="eventos">`, solo en página principal (no en búsqueda) y solo si hay banners
+
+**`apps/web-client/src/app/global.css`** — estilos añadidos al final: `.banner-slider-section`, `.banner-slider-wrapper`, `.banner-slider-track`, `.banner-slide-link`, `.banner-slide-img`, `.banner-nav`, `.banner-nav-prev/next`, `.banner-dots`, `.banner-dot`, `.banner-dot.active`
+
+---
+
+### Sesión del 24 de Mayo de 2026 (Mañana) — Emails Transaccionales + Auth Flow + URL /eventos/
 
 #### Sistema de Emails Transaccionales (Backend)
 

@@ -37,6 +37,8 @@ export class UploadController {
                 try { fs.unlinkSync(`${dir}/${f}`); } catch { /* ignore */ }
               }
             }
+          } else if (type === 'banner') {
+            dir = `./uploads/banners`;
           } else {
             const orgId = user ? user.sub : (organizerId || 'temp');
             dir = `./uploads/organizers/${orgId}`;
@@ -90,6 +92,8 @@ export class UploadController {
       const memberId = req.query.memberId || 'temp';
       const orgUserId = user ? user.sub : 'temp';
       pathPart = `/organizers/${orgUserId}/members/${memberId}/avatar`;
+    } else if (type === 'banner') {
+      pathPart = `/banners`;
     } else {
       const orgId = user ? user.sub : (organizerId || 'temp');
       pathPart = `/organizers/${orgId}`;

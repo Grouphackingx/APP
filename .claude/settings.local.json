@@ -25,7 +25,8 @@
       "Bash(netstat -ano)",
       "Bash(findstr \":3000\")",
       "Bash(findstr LISTENING)",
-      "Bash(taskkill /PID 25160 /F)"
+      "Bash(taskkill /PID 25160 /F)",
+      "Bash(curl -s http://localhost:3000/api/banners)"
     ]
   }
 }

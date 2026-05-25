@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, type Banner } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [organizers, setOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event'>('inicio');
+  const [view, setView] = useState<'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event' | 'banners'>('inicio');
   const [events, setEvents] = useState<any[]>([]);
   const [activeEventTab, setActiveEventTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
   const [editingEvent, setEditingEvent] = useState<any>(null);
@@ -941,6 +941,8 @@ export default function AdminDashboard() {
             </div>
           </>
         )}
+
+        {view === 'banners' && <BannersView token={token || ''} />}
       </div>
 
       {/* Edit Modal Overlay */}
@@ -1192,6 +1194,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
       {/* Admin User Form Modal Overlay */}
       {isCreatingUser && user?.role === 'ADMIN' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(4px)' }}>
@@ -1248,6 +1251,456 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BannersView({ token }: { token: string }) {
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  const [formData, setFormData] = useState({ imageUrl: '', linkUrl: '', title: '', isActive: true, order: 0 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const load = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const data = await getBannersAdmin(token);
+      setBanners(data);
+    } catch {
+      setLoadError('No se pudieron cargar los banners. Verifica que el servidor esté activo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const openCreate = () => {
+    setEditingBanner(null);
+    setFormError('');
+    setFormData({ imageUrl: '', linkUrl: '', title: '', isActive: true, order: banners.length });
+    setShowForm(true);
+  };
+
+  const openEdit = (b: Banner) => {
+    setEditingBanner(b);
+    setFormError('');
+    setFormData({ imageUrl: b.imageUrl, linkUrl: b.linkUrl || '', title: b.title || '', isActive: b.isActive, order: b.order });
+    setShowForm(true);
+  };
+
+  const closeForm = () => { setShowForm(false); setFormError(''); };
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadBannerImage(file, token);
+      setFormData(prev => ({ ...prev, imageUrl: url }));
+    } catch {
+      setFormError('Error al subir la imagen. Intenta de nuevo.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!formData.imageUrl) { setFormError('La imagen del banner es obligatoria.'); return; }
+    setSaving(true);
+    setFormError('');
+    try {
+      if (editingBanner) {
+        await updateBanner(editingBanner.id, formData, token);
+        showToast('Banner actualizado correctamente.');
+      } else {
+        await createBanner(formData, token);
+        showToast('Banner creado correctamente.');
+      }
+      closeForm();
+      await load();
+    } catch {
+      setFormError('No se pudo guardar el banner. Intenta de nuevo.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Eliminar este banner? Esta acción no se puede deshacer.')) return;
+    setDeletingId(id);
+    try {
+      await deleteBanner(id, token);
+      showToast('Banner eliminado.');
+      await load();
+    } catch {
+      showToast('No se pudo eliminar el banner.', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const toggleActive = async (b: Banner) => {
+    setTogglingId(b.id);
+    try {
+      await updateBanner(b.id, { isActive: !b.isActive }, token);
+      showToast(b.isActive ? 'Banner desactivado.' : 'Banner activado.');
+      await load();
+    } catch {
+      showToast('No se pudo actualizar el estado.', 'error');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+  const SERVER_URL = API_URL.replace('/api', '');
+  const resolveImg = (url: string) => url.startsWith('http') ? url : `${SERVER_URL}${url}`;
+
+  const atLimit = banners.length >= 3;
+
+  return (
+    <div style={{ position: 'relative' }}>
+
+      {/* Toast notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: '1.5rem', right: '1.5rem', zIndex: 2000,
+          padding: '0.85rem 1.25rem', borderRadius: '10px', fontSize: '0.875rem', fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: '0.6rem',
+          background: toast.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+          border: `1px solid ${toast.type === 'success' ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)'}`,
+          color: toast.type === 'success' ? '#4ade80' : '#f87171',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+        }}>
+          <span>{toast.type === 'success' ? '✓' : '⚠'}</span>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1>Banners Publicitarios</h1>
+          <p>Gestión de espacios publicitarios del Portal de Clientes.</p>
+        </div>
+        {!loading && !loadError && (
+          <button
+            className="btn btn-primary"
+            onClick={openCreate}
+            disabled={atLimit}
+            title={atLimit ? 'Máximo 3 banners permitidos' : undefined}
+          >
+            + Agregar Banner
+          </button>
+        )}
+      </div>
+
+      {/* Capacity indicator */}
+      {!loading && !loadError && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Capacidad:</span>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                width: '2rem', height: '0.4rem', borderRadius: '999px',
+                background: i < banners.length ? '#7c3aed' : 'rgba(139,92,246,0.2)',
+                transition: 'background 0.2s',
+              }} />
+            ))}
+          </div>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{banners.length} / 3 banners</span>
+          {atLimit && <span style={{ fontSize: '0.75rem', color: '#a78bfa', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', padding: '0.15rem 0.6rem', borderRadius: '999px' }}>Límite alcanzado</span>}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {[1, 2].map(i => (
+            <div key={i} style={{ height: '100px', borderRadius: '12px', background: 'var(--surface)', border: '1px solid var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ))}
+        </div>
+      )}
+
+      {/* Load error state */}
+      {!loading && loadError && (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'var(--surface)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚠️</div>
+          <h3 style={{ marginBottom: '0.5rem', color: 'var(--text)' }}>Error al cargar los banners</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', maxWidth: '360px', margin: '0 auto 1.5rem' }}>{loadError}</p>
+          <button
+            onClick={load}
+            style={{ padding: '0.6rem 1.5rem', borderRadius: '8px', border: '1px solid rgba(139,92,246,0.4)', background: 'rgba(139,92,246,0.1)', color: '#a78bfa', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !loadError && banners.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '5rem 2rem', background: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.7 }}>📢</div>
+          <h3 style={{ marginBottom: '0.5rem', color: 'var(--text)' }}>Sin banners publicitarios</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', maxWidth: '380px', margin: '0 auto 1.75rem' }}>
+            Sube hasta 3 imágenes en formato 16:3 que se mostrarán como slider en el Portal de Clientes.
+          </p>
+          <button
+            onClick={openCreate}
+            style={{ padding: '0.7rem 1.75rem', borderRadius: '10px', border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+          >
+            + Crear primer banner
+          </button>
+        </div>
+      )}
+
+      {/* Banner list */}
+      {!loading && !loadError && banners.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {banners.map((b, idx) => (
+            <div
+              key={b.id}
+              style={{
+                background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px',
+                overflow: 'hidden', display: 'flex', alignItems: 'stretch',
+                opacity: (!b.isActive) ? 0.65 : 1, transition: 'opacity 0.2s',
+              }}
+            >
+              {/* Thumbnail (16:3 ratio) */}
+              <div style={{ width: '300px', minWidth: '300px', aspectRatio: '16/3', overflow: 'hidden', flexShrink: 0, background: '#111' }}>
+                <img
+                  src={resolveImg(b.imageUrl)}
+                  alt={b.title || `Banner ${idx + 1}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+
+              {/* Info */}
+              <div style={{ flex: 1, padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.45rem', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{b.title || `Banner ${idx + 1}`}</span>
+                  <span style={{
+                    padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.03em',
+                    background: b.isActive ? 'rgba(34,197,94,0.12)' : 'rgba(100,116,139,0.15)',
+                    color: b.isActive ? '#4ade80' : 'var(--text-muted)',
+                    border: `1px solid ${b.isActive ? 'rgba(34,197,94,0.3)' : 'rgba(100,116,139,0.2)'}`,
+                  }}>
+                    {b.isActive ? '● Activo' : '○ Inactivo'}
+                  </span>
+                </div>
+                {b.linkUrl ? (
+                  <div style={{ fontSize: '0.78rem', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.3rem', overflow: 'hidden' }}>
+                    <span>🔗</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.linkUrl}</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sin enlace de destino</div>
+                )}
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Posición #{b.order + 1}</div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.875rem', justifyContent: 'center', borderLeft: '1px solid var(--border)', minWidth: '120px' }}>
+                <button
+                  onClick={() => toggleActive(b)}
+                  disabled={togglingId === b.id}
+                  style={{
+                    padding: '0.4rem 0.6rem', borderRadius: '7px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer',
+                    background: b.isActive ? 'rgba(239,68,68,0.08)' : 'rgba(34,197,94,0.08)',
+                    color: b.isActive ? '#f87171' : '#4ade80',
+                    border: `1px solid ${b.isActive ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.25)'}`,
+                    opacity: togglingId === b.id ? 0.6 : 1,
+                  }}
+                >
+                  {togglingId === b.id ? '...' : b.isActive ? 'Desactivar' : 'Activar'}
+                </button>
+                <button
+                  onClick={() => openEdit(b)}
+                  style={{ padding: '0.4rem 0.6rem', borderRadius: '7px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(139,92,246,0.1)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}
+                >
+                  ✏ Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(b.id)}
+                  disabled={deletingId === b.id}
+                  style={{
+                    padding: '0.4rem 0.6rem', borderRadius: '7px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer',
+                    background: 'rgba(239,68,68,0.07)', color: '#f87171', border: '1px solid rgba(239,68,68,0.18)',
+                    opacity: deletingId === b.id ? 0.6 : 1,
+                  }}
+                >
+                  {deletingId === b.id ? '...' : '🗑 Eliminar'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create / Edit Modal */}
+      {showForm && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeForm(); }}
+        >
+          <div style={{ background: 'var(--surface)', borderRadius: '18px', padding: '2rem', width: '100%', maxWidth: '580px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1.25rem', maxHeight: '90vh', overflowY: 'auto' }}>
+
+            {/* Modal header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>{editingBanner ? 'Editar Banner' : 'Nuevo Banner'}</h2>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>La imagen debe tener proporción 16:3 para mejor resultado.</p>
+              </div>
+              <button
+                onClick={closeForm}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1, width: '2rem', height: '2rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Image upload */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>
+                Imagen del Banner <span style={{ color: '#f87171' }}>*</span>
+              </label>
+              <div
+                style={{
+                  border: `2px dashed ${formData.imageUrl ? 'rgba(139,92,246,0.5)' : 'var(--border)'}`,
+                  borderRadius: '10px', overflow: 'hidden', aspectRatio: '16/3',
+                  background: 'var(--bg)', position: 'relative', cursor: 'pointer',
+                  transition: 'border-color 0.2s',
+                }}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {formData.imageUrl ? (
+                  <>
+                    <img src={resolveImg(formData.imageUrl)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0)', transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600, opacity: 0, transition: 'opacity 0.2s' }} className="img-change-hint">Cambiar imagen</span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: '0.5rem' }}>
+                    {uploading ? (
+                      <>
+                        <span style={{ fontSize: '1.5rem' }}>⏳</span>
+                        <span style={{ fontSize: '0.8rem' }}>Subiendo imagen...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: '2rem' }}>🖼️</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Haz clic para subir una imagen</span>
+                        <span style={{ fontSize: '0.72rem' }}>Proporción recomendada: 16:3 — PNG, JPG, WEBP</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
+              {formData.imageUrl && !uploading && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ marginTop: '0.5rem', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer', background: 'rgba(139,92,246,0.1)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.3)' }}
+                >
+                  Cambiar imagen
+                </button>
+              )}
+            </div>
+
+            {/* Title */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Título <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span></label>
+              <input
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Ej: Evento Especial de Julio"
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none' }}
+              />
+            </div>
+
+            {/* Link URL */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Enlace de destino <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(opcional)</span></label>
+              <input
+                value={formData.linkUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, linkUrl: e.target.value }))}
+                placeholder="https://..."
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none' }}
+              />
+              <p style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Al hacer clic en el banner, el usuario será redirigido a esta URL.</p>
+            </div>
+
+            {/* Order + Active */}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Posición</label>
+                <input
+                  type="number" min={0} max={2}
+                  value={formData.order}
+                  onChange={(e) => setFormData(prev => ({ ...prev, order: Number(e.target.value) }))}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', boxSizing: 'border-box', outline: 'none' }}
+                />
+              </div>
+              <div style={{ paddingBottom: '0.15rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', padding: '0.65rem 1rem', borderRadius: '9px', border: '1px solid var(--border)', background: 'var(--bg)' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                    style={{ width: '1rem', height: '1rem', cursor: 'pointer', accentColor: '#7c3aed' }}
+                  />
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Publicar inmediatamente</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Form error */}
+            {formError && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '0.85rem' }}>
+                <span>⚠</span> {formError}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.25rem' }}>
+              <button
+                onClick={closeForm}
+                style={{ padding: '0.65rem 1.25rem', borderRadius: '9px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving || uploading || !formData.imageUrl}
+                style={{
+                  padding: '0.65rem 1.75rem', borderRadius: '9px', border: 'none',
+                  background: saving || uploading || !formData.imageUrl ? 'rgba(124,58,237,0.4)' : '#7c3aed',
+                  color: '#fff', cursor: saving || uploading || !formData.imageUrl ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem', fontWeight: 700, transition: 'background 0.2s',
+                }}
+              >
+                {saving ? 'Guardando...' : editingBanner ? 'Guardar cambios' : 'Crear Banner'}
+              </button>
+            </div>
           </div>
         </div>
       )}

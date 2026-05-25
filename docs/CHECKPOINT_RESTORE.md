@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 24 de Mayo de 2026
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español
+**Fecha de Última Actualización:** 24 de Mayo de 2026 (Sesión 2)
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack
 
 ---
 
@@ -132,7 +132,12 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | GET    | `/api/orders/attendees/me`          | JWT (HOST)  | OK     | Lista de asistentes del organizador     |
 | POST   | `/api/tickets/validate`             | JWT         | OK     | Validar ticket QR (VALID → USED)        |
 | POST   | `/api/tickets/validate-by-id`       | JWT         | OK     | Validar por ID corto (#c288f2ae)        |
-| POST   | `/api/upload`                       | Opcional    | OK     | Subir imágenes (logo/event/user-avatar/member-avatar) |
+| POST   | `/api/upload`                       | Opcional    | OK     | Subir imágenes (logo/event/user-avatar/member-avatar/banner) |
+| GET    | `/api/banners`                      | No          | OK     | Banners activos ordenados (público — para web-client) |
+| GET    | `/api/banners/admin`                | JWT (ADMIN/EDITOR) | OK | Todos los banners incluyendo inactivos          |
+| POST   | `/api/banners`                      | JWT (ADMIN/EDITOR) | OK | Crear banner publicitario                       |
+| PATCH  | `/api/banners/:id`                  | JWT (ADMIN/EDITOR) | OK | Editar banner (imagen, título, link, estado, orden) |
+| DELETE | `/api/banners/:id`                  | JWT (ADMIN/EDITOR) | OK | Eliminar banner                                 |
 | GET    | `/api/plans`                        | No          | OK     | Planes públicos para formulario registro|
 | GET    | `/api/admin/plans`                  | JWT (ADMIN) | OK     | CRUD Planes — Listar                    |
 | POST   | `/api/admin/plans`                  | JWT (ADMIN) | OK     | CRUD Planes — Crear                     |
@@ -149,7 +154,7 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 | Ruta                        | Estado | Descripción                                                |
 | :-------------------------- | :----- | :--------------------------------------------------------- |
-| `/`                         | OK     | Hero split (Anton font) + Carrusel coverflow 3:4 + Sección Destacados (condicional) + Catálogo en grid |
+| `/`                         | OK     | Hero split (Anton font) + Carrusel coverflow 3:4 + Sección Destacados + **Banner Slider 16:3** (si hay banners) + Catálogo en grid |
 | `/login`                    | OK     | Login + link "¿Olvidaste tu contraseña?" |
 | `/register`                 | OK     | Registro + pantalla "Revisa tu correo" post-registro |
 | `/verify-email?token=`      | OK     | Verificación de email con estados: verificando / éxito / expirado |
@@ -182,21 +187,22 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 ### Web Admin (Puerto 4202)
 
-| Sección              | Estado | Descripción                                                        |
-| :------------------- | :----- | :----------------------------------------------------------------- |
-| Login                | OK     | Login + link "¿Olvidaste tu contraseña?" → `/forgot-password`      |
-| Forgot Password      | OK     | Solicitar reset de contraseña por email                            |
-| Reset Password       | OK     | Nueva contraseña + confirmación + auto-redirect 3s al login        |
-| Panel Inicio         | OK     | Resumen del sistema con stats de organizaciones                    |
-| Gestión Organizadores| OK     | Tabla + avatar/logo, acciones: Aprobar, Editar, Eliminar           |
-| Modal Edición Org    | OK     | Email, org, representante, ubicación, plan, estado, contraseña, logo |
-| Gestión de Planes    | OK     | CRUD completo (nombre, precio, límite de eventos)                  |
-| Gestión de Usuarios  | OK     | CRUD Admin/Editor; envía credenciales por email al crear           |
-| Analíticas           | OK     | Métricas de eventos, tickets y revenue por organizador             |
-| Gestión de Eventos   | OK     | Directorio global con tabs (Activos/Inactivos/Borrador)            |
-| Destacar Evento      | OK     | Botón Destacar con duración en días + expiración automática (cron) |
-| Editar Evento        | OK     | Formulario completo con todas las validaciones de ventas           |
-| Eliminar Evento      | OK     | Solo visible si el evento no tiene tickets vendidos                |
+| Sección               | Estado | Descripción                                                        |
+| :-------------------- | :----- | :----------------------------------------------------------------- |
+| Login                 | OK     | Login + link "¿Olvidaste tu contraseña?" → `/forgot-password`      |
+| Forgot Password       | OK     | Solicitar reset de contraseña por email                            |
+| Reset Password        | OK     | Nueva contraseña + confirmación + auto-redirect 3s al login        |
+| Panel Inicio          | OK     | Resumen del sistema con stats de organizaciones                    |
+| Gestión Organizadores | OK     | Tabla + avatar/logo, acciones: Aprobar, Editar, Eliminar           |
+| Modal Edición Org     | OK     | Email, org, representante, ubicación, plan, estado, contraseña, logo |
+| Analíticas            | OK     | Métricas de eventos, tickets y revenue por organizador             |
+| Gestión de Eventos    | OK     | Directorio global con tabs (Activos/Inactivos/Borrador)            |
+| Destacar Evento       | OK     | Botón Destacar con duración en días + expiración automática (cron) |
+| Editar Evento         | OK     | Formulario completo con todas las validaciones de ventas           |
+| Eliminar Evento       | OK     | Solo visible si el evento no tiene tickets vendidos                |
+| **Banners Publicitarios** | OK | CRUD de banners (1-3) con upload, preview 16:3, activar/desactivar, toast feedback |
+| Gestión de Planes     | OK     | CRUD completo (nombre, precio, límite de eventos)                  |
+| Gestión de Usuarios   | OK     | CRUD Admin/Editor; envía credenciales por email al crear           |
 
 ---
 
@@ -373,7 +379,49 @@ POST /api/auth/reset-password { token, newPassword }
 
 ---
 
-## 7. Notas Técnicas Importantes
+## 7. Sistema de Banners Publicitarios
+
+### Flujo completo
+
+```
+Admin sube imagen → POST /api/upload?type=banner → guarda en ./uploads/banners/{uuid}.jpg
+                  → copia la URL → POST /api/banners { imageUrl, title?, linkUrl?, isActive, order }
+                  → Banner guardado en BD
+
+Web Client (SSR) → getBanners() → GET /api/banners → [banners activos ordenados]
+                 → <BannerSlider banners={banners} /> renderizado entre Destacados y Próximos Eventos
+                 → Auto-avance 5s, flechas prev/next, puntos indicadores
+                 → Clic en banner → redirige a linkUrl (target _blank) si existe
+```
+
+### Límites y comportamiento
+
+| Regla | Detalle |
+| :---- | :------ |
+| Máximo de banners | 3 (limitado en UI Admin — el botón "Agregar" se deshabilita) |
+| Banners inactivos | No aparecen en `GET /api/banners` (público). Solo en `GET /api/banners/admin` |
+| Banner sin imagen | La UI Admin bloquea el guardado si no hay imagen |
+| API caída | `getBanners().catch(() => [])` — el slider no se renderiza, no hay error de página |
+| Un solo banner | No se muestran flechas ni puntos; la imagen es estática |
+
+### Archivos clave
+
+| Archivo | Descripción |
+| :------ | :---------- |
+| `libs/shared/prisma/schema.prisma` | Modelo `Banner` |
+| `apps/api/src/app/banners/banners.service.ts` | Lógica CRUD |
+| `apps/api/src/app/banners/banners.controller.ts` | Endpoints REST |
+| `apps/api/src/app/upload/upload.controller.ts` | Tipo `banner` para upload |
+| `apps/web-admin/lib/api.ts` | `getBannersAdmin`, `createBanner`, `updateBanner`, `deleteBanner`, `uploadBannerImage` |
+| `apps/web-admin/app/dashboard/page.tsx` | `BannersView` — componente CRUD completo |
+| `apps/web-client/src/lib/api.ts` | `getBanners()`, tipo `BannerItem` |
+| `apps/web-client/src/components/BannerSlider.tsx` | Slider cliente 16:3 |
+| `apps/web-client/src/app/page.tsx` | Integración server-side de `getBanners()` |
+| `apps/web-client/src/app/global.css` | Estilos del slider (al final del archivo) |
+
+---
+
+## 8. Notas Técnicas Importantes
 
 - **NX Daemon**: Activo (`useDaemonProcess: true`). `npx nx serve api --no-dte` para desarrollo — hot-reload automático.
 - **Puertos**: PostgreSQL en **5435**, Redis en **6380** (no estándar para evitar conflictos).
@@ -389,10 +437,14 @@ POST /api/auth/reset-password { token, newPassword }
   - `uploads/organizers/{id}/events/{eventId}/` — imágenes de eventos
   - `uploads/organizers/{orgId}/members/{memberId}/avatar/` — avatares de miembros
   - `uploads/users/{id}/avatar/` — fotos de perfil de clientes
+  - `uploads/banners/` — imágenes de banners publicitarios (UUID + extensión)
+- **Banners — límite**: máximo 3 banners en la plataforma (validado solo en la UI Admin; no hay guard en el backend)
+- **BannerSlider — carga SSR**: `getBanners()` se llama en el server component de `page.tsx` con `.catch(() => [])`. Si la API está caída, la sección de banners simplemente no se renderiza (no lanza error al usuario).
+- **Favicons**: SVG puro en `/public/favicon.svg` de las 3 apps. El web-host usa `<link>` en JSX por ser `'use client'` y no poder exportar `metadata`.
 
 ---
 
-## 8. Reglas de Negocio — Edición de Zonas
+## 9. Reglas de Negocio — Edición de Zonas
 
 | Campo       | ¿Editable si hay ventas? | Restricción                                 |
 | :---------- | :----------------------- | :------------------------------------------ |
@@ -405,7 +457,7 @@ POST /api/auth/reset-password { token, newPassword }
 
 ---
 
-## 9. Próximos Pasos de Desarrollo
+## 10. Próximos Pasos de Desarrollo
 
 ### Prioridad Alta
 
@@ -459,11 +511,15 @@ POST /api/auth/reset-password { token, newPassword }
 - **Emails transaccionales — sistema completo (13 templates)** ✅ (24 May 2026)
 - **Auth flow: verify email, forgot/reset password en 3 paneles** ✅ (24 May 2026)
 - **URL frontend `/eventos/` en español (migración de `/events/`)** ✅ (24 May 2026)
+- **Favicons AfroEventos en las 3 apps (SVG oficial)** ✅ (24 May 2026)
+- **Sistema de Banners Publicitarios full-stack (backend + admin CRUD + web-client slider)** ✅ (24 May 2026)
 
 ---
 
-## 10. Bugs Conocidos / Deuda Técnica
+## 11. Bugs Conocidos / Deuda Técnica
 
 - **Lint warnings `any`**: Múltiples archivos usan `any` type. Funcional pero debería tiparse mejor.
 - **Galería de imágenes en edición**: Las imágenes de galería se acumulan en vez de reemplazarse.
 - **Ticket sin relación a Seat en BD**: Requiere decodificar todos los JWTs para encontrar compradores de un evento (costoso con muchos tickets). Mejora futura: agregar `eventId` al modelo `Order`.
+- **Límite de 3 banners no validado en backend**: El límite existe solo en la UI Admin. Un POST directo a `/api/banners` podría crear más de 3. Mejora futura: agregar validación en `BannersService.create()`.
+- **BannerSlider sin transición entre slides**: El cambio de imagen es abrupto (no hay fade ni slide animado). Mejora futura: añadir `opacity` transition o `translateX` entre slides.

@@ -216,6 +216,65 @@ export async function setEventFeatured(id: string, isFeatured: boolean, duration
   });
 }
 
+// Banners Integration
+
+export interface Banner {
+  id: string;
+  imageUrl: string;
+  linkUrl?: string | null;
+  title?: string | null;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getBannersAdmin(token: string) {
+  return fetchAPI<Banner[]>('/banners/admin', { token, cache: 'no-store' });
+}
+
+export async function createBanner(data: { imageUrl: string; linkUrl?: string; title?: string; isActive?: boolean; order?: number }, token: string) {
+  return fetchAPI<Banner>('/banners', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function updateBanner(id: string, data: { imageUrl?: string; linkUrl?: string; title?: string; isActive?: boolean; order?: number }, token: string) {
+  return fetchAPI<Banner>(`/banners/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    token,
+  });
+}
+
+export async function deleteBanner(id: string, token: string) {
+  return fetchAPI<any>(`/banners/${id}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export async function uploadBannerImage(file: File, token: string): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/upload?type=banner`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Error uploading banner image' }));
+    throw new Error(error.message || 'Error uploading banner image');
+  }
+
+  const data = await res.json();
+  return data.url;
+}
+
 export async function forgotPassword(email: string): Promise<{ message: string }> {
   return fetchAPI('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
 }

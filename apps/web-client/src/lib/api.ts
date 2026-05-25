@@ -254,6 +254,20 @@ export async function uploadUserAvatar(file: File, userId: string, token?: strin
 }
 
 
+// ===== Banners API =====
+export interface BannerItem {
+  id: string;
+  imageUrl: string;
+  linkUrl?: string | null;
+  title?: string | null;
+  isActive: boolean;
+  order: number;
+}
+
+export async function getBanners(): Promise<BannerItem[]> {
+  return fetchAPI<BannerItem[]>('/banners', { cache: 'no-store' });
+}
+
 // ─── Email verification ───────────────────────────────────────────────────────
 
 export async function verifyEmail(token: string): Promise<{ message: string }> {

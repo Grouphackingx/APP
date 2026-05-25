@@ -1,7 +1,8 @@
-import { getEvents, type EventItem } from '../lib/api';
+import { getEvents, getBanners, type EventItem, type BannerItem } from '../lib/api';
 import { EventCard } from '../components/EventCard';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { FeaturedEventsSection } from '../components/FeaturedEventsSection';
+import { BannerSlider } from '../components/BannerSlider';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -23,9 +24,11 @@ export default async function HomePage(props: {
 
   let featuredEvents: EventItem[] = [];
   let generalEvents: EventItem[] = [];
+  let banners: BannerItem[] = [];
   let error = '';
 
   try {
+    banners = await getBanners().catch(() => []);
     const allEvents = await getEvents(query);
     const published = allEvents.filter((e) => e.status === 'PUBLISHED');
 
@@ -105,6 +108,9 @@ export default async function HomePage(props: {
 
       {/* ── Featured Events — only on main page (no search), only if there are featured events ── */}
       {!query && <FeaturedEventsSection events={featuredEvents} />}
+
+      {/* ── Banner Slider — only on main page (no search) ── */}
+      {!query && banners.length > 0 && <BannerSlider banners={banners} />}
 
       {/* ── Events Section ── */}
       <section className="section" id="eventos">
