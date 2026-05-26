@@ -20,6 +20,19 @@ function toSlug(text: string): string {
 export class EventsService {
     constructor(private prisma: PrismaService, private mail: MailService, private jwt: JwtService) { }
 
+    private getAnnualPeriodStart(profileCreatedAt: Date): Date {
+        const now = new Date();
+        const start = new Date(profileCreatedAt);
+        // Advance anniversary year by year until the next one is in the future
+        while (true) {
+            const next = new Date(start);
+            next.setFullYear(next.getFullYear() + 1);
+            if (next > now) break;
+            start.setFullYear(start.getFullYear() + 1);
+        }
+        return start;
+    }
+
     private async generateUniqueSlug(title: string, excludeId?: string): Promise<string> {
         const base = toSlug(title);
         let slug = base;
@@ -32,6 +45,22 @@ export class EventsService {
         return slug;
     }
 
+    async getPaymentStatusForOrganizer(organizerId: string): Promise<boolean> {
+        const profile = await this.prisma.organizerProfile.findUnique({
+            where: { userId: organizerId },
+            select: { paidEventsEnabled: true },
+        });
+        if (profile?.paidEventsEnabled !== null && profile?.paidEventsEnabled !== undefined) {
+            return profile.paidEventsEnabled;
+        }
+        const config = await this.prisma.systemConfig.upsert({
+            where: { id: 'global' },
+            create: { id: 'global', paidEventsEnabled: false },
+            update: {},
+        });
+        return config.paidEventsEnabled;
+    }
+
     async create(organizerId: string, createEventDto: CreateEventDto) {
         const { zones, ...eventData } = createEventDto;
 
@@ -41,7 +70,7 @@ export class EventsService {
 
         const user = await this.prisma.user.findUnique({
             where: { id: organizerId },
-            include: { organizerProfile: true, _count: { select: { eventsOwned: true } } }
+            include: { organizerProfile: true }
         });
 
         if (!user || !user.organizerProfile) {
@@ -49,14 +78,18 @@ export class EventsService {
         }
 
         const profile = user.organizerProfile;
-        
+
         if (profile.status === 'PENDING') {
             throw new BadRequestException('Tu cuenta de organizador está PENDIENTE de aprobación por el Administrador Global.');
         } else if (profile.status === 'REJECTED') {
             throw new BadRequestException('Tu cuenta de organizador fue rechazada.');
         }
 
-        const currentEventsCount = user._count.eventsOwned;
+        // Count events created within the current annual period (anniversary-based)
+        const periodStart = this.getAnnualPeriodStart(profile.createdAt);
+        const currentEventsCount = await this.prisma.event.count({
+            where: { organizerId, createdAt: { gte: periodStart } }
+        });
         
         // Fetch plan limits
         const planDetails = await this.prisma.plan.findUnique({
@@ -66,18 +99,27 @@ export class EventsService {
         if (planDetails) {
             // maxEvents === 0 means unlimited
             if (planDetails.maxEvents > 0 && currentEventsCount >= planDetails.maxEvents) {
-                throw new BadRequestException(`Has alcanzado el límite de ${planDetails.maxEvents} eventos permitidos en tu plan (${planDetails.name}). Actualiza tu suscripción para seguir publicando.`);
+                const renewDate = new Date(periodStart);
+                renewDate.setFullYear(renewDate.getFullYear() + 1);
+                const renewStr = renewDate.toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' });
+                throw new BadRequestException(`Has alcanzado el límite de ${planDetails.maxEvents} eventos para tu plan (${planDetails.name}). Tu cuota se renueva el ${renewStr}. Actualiza tu suscripción para publicar más.`);
             }
         } else {
             // Fallback for missing plan configurations
             if (profile.plan === 'FREE' && currentEventsCount >= 3) {
-                throw new BadRequestException('Has alcanzado el límite de 3 eventos para el plan Gratuito. Sube a PLUS para más.');
+                throw new BadRequestException('Has alcanzado el límite de 3 eventos anuales para el plan FREE.');
             } else if (profile.plan === 'PLUS' && currentEventsCount >= 12) {
-                throw new BadRequestException('Has alcanzado el límite de 12 eventos para el plan PLUS. Usa ELITE para eventos ilimitados.');
+                throw new BadRequestException('Has alcanzado el límite de 12 eventos anuales para el plan PLUS. Usa ELITE para eventos ilimitados.');
             }
         }
 
         const slug = await this.generateUniqueSlug(eventData.title);
+
+        const paidEnabled = await this.getPaymentStatusForOrganizer(organizerId);
+        if (!paidEnabled && zones?.length) {
+            zones.forEach(z => { if (!z.sellOnSite) z.price = 0; });
+        }
+
         return this.prisma.event.create({
             data: {
                 ...(eventData as any),
@@ -259,6 +301,11 @@ export class EventsService {
 
                 if (!existingEvent) {
                     throw new BadRequestException('Evento no encontrado');
+                }
+
+                const paidEnabled = await this.getPaymentStatusForOrganizer(existingEvent.organizerId);
+                if (!paidEnabled && zones) {
+                    zones.forEach((z: any) => { if (!z.sellOnSite) z.price = 0; });
                 }
 
                 const incomingZoneIds = new Set((zones || []).filter((z: CreateZoneDto) => z.id).map((z: CreateZoneDto) => z.id));

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { createEvent, uploadImage } from '../lib/api';
+import { useState, useEffect } from 'react';
+import { createEvent, uploadImage, getPaymentStatus } from '../lib/api';
 
 interface ZoneInput {
   name: string;
@@ -77,6 +77,18 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
     text: string;
     type: 'error' | 'success';
   } | null>(null);
+  const [paidEventsEnabled, setPaidEventsEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getPaymentStatus(token)
+      .then(res => {
+        setPaidEventsEnabled(res.paidEventsEnabled);
+        if (!res.paidEventsEnabled) {
+          setZones(prev => prev.map(z => ({ ...z, price: 0 })));
+        }
+      })
+      .catch(() => setPaidEventsEnabled(false));
+  }, [token]);
 
   const addZone = () => {
     setZones([...zones, { name: '', price: 0, capacity: 0 }]);
@@ -233,8 +245,8 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         zones: zones.map((z) => ({
           name: z.name,
           description: z.description,
-          price: z.sellOnSite ? 0 : z.price,
-          capacity: z.sellOnSite ? 0 : z.capacity,
+          price: (z.sellOnSite || paidEventsEnabled === false) ? 0 : z.price,
+          capacity: (z.sellOnSite || paidEventsEnabled === false) ? 0 : z.capacity,
           sellOnSite: z.sellOnSite ?? false,
         })),
       };
@@ -260,6 +272,16 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         >
           {message.type === 'error' ? '⚠️ ' : ''}
           {message.text}
+        </div>
+      )}
+
+      {paidEventsEnabled === false && (
+        <div style={{
+          padding: '0.85rem 1.2rem', borderRadius: '10px', marginBottom: '1.25rem',
+          background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.3)',
+          color: '#fb923c', fontSize: '0.875rem', lineHeight: 1.5,
+        }}>
+          <strong>Pasarela de pagos no disponible.</strong> Solo puedes crear zonas gratuitas o con venta en el lugar. Los precios se fijarán automáticamente en $0.
         </div>
       )}
 
@@ -754,9 +776,12 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={zone.price}
-                    onChange={(e) => updateZone(i, 'price', e.target.value)}
+                    value={paidEventsEnabled === false ? 0 : zone.price}
+                    onChange={(e) => { if (paidEventsEnabled !== false) updateZone(i, 'price', e.target.value); }}
                     required
+                    disabled={paidEventsEnabled === false}
+                    title={paidEventsEnabled === false ? 'Pasarela de pagos deshabilitada — precio bloqueado en $0' : ''}
+                    style={paidEventsEnabled === false ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                   />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -764,9 +789,12 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                   <input
                     type="number"
                     min="1"
-                    value={zone.capacity}
-                    onChange={(e) => updateZone(i, 'capacity', e.target.value)}
+                    value={paidEventsEnabled === false ? 0 : zone.capacity}
+                    onChange={(e) => { if (paidEventsEnabled !== false) updateZone(i, 'capacity', e.target.value); }}
                     required
+                    disabled={paidEventsEnabled === false}
+                    title={paidEventsEnabled === false ? 'Pasarela de pagos deshabilitada — capacidad bloqueada en 0' : ''}
+                    style={paidEventsEnabled === false ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                   />
                 </div>
               </div>

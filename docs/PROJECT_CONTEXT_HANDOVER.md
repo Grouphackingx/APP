@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 25 de Mayo de 2026 (Sesión 5)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin
+**Última Actualización:** 25 de Mayo de 2026 (Sesión 6)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -170,7 +170,15 @@ model OrganizerProfile {
   address?, province?, city?
   status OrganizerStatus (default PENDING)  // PENDING | APPROVED | REJECTED | BLOCKED
   planId → Plan?
+  paidEventsEnabled Boolean?  // null = heredar global, true/false = override por organizador
+  createdAt DateTime @default(now())
   → members OrganizerMember[]
+}
+
+model SystemConfig {
+  id                String   @id @default("global")  // singleton row
+  paidEventsEnabled Boolean  @default(false)          // toggle global de pasarela de pagos
+  updatedAt         DateTime @updatedAt
 }
 
 model OrganizerMember {
@@ -1031,6 +1039,39 @@ Ver detalle completo en CHECKPOINT_RESTORE.md secciones "Sesión del 17-20 de Ma
 - 8 campos nuevos en schema `User` (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)
 - Endpoints `GET/PATCH /api/auth/me` protegidos con JwtAuthGuard
 - Toast amarillo al intentar seleccionar asientos sin autenticación (auto-cierre 4s)
+
+### Sesión del 25 de Mayo de 2026 — Control de Pasarela de Pagos + Límites Anuales por Aniversario
+
+**Control de Pasarela de Pagos (Payment Gateway Control)**:
+
+Sistema de doble nivel para bloquear eventos de pago antes de integrar pasarela real:
+
+- **Schema**: modelo `SystemConfig` (singleton `id="global"`) + campo `paidEventsEnabled Boolean?` en `OrganizerProfile`
+- **Backend endpoints nuevos**:
+  - `GET /api/admin/config` — obtener config global (solo ADMIN)
+  - `PATCH /api/admin/config` — toggle global (solo ADMIN)
+  - `PATCH /api/admin/organizers/:id/payment-gateway` — override por org (solo ADMIN)
+  - `GET /api/events/payment-status` — consulta del organizador autenticado (HOST)
+- **Lógica de resolución** en `EventsService.getPaymentStatusForOrganizer()`: override org (`null/true/false`) ?? config global
+- **Enforcement backend**: en `create()` y `update()` de eventos, si `!paidEnabled`, fuerza `price=0` y `capacity=0` en zonas (excepto `sellOnSite`)
+- **Admin UI** (`web-admin/app/dashboard/page.tsx`):
+  - Card "Pasarela de Pagos" con badge HABILITADA/DESHABILITADA y botón toggle (solo ADMIN, con confirmación modal)
+  - Columna "Pagos" en tabla de organizadores con botón cíclico: Global (gris) → Habilitado (verde) → Deshabilitado (rojo) → Global
+- **Host UI** (`CreateEventForm.tsx` y `EditEventForm.tsx`):
+  - Carga `GET /events/payment-status` al montar el formulario
+  - Banner naranja de advertencia cuando `paidEventsEnabled === false`
+  - Inputs `precio` y `capacidad` deshabilitados y forzados a 0 cuando gateway desactivado
+  - Submit sanitiza `price` y `capacity` a 0 si no disponible
+
+**Límites de Eventos por Plan — Conteo Anual por Aniversario**:
+
+- **Problema**: el conteo anterior usaba `_count.eventsOwned` (total de todos los tiempos)
+- **Fix**: helper privado `getAnnualPeriodStart(profileCreatedAt)` en `EventsService`
+  - Avanza la fecha de creación del perfil de 1 en 1 año hasta que el próximo aniversario esté en el futuro
+  - Retorna la fecha del aniversario actual como inicio del período
+  - Correcto para cualquier año, incluyendo años bisiestos
+- **Implementación**: `prisma.event.count({ where: { organizerId, createdAt: { gte: periodStart } } })` (query separada)
+- **Error message**: incluye fecha de renovación `renewDate` en formato `'es-EC'` (ej: "15 de marzo de 2027")
 
 ### Sesión del 2 de Mayo de 2026 — Logo Organizaciones, Planes Dinámicos, CRUD Admin
 

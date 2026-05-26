@@ -2,6 +2,9 @@ import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch, D
 import { EventsService } from './events.service';
 import { CreateEventDto, UpdateEventDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('events')
 export class EventsController {
@@ -22,6 +25,14 @@ export class EventsController {
     @Get('me')
     findMyEvents(@Request() req: any) {
         return this.eventsService.findMyEvents(req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.HOST)
+    @Get('payment-status')
+    async getPaymentStatus(@Request() req: any) {
+        const paidEventsEnabled = await this.eventsService.getPaymentStatusForOrganizer(req.user.userId);
+        return { paidEventsEnabled };
     }
 
     @Get('backfill-slugs')

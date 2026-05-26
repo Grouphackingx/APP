@@ -108,6 +108,26 @@ export class AdminController {
     return this.adminService.getAllEvents();
   }
 
+  // --- SYSTEM CONFIG ---
+
+  @Get('config')
+  getConfig() {
+    return this.adminService.getConfig();
+  }
+
+  @Patch('config')
+  updateConfig(@Body('paidEventsEnabled') paidEventsEnabled: boolean) {
+    return this.adminService.updateConfig(paidEventsEnabled);
+  }
+
+  @Patch('organizers/:id/payment-gateway')
+  setOrgPaymentGateway(
+    @Param('id') userId: string,
+    @Body('paidEventsEnabled') paidEventsEnabled: boolean | null,
+  ) {
+    return this.adminService.setOrgPaymentGateway(userId, paidEventsEnabled);
+  }
+
   @Patch('events/:id/featured')
   @Roles(Role.ADMIN)
   toggleEventFeatured(

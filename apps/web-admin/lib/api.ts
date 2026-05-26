@@ -282,6 +282,28 @@ export async function uploadBannerImage(file: File, token: string): Promise<stri
   return data.url;
 }
 
+// System Config / Payment Gateway
+
+export async function getSystemConfig(token: string) {
+  return fetchAPI<{ id: string; paidEventsEnabled: boolean; updatedAt: string }>('/admin/config', { token });
+}
+
+export async function updateSystemConfig(paidEventsEnabled: boolean, token: string) {
+  return fetchAPI<{ id: string; paidEventsEnabled: boolean; updatedAt: string }>('/admin/config', {
+    method: 'PATCH',
+    body: JSON.stringify({ paidEventsEnabled }),
+    token,
+  });
+}
+
+export async function setOrgPaymentGateway(userId: string, paidEventsEnabled: boolean | null, token: string) {
+  return fetchAPI<any>(`/admin/organizers/${userId}/payment-gateway`, {
+    method: 'PATCH',
+    body: JSON.stringify({ paidEventsEnabled }),
+    token,
+  });
+}
+
 export async function forgotPassword(email: string): Promise<{ message: string }> {
   return fetchAPI('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
 }

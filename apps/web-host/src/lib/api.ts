@@ -114,6 +114,10 @@ export async function deleteEvent(id: string, token: string) {
   });
 }
 
+export async function getPaymentStatus(token: string): Promise<{ paidEventsEnabled: boolean }> {
+  return fetchAPI<{ paidEventsEnabled: boolean }>('/events/payment-status', { token });
+}
+
 export async function getPublicPlans() {
   return fetchAPI<any[]>('/plans', { cache: 'no-store' });
 }

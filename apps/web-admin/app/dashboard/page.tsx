@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, type Banner } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, getSystemConfig, updateSystemConfig, setOrgPaymentGateway, type Banner } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
@@ -168,6 +168,9 @@ function AdminDashboard() {
     }
   };
 
+  const [systemConfig, setSystemConfig] = useState<{ paidEventsEnabled: boolean } | null>(null);
+  const [togglingConfig, setTogglingConfig] = useState(false);
+
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
@@ -185,6 +188,7 @@ function AdminDashboard() {
       loadPlans();
       loadAdminUsers();
       loadEvents();
+      getSystemConfig(token as string).then(setSystemConfig).catch(console.error);
     } else if (user.role === 'EDITOR') {
       loadEvents();
     }
@@ -322,6 +326,38 @@ function AdminDashboard() {
     } catch (err: any) {
       showToast(err.message || `Error al acceder como ${orgName}`, 'error');
     }
+  };
+
+  const handleTogglePaymentGateway = () => {
+    if (!systemConfig) return;
+    const enabling = !systemConfig.paidEventsEnabled;
+    showConfirm(
+      enabling ? 'Habilitar Pasarela de Pagos' : 'Deshabilitar Pasarela de Pagos',
+      enabling
+        ? 'Los organizadores podrán crear zonas con precio mayor a $0. ¿Confirmas?'
+        : 'Todos los nuevos precios serán forzados a $0. Los eventos existentes no se modifican. ¿Confirmas?',
+      async () => {
+        setTogglingConfig(true);
+        try {
+          const updated = await updateSystemConfig(enabling, token as string);
+          setSystemConfig(updated);
+          showToast(enabling ? 'Pasarela de pagos habilitada globalmente.' : 'Pasarela de pagos deshabilitada globalmente.', enabling ? 'success' : 'warning');
+        } catch { showToast('Error al actualizar la configuración.', 'error'); }
+        finally { setTogglingConfig(false); }
+      }
+    );
+  };
+
+  const handleSetOrgPaymentGateway = (orgId: string, orgName: string, current: boolean | null) => {
+    const next = current === null ? true : current === true ? false : null;
+    const nextLabel = next === null ? 'Heredar global' : next ? 'Forzar habilitado' : 'Forzar deshabilitado';
+    showConfirm(`Pagos: ${orgName}`, `¿Cambiar a "${nextLabel}"?`, async () => {
+      try {
+        await setOrgPaymentGateway(orgId, next, token as string);
+        loadOrganizers();
+        showToast(`Pagos de ${orgName}: ${nextLabel}.`);
+      } catch { showToast('Error al actualizar.', 'error'); }
+    });
   };
 
   const handleEditOrg = (org: any) => {
@@ -539,6 +575,45 @@ function AdminDashboard() {
               </div>
             </div>
 
+            {/* Payment Gateway Global Toggle */}
+            {user?.role === 'ADMIN' && systemConfig !== null && (
+              <div className="table-container" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem' }}>
+                      💳 Pasarela de Pagos
+                      <span style={{
+                        padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em',
+                        backgroundColor: systemConfig.paidEventsEnabled ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                        color: systemConfig.paidEventsEnabled ? '#6ee7b7' : '#fca5a5',
+                        border: `1px solid ${systemConfig.paidEventsEnabled ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                      }}>
+                        {systemConfig.paidEventsEnabled ? 'HABILITADA' : 'DESHABILITADA'}
+                      </span>
+                    </h3>
+                    <p style={{ margin: '0.35rem 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      {systemConfig.paidEventsEnabled
+                        ? 'Los organizadores pueden crear zonas con precio mayor a $0.'
+                        : 'Solo se permiten zonas gratuitas o con venta en el lugar. Precios forzados a $0.'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleTogglePaymentGateway}
+                    disabled={togglingConfig}
+                    style={{
+                      padding: '0.55rem 1.3rem', borderRadius: '9px', fontWeight: 700, fontSize: '0.875rem',
+                      cursor: togglingConfig ? 'not-allowed' : 'pointer', opacity: togglingConfig ? 0.6 : 1,
+                      backgroundColor: systemConfig.paidEventsEnabled ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
+                      color: systemConfig.paidEventsEnabled ? '#fca5a5' : '#6ee7b7',
+                      border: `1px solid ${systemConfig.paidEventsEnabled ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`,
+                    }}
+                  >
+                    {togglingConfig ? '...' : systemConfig.paidEventsEnabled ? 'Deshabilitar' : 'Habilitar'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Organizations Table */}
             <div className="table-container">
               <div className="table-header" style={{ borderBottom: 'none', paddingBottom: '0.5rem' }}>
@@ -564,6 +639,7 @@ function AdminDashboard() {
                       <th>Ubicación</th>
                       <th>Suscripción</th>
                       <th>Estado Actual</th>
+                      <th>Pagos</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
@@ -625,6 +701,29 @@ function AdminDashboard() {
                               }}>
                               {prof.status === 'APPROVED' ? '🟢 Aprobado' : prof.status === 'REJECTED' ? '🔴 Rechazado' : prof.status === 'BLOCKED' ? '🔒 Bloqueado' : '⏳ Pendiente'}
                             </span>
+                          </td>
+                          <td>
+                            {user?.role === 'ADMIN' ? (
+                              <button
+                                onClick={() => handleSetOrgPaymentGateway(org.id, prof.organizationName, prof.paidEventsEnabled ?? null)}
+                                title="Clic para cambiar: Global → Habilitado → Deshabilitado → Global"
+                                style={{
+                                  padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700,
+                                  cursor: 'pointer', border: '1px solid',
+                                  ...(prof.paidEventsEnabled === true
+                                    ? { backgroundColor: 'rgba(16,185,129,0.15)', color: '#6ee7b7', borderColor: 'rgba(16,185,129,0.3)' }
+                                    : prof.paidEventsEnabled === false
+                                    ? { backgroundColor: 'rgba(239,68,68,0.15)', color: '#fca5a5', borderColor: 'rgba(239,68,68,0.3)' }
+                                    : { backgroundColor: 'rgba(148,163,184,0.1)', color: '#94a3b8', borderColor: 'rgba(148,163,184,0.3)' }),
+                                }}
+                              >
+                                {prof.paidEventsEnabled === true ? 'Habilitado' : prof.paidEventsEnabled === false ? 'Deshabilitado' : 'Global'}
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                {prof.paidEventsEnabled === true ? 'Habilitado' : prof.paidEventsEnabled === false ? 'Deshabilitado' : 'Global'}
+                              </span>
+                            )}
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

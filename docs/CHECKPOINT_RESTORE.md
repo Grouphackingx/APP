@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 5)
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin
+**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 6)
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes
 
 ---
 
@@ -152,6 +152,10 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | POST   | `/api/admin/organizers/:id/impersonate` | JWT (ADMIN) | OK | Generar JWT de 1h para acceder como el organizador |
 | GET    | `/api/admin/events`                 | JWT (ADMIN) | OK     | Directorio global de eventos            |
 | PATCH  | `/api/admin/events/:id/featured`    | JWT (ADMIN) | OK     | Activar/desactivar evento destacado     |
+| GET    | `/api/admin/config`                 | JWT (ADMIN) | OK     | Obtener configuración global del sistema (paidEventsEnabled) |
+| PATCH  | `/api/admin/config`                 | JWT (ADMIN) | OK     | Actualizar toggle global de pasarela de pagos |
+| PATCH  | `/api/admin/organizers/:id/payment-gateway` | JWT (ADMIN) | OK | Override de pasarela por organizador (null/true/false) |
+| GET    | `/api/events/payment-status`        | JWT (HOST)  | OK     | Consultar si el organizador autenticado puede crear eventos de pago |
 
 ### Web Client (Puerto 4200)
 
@@ -180,8 +184,8 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | Forgot Password      | OK     | Solicitar reset de contraseña por email (válido 60 min)             |
 | Reset Password       | OK     | Nueva contraseña + confirmación + auto-redirect 3s al login         |
 | Dashboard / Inicio   | OK     | Stats + tabla de eventos con pestañas (Activos/Inactivos/Borrador)  |
-| Crear Evento         | OK     | Formulario completo con zonas, galería, imagen retrato 3:4; tipo por defecto "Entradas", precio/capacidad por defecto 0; checkbox sellOnSite por zona |
-| Editar Evento        | OK     | Edición de zonas con protección de ventas activas; checkbox sellOnSite (deshabilitado si hay ventas) |
+| Crear Evento         | OK     | Formulario completo con zonas, galería, imagen retrato 3:4; tipo por defecto "Entradas", precio/capacidad por defecto 0; checkbox sellOnSite por zona; banner naranja + precio/capacidad bloqueados si pasarela desactivada |
+| Editar Evento        | OK     | Edición de zonas con protección de ventas activas; checkbox sellOnSite (deshabilitado si hay ventas); precio/capacidad bloqueados si pasarela desactivada |
 | Eliminar Evento      | OK     | Solo visible si 0 tickets vendidos                                  |
 | Asistentes           | OK     | Compradores por evento + tickets comprados/usados + filtro + búsqueda |
 | Escáner de Tickets   | OK     | 3 tabs: Cámara QR, Buscar por ID corto, Token JWT manual            |
@@ -207,7 +211,8 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | Editar Evento         | OK     | Formulario completo con todas las validaciones de ventas           |
 | Eliminar Evento       | OK     | Solo visible si el evento no tiene tickets vendidos                |
 | **Banners Publicitarios** | OK | CRUD de banners (1-3) con upload, preview 16:3, activar/desactivar, toast feedback |
-| Gestión de Planes     | OK     | CRUD completo (nombre, precio, límite de eventos)                  |
+| **Pasarela de Pagos** | OK     | Card global (solo ADMIN) con badge HABILITADA/DESHABILITADA + botón toggle con confirmación; columna "Pagos" en tabla de orgs (botón cíclico: Global/Habilitado/Deshabilitado) |
+| Gestión de Planes     | OK     | CRUD completo (nombre, precio, límite de eventos — conteo anual por aniversario de contratación) |
 | Gestión de Usuarios   | OK     | CRUD Admin/Editor; envía credenciales por email al crear           |
 | **Vista persistente en URL** | OK | `?view=X` en URL — al recargar se restaura la sección activa  |
 | **Modales personalizados** | OK | Sin confirm/alert nativo — `ConfirmModal` + `ToastStack` inline   |
@@ -550,6 +555,8 @@ Cuando `sellOnSite: true` en una zona:
 - **Persistencia de vista en URL** — `?view=X` en ambos dashboards (web-admin y web-host), Suspense boundary para useSearchParams ✅ (25 May 2026)
 - **Badge sidebar "Organizador"** (antes "HOST") + logo -10% tamaño ✅ (25 May 2026)
 - **Impersonación de Organizadores** — endpoint `/admin/organizers/:id/impersonate` JWT 1h, botón 👁 en web-admin, `/auth/impersonate` auto-login, ImpersonationBanner morado en web-host ✅ (25 May 2026)
+- **Control de Pasarela de Pagos** — SystemConfig singleton, override por org (null/true/false), toggle global en admin UI, card + columna "Pagos" en tabla de orgs, banner naranja + precio/capacidad bloqueados en formularios web-host, enforcement backend ✅ (25 May 2026)
+- **Límite de eventos por plan — conteo anual por aniversario** — helper `getAnnualPeriodStart()`, cuenta eventos desde la última fecha de aniversario del perfil, error message incluye fecha de renovación en español ✅ (25 May 2026)
 
 ---
 

@@ -327,6 +327,33 @@ export class AdminService {
     return { impersonation_token: this.jwtService.sign(payload) };
   }
 
+  // --- SYSTEM CONFIG / PAYMENT GATEWAY ---
+
+  async getConfig() {
+    return this.prisma.systemConfig.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', paidEventsEnabled: false },
+      update: {},
+    });
+  }
+
+  async updateConfig(paidEventsEnabled: boolean) {
+    return this.prisma.systemConfig.upsert({
+      where: { id: 'global' },
+      create: { id: 'global', paidEventsEnabled },
+      update: { paidEventsEnabled },
+    });
+  }
+
+  async setOrgPaymentGateway(userId: string, paidEventsEnabled: boolean | null) {
+    const profile = await this.prisma.organizerProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundException('Organizador no encontrado');
+    return this.prisma.organizerProfile.update({
+      where: { userId },
+      data: { paidEventsEnabled },
+    });
+  }
+
   async toggleEventFeatured(id: string, isFeatured: boolean, durationDays?: number) {
     let featuredUntil = null;
     
