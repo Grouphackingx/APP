@@ -5,6 +5,7 @@ import {
   getOrganizerMembers, createOrganizerMember, updateOrganizerMember,
   deleteOrganizerMember, uploadMemberAvatar, OrganizerMember,
 } from '../lib/api';
+import { useConfirm, useToast } from './UIHelpers';
 
 interface Props { token: string }
 
@@ -21,6 +22,8 @@ const emptyForm = {
 };
 
 export function OrganizerUsers({ token }: Props) {
+  const { showConfirm, modalNode } = useConfirm();
+  const { showToast, toastNode } = useToast();
   const [members, setMembers]     = useState<OrganizerMember[]>([]);
   const [loading, setLoading]     = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -118,10 +121,16 @@ export function OrganizerUsers({ token }: Props) {
     }
   }
 
-  async function handleDelete(m: OrganizerMember) {
-    if (!window.confirm(`¿Eliminar a ${m.name}? Esta acción no se puede deshacer.`)) return;
-    try { await deleteOrganizerMember(m.id, token); fetchMembers(); }
-    catch (err: unknown) { alert((err as { message?: string })?.message || 'Error al eliminar'); }
+  function handleDelete(m: OrganizerMember) {
+    showConfirm(
+      'Eliminar usuario',
+      `¿Eliminar a "${m.name}"? Esta acción no se puede deshacer.`,
+      async () => {
+        try { await deleteOrganizerMember(m.id, token); fetchMembers(); }
+        catch (err: unknown) { showToast((err as { message?: string })?.message || 'Error al eliminar.', 'error'); }
+      },
+      'danger'
+    );
   }
 
   const inputStyle: React.CSSProperties = {
@@ -349,6 +358,8 @@ export function OrganizerUsers({ token }: Props) {
           </div>
         </div>
       )}
+      {modalNode}
+      {toastNode}
     </div>
   );
 }

@@ -105,6 +105,13 @@ export async function updateOrganizer(id: string, data: any, token: string) {
   });
 }
 
+export async function impersonateOrganizer(id: string, token: string) {
+  return fetchAPI<{ impersonation_token: string }>(`/admin/organizers/${id}/impersonate`, {
+    method: 'POST',
+    token,
+  });
+}
+
 export async function deleteOrganizer(id: string, token: string) {
   return fetchAPI<any>(`/admin/organizers/${id}`, {
     method: 'DELETE',

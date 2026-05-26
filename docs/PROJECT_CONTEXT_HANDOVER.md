@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 25 de Mayo de 2026 (Sesión 4)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack)
+**Última Actualización:** 25 de Mayo de 2026 (Sesión 5)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -149,7 +149,7 @@ MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
 enum Role      { USER, HOST, ADMIN, EDITOR, STAFF }
 enum EventStatus { DRAFT, PUBLISHED, CANCELLED, COMPLETED }
 enum TicketStatus { VALID, USED, REFUNDED }
-enum OrganizerStatus { PENDING, APPROVED, REJECTED }
+enum OrganizerStatus { PENDING, APPROVED, REJECTED, BLOCKED }
 enum MemberRole { ADMIN, STAFF }
 
 model User {
@@ -168,7 +168,7 @@ model OrganizerProfile {
   id, userId → User (unique)
   organizationName, organizationDescription?, organizationLogo?
   address?, province?, city?
-  status OrganizerStatus (default PENDING)
+  status OrganizerStatus (default PENDING)  // PENDING | APPROVED | REJECTED | BLOCKED
   planId → Plan?
   → members OrganizerMember[]
 }
@@ -477,6 +477,143 @@ start-all.bat
 ---
 
 ## 12. Registro de Cambios
+
+### Sesión del 25 de Mayo de 2026 (Sesión 5) — Bloqueo de Organizadores + Modales Personalizados + Persistencia URL + Impersonación Admin
+
+#### Bloqueo de Organizadores — Full-Stack
+
+**Motivación**: El administrador necesita poder suspender inmediatamente la cuenta de un organizador, terminando su sesión activa al instante sin esperar a que el JWT expire.
+
+**`libs/shared/prisma/schema.prisma`** — `BLOCKED` añadido al enum `HostStatus`:
+```prisma
+enum HostStatus { PENDING, APPROVED, REJECTED, BLOCKED }
+```
+`npx prisma db push` + `npx prisma generate` ejecutados (API detenida durante generación).
+
+**`apps/api/src/app/auth/auth.service.ts`** — Check en `login()`:
+```typescript
+if (user.role === 'HOST' && user.organizerProfile?.status === 'BLOCKED') {
+    throw new UnauthorizedException('Tu cuenta ha sido suspendida...');
+}
+```
+
+**`apps/api/src/app/auth/strategies/jwt.strategy.ts`** — Check en cada request autenticado:
+- Inyecta `PrismaService`
+- Si `payload.role === 'HOST' && !payload.isMember`: consulta `organizerProfile.status` en BD
+- Si `status === 'BLOCKED'` → lanza `UnauthorizedException('ACCOUNT_BLOCKED')`
+- Esto fuerza el cierre de sesión en tiempo real (sin esperar a que el JWT expire)
+
+**`apps/api/src/app/auth/auth.module.ts`** — `PrismaService` añadido a `providers`.
+
+**`apps/web-host/src/lib/api.ts`** — Interceptor 401 en `fetchAPI()`:
+```typescript
+if (res.status === 401 && token && typeof window !== 'undefined') {
+    localStorage.removeItem('ot_host_token');
+    localStorage.removeItem('ot_host_user');
+    window.location.href = '/login';
+    return {} as T;
+}
+```
+
+**`apps/web-admin/app/dashboard/page.tsx`** — Handler `handleBlockOrg` + botón 🔒/🔓 en la tabla de organizadores:
+- 🔒 (naranja) para bloquear → cambia status a `BLOCKED`
+- 🔓 (verde) para desbloquear → cambia status a `APPROVED`
+- Solo visible para usuarios con `role === 'ADMIN'` (no EDITOR)
+- Nuevo stat card "Bloqueados" (naranja) en el panel de estadísticas
+
+---
+
+#### Modales Personalizados — Sin confirm/alert/prompt Nativos
+
+**`apps/web-host/src/components/UIHelpers.tsx`** *(nuevo)*:
+- `ConfirmModal` — modal de confirmación con `createPortal`, backdrop blur, botón de confirm con variante `danger`/`warning`/`default`
+- `ToastStack` — stack de notificaciones (esquina inferior derecha), auto-cierre 3.5s, apilables
+- `useConfirm()` → hook: `{ showConfirm(title, msg, onConfirm, variant), modalNode }`
+- `useToast()` → hook: `{ showToast(msg, type), toastNode }`
+
+**`apps/web-host/src/app/global.css`** — `@keyframes slideInRight` para animación de toasts.
+
+**`apps/web-host/src/app/dashboard/page.tsx`** — Reemplazados `window.confirm` / `alert` en `handleDelete` con `showConfirm` / `showToast`.
+
+**`apps/web-host/src/components/OrganizerUsers.tsx`** — Ídem en `handleDelete`.
+
+**`apps/web-host/src/app/register/page.tsx`** — `alert(err.message)` en `handleLogoUpload` reemplazado por `setError(err.message)`.
+
+**`apps/web-admin/app/dashboard/page.tsx`** — Componentes `ConfirmModal`, `InputModal` y `ToastStack` integrados inline (no como archivo separado). Todos los `confirm()`, `alert()`, `window.prompt()` del panel admin reemplazados por modales personalizados.
+
+**`apps/web-admin/app/global.css`** — `@keyframes slideInRight` añadido.
+
+---
+
+#### Persistencia de Vista en URL
+
+**`apps/web-admin/app/dashboard/page.tsx`**:
+- `ViewType` + `VALID_VIEWS` array para validación de vistas
+- `useSearchParams()` lee la vista inicial desde `?view=X`
+- `setView(v)` wrapper: actualiza estado React + `router.replace('/dashboard?view=${v}', { scroll: false })`
+- Al recargar la página, la vista activa se restaura desde la URL
+- `export default function AdminDashboardWrapper() { return <Suspense><AdminDashboard /></Suspense>; }` — Suspense boundary requerido para `useSearchParams` en Next.js
+
+**`apps/web-host/src/app/dashboard/page.tsx`**:
+- Mismo patrón: `View` type + `VALID_VIEWS` + `setView` con `router.replace`
+- `export default function DashboardPageWrapper() { return <Suspense><DashboardPage /></Suspense>; }`
+
+**`apps/web-admin/app/reset-password/page.tsx`** y **`apps/web-host/src/app/reset-password/page.tsx`** — Mismo Suspense wrapper para `useSearchParams`.
+
+---
+
+#### Impersonación de Organizadores por Admin ("Acceder como Organizador")
+
+**Motivación**: El administrador global necesita poder navegar el panel de un organizador como si fuera ese organizador (para soporte, diagnóstico, revisión), sin conocer ni cambiar su contraseña.
+
+**Flujo**:
+```
+Admin hace clic en 👁 (solo para organizadores APPROVED)
+  → POST /api/admin/organizers/:id/impersonate (solo ADMIN)
+  → Backend genera JWT de 1h con identidad del HOST + campo impersonatedBy: adminId
+  → window.open('localhost:4201/auth/impersonate?token=XXX', '_blank')
+
+Nueva pestaña web-host en /auth/impersonate
+  → Decodifica JWT (solo payload, sin verificar firma en frontend)
+  → Valida que tenga campo impersonatedBy
+  → loginUser(token, { ...usuario, organizerProfile: { status: 'APPROVED' }, impersonatedBy })
+  → router.replace('/dashboard?view=dashboard')
+
+Dashboard web-host
+  → ImpersonationBanner detecta user.impersonatedBy → muestra banner morado fijo
+  → Todas las acciones del panel funcionan con el JWT del organizador
+  → JwtStrategy.validate() verifica BLOCKED en cada request (seguridad intacta)
+  → Clic "Salir" → logout() → /login → cierra sesión de impersonación
+```
+
+**Backend** (`apps/api/src/app/admin/`):
+
+- **`admin.module.ts`** — `JwtModule.register({ secret, signOptions: { expiresIn: '1h' } })` añadido a `imports`
+- **`admin.service.ts`** — Nuevo método `impersonateOrganizer(targetUserId, adminId)`: valida que el organizador exista y esté APPROVED, genera JWT de 1h con payload HOST + `impersonatedBy`
+- **`admin.controller.ts`** — Nuevo endpoint `@Post('organizers/:id/impersonate')`: hereda `@Roles(Role.ADMIN)` del controlador; solo accesible por ADMIN
+
+**Frontend Admin** (`apps/web-admin/`):
+
+- **`lib/api.ts`** — Nueva función `impersonateOrganizer(id, token)`
+- **`app/dashboard/page.tsx`** — Handler `handleImpersonate` + botón 👁 (índigo) por organizador APPROVED; condición `user?.role === 'ADMIN'`
+
+**Frontend Web-Host** (`apps/web-host/src/`):
+
+- **`lib/AuthContext.tsx`** — `User` interface extendida con `impersonatedBy?: string`; `isImpersonating: boolean` derivado de `!!user?.impersonatedBy`; añadido al contexto y al valor del Provider
+- **`app/layout.tsx`** — `<ImpersonationBanner />` añadido dentro de `<AuthProvider>` antes de `{children}`
+- **`app/auth/impersonate/page.tsx`** *(nuevo)* — Decodifica token, llama `loginUser` con `organizerProfile: { status: 'APPROVED' }` y `impersonatedBy`, redirige a `/dashboard`. Usa `useRef(done)` para evitar doble ejecución por React Strict Mode
+- **`components/ImpersonationBanner.tsx`** *(nuevo)* — Banner morado fijo (`position: fixed, top: 0, zIndex: 9999`): texto "👁 Modo Vista Admin — Navegando como [nombre]", botón "Salir"
+
+**Bug corregido (React Strict Mode)**: En desarrollo, React ejecuta `useEffect` dos veces. En la segunda ejecución, la URL ya era `/dashboard` y `token` era `null`, lo que causaba `router.replace('/login')`. Fix: `useRef(done)` hace que el efecto sea idempotente.
+
+---
+
+#### Ajustes UX Web-Host Sidebar
+
+- Badge "HOST" → **"Organizador"** (`Sidebar.tsx` línea `logo-badge`)
+- Logo `AfroEventosLogo` reducido de `height={50}` → `height={45}` para evitar desbordamiento del badge
+
+---
 
 ### Sesión del 25 de Mayo de 2026 (Tarde/Sesión 4) — OrganizerCTA + Navbar Dropdown + Galería Rediseñada + sellOnSite en Zonas + UX Web-Host
 

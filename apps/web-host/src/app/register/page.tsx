@@ -75,7 +75,7 @@ export default function RegisterHostPage() {
       const url = await uploadImage(file, '', 'logo', undefined, emailSafe);
       setFormData(prev => ({ ...prev, organizationLogo: url }));
     } catch (err: any) {
-      alert(err.message || 'Error al subir el logo');
+      setError(err.message || 'Error al subir el logo');
     } finally {
       setUploadingLogo(false);
     }

@@ -20,7 +20,7 @@ let jsQRFn: ((d: Uint8ClampedArray, w: number, h: number, o?: { inversionAttempt
 async function getJsQR() {
   if (!jsQRFn) {
     const mod = await import('jsqr');
-    jsQRFn = mod.default as typeof jsQRFn;
+    jsQRFn = mod.default as unknown as typeof jsQRFn;
   }
   return jsQRFn;
 }

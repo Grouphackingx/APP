@@ -1,19 +1,108 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, type Banner } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, type Banner } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
 import { EditEventForm } from '../../components/EditEventForm';
 
-export default function AdminDashboard() {
+type ViewType = 'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event' | 'banners';
+
+// ─── Shared UI Components ────────────────────────────────────────────────────
+
+function ConfirmModal({ title, message, variant = 'default', onConfirm, onCancel }: {
+  title: string; message: string; variant?: 'danger' | 'warning' | 'default';
+  onConfirm: () => void; onCancel: () => void;
+}) {
+  const icon = variant === 'danger' ? '🗑️' : variant === 'warning' ? '🔒' : '❓';
+  const confirmColor = variant === 'danger' ? '#ef4444' : variant === 'warning' ? '#fb923c' : '#7c3aed';
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onCancel}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2rem', maxWidth: '420px', width: '90%', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '0.75rem' }}>{icon}</div>
+        <h3 style={{ color: 'var(--text-primary)', textAlign: 'center', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{title}</h3>
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.75rem' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <button onClick={onCancel} style={{ padding: '0.6rem 1.4rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>Cancelar</button>
+          <button onClick={() => { onConfirm(); onCancel(); }} style={{ padding: '0.6rem 1.4rem', borderRadius: '9px', border: 'none', background: confirmColor, color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>Confirmar</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function InputModal({ title, placeholder, onConfirm, onCancel }: {
+  title: string; placeholder: string;
+  onConfirm: (value: string) => void; onCancel: () => void;
+}) {
+  const [value, setValue] = useState('');
+  return createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={onCancel}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2rem', maxWidth: '380px', width: '90%', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '0.75rem' }}>⭐</div>
+        <h3 style={{ color: 'var(--text-primary)', textAlign: 'center', marginBottom: '1.25rem', fontSize: '1.05rem' }}>{title}</h3>
+        <input type="number" min="1" value={value} onChange={e => setValue(e.target.value)}
+          placeholder={placeholder} autoFocus
+          onKeyDown={e => { if (e.key === 'Enter' && value) { onConfirm(value); onCancel(); } }}
+          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '1.25rem', boxSizing: 'border-box' }} />
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <button onClick={onCancel} style={{ padding: '0.6rem 1.4rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>Cancelar</button>
+          <button disabled={!value} onClick={() => { onConfirm(value); onCancel(); }} style={{ padding: '0.6rem 1.4rem', borderRadius: '9px', border: 'none', background: value ? '#7c3aed' : 'rgba(124,58,237,0.4)', color: '#fff', cursor: value ? 'pointer' : 'not-allowed', fontWeight: 600, fontSize: '0.875rem' }}>Destacar</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function ToastStack({ toasts }: { toasts: { id: number; msg: string; type: 'success' | 'error' | 'warning' }[] }) {
+  if (!toasts.length) return null;
+  return createPortal(
+    <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9100, display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+      {toasts.map(t => (
+        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.75rem 1.25rem', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', fontSize: '0.875rem', fontWeight: 500, maxWidth: '340px', animation: 'slideInRight 0.25s ease',
+          background: t.type === 'success' ? 'rgba(16,185,129,0.15)' : t.type === 'error' ? 'rgba(239,68,68,0.15)' : 'rgba(251,146,60,0.15)',
+          border: `1px solid ${t.type === 'success' ? 'rgba(16,185,129,0.4)' : t.type === 'error' ? 'rgba(239,68,68,0.4)' : 'rgba(251,146,60,0.4)'}`,
+          color: t.type === 'success' ? '#6ee7b7' : t.type === 'error' ? '#fca5a5' : '#fb923c',
+        }}>
+          <span>{t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : '⚠'}</span>
+          <span>{t.msg}</span>
+        </div>
+      ))}
+    </div>,
+    document.body
+  );
+}
+const VALID_VIEWS: ViewType[] = ['inicio', 'dashboard', 'users', 'plans', 'analytics', 'events', 'edit-event', 'banners'];
+
+export default function AdminDashboardWrapper() {
+  return <Suspense><AdminDashboard /></Suspense>;
+}
+
+function AdminDashboard() {
   const { user, token, logout, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [organizers, setOrganizers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event' | 'banners'>('inicio');
+
+  const initialView = ((): ViewType => {
+    const v = searchParams.get('view') as ViewType;
+    return VALID_VIEWS.includes(v) ? v : 'inicio';
+  })();
+  const [view, setViewState] = useState<ViewType>(initialView);
+
+  const setView = (v: ViewType) => {
+    setViewState(v);
+    router.replace(`/dashboard?view=${v}`, { scroll: false });
+  };
   const [events, setEvents] = useState<any[]>([]);
   const [activeEventTab, setActiveEventTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
   const [editingEvent, setEditingEvent] = useState<any>(null);
@@ -37,6 +126,18 @@ export default function AdminDashboard() {
   const createLogoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
+  const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; variant?: 'danger' | 'warning' | 'default'; onConfirm: () => void } | null>(null);
+  const [inputModal, setInputModal] = useState<{ title: string; placeholder: string; onConfirm: (v: string) => void } | null>(null);
+  const [globalToasts, setGlobalToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' | 'warning' }[]>([]);
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void, variant?: 'danger' | 'warning' | 'default') => setConfirmModal({ title, message, variant, onConfirm });
+  const showInputModal = (title: string, placeholder: string, onConfirm: (v: string) => void) => setInputModal({ title, placeholder, onConfirm });
+  const showToast = (msg: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    const id = Date.now();
+    setGlobalToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setGlobalToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  };
+
   const handleEditLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !token) return;
@@ -44,9 +145,9 @@ export default function AdminDashboard() {
     try {
       const orgId = editingOrgData.id;
       const url = await uploadImage(file, token, 'logo', undefined, orgId);
-      setEditFormData(prev => ({ ...prev, organizationLogo: url }));
+      setEditFormData((prev: any) => ({ ...prev, organizationLogo: url }));
     } catch (err: any) {
-      alert(err.message || 'Error al subir el logo');
+      showToast(err.message || 'Error al subir el logo', 'error');
     } finally {
       setUploadingLogo(false);
     }
@@ -59,9 +160,9 @@ export default function AdminDashboard() {
     try {
       const tempId = createFormData.email ? createFormData.email.replace(/[^a-zA-Z0-9]/g, '_') : 'temp_' + Date.now();
       const url = await uploadImage(file, token, 'logo', undefined, tempId);
-      setCreateFormData(prev => ({ ...prev, organizationLogo: url }));
+      setCreateFormData((prev: any) => ({ ...prev, organizationLogo: url }));
     } catch (err: any) {
-      alert(err.message || 'Error al subir el logo');
+      showToast(err.message || 'Error al subir el logo', 'error');
     } finally {
       setUploadingLogo(false);
     }
@@ -98,25 +199,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleToggleFeatured = async (id: string, currentStatus: boolean) => {
-    let duration = null;
+  const handleToggleFeatured = (id: string, currentStatus: boolean) => {
     if (!currentStatus) {
-      const promptRes = window.prompt('¿Por cuántos días quieres destacar este evento? (Ej: 7, 30)');
-      if (promptRes === null) return;
-      duration = parseInt(promptRes);
-      if (isNaN(duration) || duration <= 0) {
-        alert('Por favor ingresa un número de días válido.');
-        return;
-      }
+      showInputModal('¿Por cuántos días destacar este evento?', 'Ej: 7, 30', async (val) => {
+        const duration = parseInt(val);
+        if (isNaN(duration) || duration <= 0) { showToast('Ingresa un número de días válido.', 'warning'); return; }
+        try {
+          await setEventFeatured(id, true, duration, token as string);
+          loadEvents();
+        } catch { showToast('Error al destacar el evento.', 'error'); }
+      });
     } else {
-      if (!confirm('¿Deseas quitar este evento de destacados?')) return;
-    }
-
-    try {
-      await setEventFeatured(id, !currentStatus, duration, token as string);
-      loadEvents();
-    } catch (err) {
-      alert('Error al actualizar el estado de destacado.');
+      showConfirm('Quitar de destacados', '¿Deseas quitar este evento de la sección de destacados?', async () => {
+        try {
+          await setEventFeatured(id, false, null, token as string);
+          loadEvents();
+        } catch { showToast('Error al actualizar el evento.', 'error'); }
+      });
     }
   };
 
@@ -130,19 +229,20 @@ export default function AdminDashboard() {
     loadEvents();
   };
 
-  const handleDeleteEvent = async (ev: any) => {
+  const handleDeleteEvent = (ev: any) => {
     const hasSoldSeats = (ev.zones || []).some((z: any) => (z.seats || []).some((s: any) => s.isSold));
     if (hasSoldSeats) {
-      alert('No se puede eliminar este evento porque tiene tickets vendidos.');
+      showToast('No se puede eliminar: el evento tiene tickets vendidos.', 'warning');
       return;
     }
-    if (!confirm(`¿Estás seguro de eliminar el evento "${ev.title}"? Esta acción no se puede deshacer.`)) return;
-    try {
-      await deleteEvent(ev.id, token as string);
-      loadEvents();
-    } catch (err: any) {
-      alert(err.message || 'Error al eliminar el evento.');
-    }
+    showConfirm('Eliminar evento', `¿Estás seguro de eliminar "${ev.title}"? Esta acción no se puede deshacer.`, async () => {
+      try {
+        await deleteEvent(ev.id, token as string);
+        loadEvents();
+      } catch (err: any) {
+        showToast(err.message || 'Error al eliminar el evento.', 'error');
+      }
+    }, 'danger');
   };
 
   const loadAnalytics = async () => {
@@ -188,16 +288,39 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleStatusChange = async (id: string, currentStatus: string) => {
+  const handleStatusChange = (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'PENDING' ? 'APPROVED' : currentStatus === 'APPROVED' ? 'REJECTED' : 'PENDING';
-    
-    if (!confirm(`¿Cambiar estado de este organizador a ${nextStatus}?`)) return;
+    const labels: Record<string, string> = { APPROVED: 'Aprobado', REJECTED: 'Rechazado', PENDING: 'Pendiente' };
+    showConfirm('Cambiar estado', `¿Cambiar el estado de este organizador a "${labels[nextStatus]}"?`, async () => {
+      try {
+        await setOrganizerStatus(id, nextStatus, token as string);
+        loadOrganizers();
+      } catch { showToast('Error al cambiar el estado.', 'error'); }
+    });
+  };
 
+  const handleBlockOrg = (id: string, orgName: string, isBlocked: boolean) => {
+    const newStatus = isBlocked ? 'APPROVED' : 'BLOCKED';
+    showConfirm(
+      isBlocked ? 'Desbloquear organizador' : 'Bloquear organizador',
+      isBlocked ? `¿Desbloquear a "${orgName}"? Podrá volver a iniciar sesión.` : `¿Bloquear a "${orgName}"? No podrá iniciar sesión hasta que sea desbloqueado.`,
+      async () => {
+        try {
+          await setOrganizerStatus(id, newStatus, token as string);
+          loadOrganizers();
+        } catch { showToast(`Error al ${isBlocked ? 'desbloquear' : 'bloquear'} el organizador.`, 'error'); }
+      },
+      isBlocked ? 'default' : 'warning'
+    );
+  };
+
+  const handleImpersonate = async (orgUserId: string, orgName: string) => {
     try {
-      await setOrganizerStatus(id, nextStatus, token as string);
-      loadOrganizers();
-    } catch (err) {
-      alert('Error updating status');
+      const { impersonation_token } = await impersonateOrganizer(orgUserId, token as string);
+      const hostUrl = process.env.NEXT_PUBLIC_HOST_URL || 'http://localhost:4201';
+      window.open(`${hostUrl}/auth/impersonate?token=${encodeURIComponent(impersonation_token)}`, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      showToast(err.message || `Error al acceder como ${orgName}`, 'error');
     }
   };
 
@@ -214,8 +337,9 @@ export default function AdminDashboard() {
       await updateOrganizer(editingOrgData.id, cleanData, token as string);
       setEditingOrgData(null);
       loadOrganizers();
+      showToast('Organizador actualizado correctamente.');
     } catch (err) {
-      alert('Error actualizando organizador. Revisa los campos.');
+      showToast('Error al actualizar el organizador. Revisa los campos.', 'error');
       setLoading(false);
     }
   };
@@ -228,20 +352,21 @@ export default function AdminDashboard() {
       setIsCreatingOrg(false);
       setCreateFormData({});
       loadOrganizers();
+      showToast('Organizador creado correctamente.');
     } catch (err: any) {
-      alert(err.message || 'Error creando organizador.');
+      showToast(err.message || 'Error al crear el organizador.', 'error');
       setLoading(false);
     }
   };
 
-  const handleDeleteOrg = async (id: string, name: string) => {
-    if (!confirm(`¿Estás completamente seguro de borrar de forma permanente a ${name}? Esta acción no se puede deshacer.`)) return;
-    try {
-      await deleteOrganizer(id, token as string);
-      loadOrganizers();
-    } catch (err) {
-      alert('No se pudo borrar el organizador o posee eventos asociados.');
-    }
+  const handleDeleteOrg = (id: string, name: string) => {
+    showConfirm('Eliminar organizador', `¿Estás seguro de eliminar permanentemente a "${name}"? Esta acción no se puede deshacer.`, async () => {
+      try {
+        await deleteOrganizer(id, token as string);
+        loadOrganizers();
+        showToast('Organizador eliminado.');
+      } catch { showToast('No se pudo eliminar. El organizador puede tener eventos asociados.', 'error'); }
+    }, 'danger');
   };
 
   const handleSavePlan = async (e: React.FormEvent) => {
@@ -250,27 +375,29 @@ export default function AdminDashboard() {
     try {
       if (editingPlanData) {
         await updatePlan(editingPlanData.id, planFormData, token as string);
+        showToast('Plan actualizado.');
       } else {
         await createPlan(planFormData, token as string);
+        showToast('Plan creado.');
       }
       setIsCreatingPlan(false);
       setEditingPlanData(null);
       loadPlans();
     } catch (err: any) {
-      alert(err.message || 'Error guardando plan');
+      showToast(err.message || 'Error al guardar el plan.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeletePlan = async (id: string, name: string) => {
-    if (!confirm(`¿Borrar permanentemente el plan ${name}?`)) return;
-    try {
-      await deletePlan(id, token as string);
-      loadPlans();
-    } catch (err) {
-      alert('Error eliminando plan');
-    }
+  const handleDeletePlan = (id: string, name: string) => {
+    showConfirm('Eliminar plan', `¿Borrar permanentemente el plan "${name}"?`, async () => {
+      try {
+        await deletePlan(id, token as string);
+        loadPlans();
+        showToast('Plan eliminado.');
+      } catch { showToast('Error al eliminar el plan.', 'error'); }
+    }, 'danger');
   };
 
   const handleSaveUser = async (e: React.FormEvent) => {
@@ -293,18 +420,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteUser = async (id: string, name: string) => {
+  const handleDeleteUser = (id: string, name: string) => {
     if (id === user?.id) {
-      alert('No puedes eliminarte a ti mismo.');
+      showToast('No puedes eliminarte a ti mismo.', 'warning');
       return;
     }
-    if (!confirm(`¿Borrar permanentemente al usuario ${name}?`)) return;
-    try {
-      await deleteAdminUser(id, token as string);
-      loadAdminUsers();
-    } catch (err) {
-      alert('Error eliminando usuario');
-    }
+    showConfirm('Eliminar usuario', `¿Borrar permanentemente al usuario "${name}"?`, async () => {
+      try {
+        await deleteAdminUser(id, token as string);
+        loadAdminUsers();
+        showToast('Usuario eliminado.');
+      } catch { showToast('Error al eliminar el usuario.', 'error'); }
+    }, 'danger');
   };
 
   if (isLoading) {
@@ -320,6 +447,7 @@ export default function AdminDashboard() {
   const totalOrgs = organizers.length;
   const approvedOrgs = organizers.filter(o => o.organizerProfile?.status === 'APPROVED').length;
   const pendingOrgs = organizers.filter(o => o.organizerProfile?.status === 'PENDING').length;
+  const blockedOrgs = organizers.filter(o => o.organizerProfile?.status === 'BLOCKED').length;
   const filteredEvents = events.filter((e) => {
     if (activeEventTab === 'ACTIVOS') return e.status === 'PUBLISHED';
     if (activeEventTab === 'INACTIVOS') return e.status === 'INACTIVE';
@@ -404,6 +532,11 @@ export default function AdminDashboard() {
                 <div className="stat-value" style={{color: '#FDE68A'}}>{pendingOrgs}</div>
                 <div className="stat-label">Solicitudes Pendientes</div>
               </div>
+              <div className="stat-card">
+                <div className="stat-icon" style={{color: '#FB923C'}}>🔒</div>
+                <div className="stat-value" style={{color: '#FB923C'}}>{blockedOrgs}</div>
+                <div className="stat-label">Bloqueados</div>
+              </div>
             </div>
 
             {/* Organizations Table */}
@@ -485,23 +618,46 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td>
-                            <span className={`status-badge ${prof.status === 'APPROVED' ? 'status-published' : prof.status === 'REJECTED' ? 'status-inactive' : 'status-draft'}`}
+                            <span className={`status-badge ${prof.status === 'APPROVED' ? 'status-published' : prof.status === 'REJECTED' ? 'status-inactive' : prof.status === 'BLOCKED' ? '' : 'status-draft'}`}
                               style={{
-                                backgroundColor: prof.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.15)' : undefined,
-                                color: prof.status === 'REJECTED' ? '#fca5a5' : undefined,
+                                backgroundColor: prof.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.15)' : prof.status === 'BLOCKED' ? 'rgba(251, 146, 60, 0.15)' : undefined,
+                                color: prof.status === 'REJECTED' ? '#fca5a5' : prof.status === 'BLOCKED' ? '#fb923c' : undefined,
                               }}>
-                              {prof.status === 'APPROVED' ? '🟢 Aprobado' : prof.status === 'REJECTED' ? '🔴 Rechazado' : '⏳ Pendiente'}
+                              {prof.status === 'APPROVED' ? '🟢 Aprobado' : prof.status === 'REJECTED' ? '🔴 Rechazado' : prof.status === 'BLOCKED' ? '🔒 Bloqueado' : '⏳ Pendiente'}
                             </span>
                           </td>
                           <td>
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              {prof.status !== 'BLOCKED' && (
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => handleStatusChange(org.id, prof.status)}
+                                  title="Cambiar Estado"
+                                >
+                                  {prof.status === 'PENDING' ? 'Aprobar' : 'Cambiar Estado'}
+                                </button>
+                              )}
                               <button
                                 className="btn btn-secondary btn-sm"
-                                onClick={() => handleStatusChange(org.id, prof.status)}
-                                title="Cambiar Estado"
+                                onClick={() => handleBlockOrg(org.id, prof.organizationName, prof.status === 'BLOCKED')}
+                                title={prof.status === 'BLOCKED' ? 'Desbloquear organizador' : 'Bloquear organizador'}
+                                style={prof.status === 'BLOCKED'
+                                  ? { backgroundColor: 'rgba(110, 231, 183, 0.1)', borderColor: 'rgba(110, 231, 183, 0.3)', color: '#6ee7b7' }
+                                  : { backgroundColor: 'rgba(251, 146, 60, 0.1)', borderColor: 'rgba(251, 146, 60, 0.3)', color: '#fb923c' }
+                                }
                               >
-                                {prof.status === 'PENDING' ? 'Aprobar' : 'Cambiar Estado'}
+                                {prof.status === 'BLOCKED' ? '🔓' : '🔒'}
                               </button>
+                              {prof.status === 'APPROVED' && user?.role === 'ADMIN' && (
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => handleImpersonate(org.id, prof.organizationName)}
+                                  title="Acceder como este organizador"
+                                  style={{ backgroundColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.3)', color: '#a5b4fc' }}
+                                >
+                                  👁
+                                </button>
+                              )}
                               <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => handleEditOrg(org)}
@@ -1035,6 +1191,7 @@ export default function AdminDashboard() {
                     <option value="PENDING">Pendiente</option>
                     <option value="APPROVED">Aprobado</option>
                     <option value="REJECTED">Rechazado</option>
+                    <option value="BLOCKED">Bloqueado</option>
                   </select>
                 </div>
               </div>
@@ -1255,6 +1412,25 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {confirmModal && (
+        <ConfirmModal
+          title={confirmModal.title}
+          message={confirmModal.message}
+          variant={confirmModal.variant}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
+      {inputModal && (
+        <InputModal
+          title={inputModal.title}
+          placeholder={inputModal.placeholder}
+          onConfirm={inputModal.onConfirm}
+          onCancel={() => setInputModal(null)}
+        />
+      )}
+      <ToastStack toasts={globalToasts} />
     </div>
   );
 }
@@ -1344,8 +1520,10 @@ function BannersView({ token }: { token: string }) {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este banner? Esta acción no se puede deshacer.')) return;
+  const [bannerConfirm, setBannerConfirm] = useState<{ id: string } | null>(null);
+  const handleDelete = (id: string) => setBannerConfirm({ id });
+  const confirmBannerDelete = async (id: string) => {
+    setBannerConfirm(null);
     setDeletingId(id);
     try {
       await deleteBanner(id, token);
@@ -1735,6 +1913,16 @@ function BannersView({ token }: { token: string }) {
           </div>
         </div>,
         document.body
+      )}
+
+      {bannerConfirm && (
+        <ConfirmModal
+          title="Eliminar banner"
+          message="¿Eliminar este banner? Esta acción no se puede deshacer."
+          variant="danger"
+          onConfirm={() => confirmBannerDelete(bannerConfirm.id)}
+          onCancel={() => setBannerConfirm(null)}
+        />
       )}
     </div>
   );

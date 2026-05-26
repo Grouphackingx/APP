@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import * as bcrypt from 'bcrypt';
@@ -8,6 +9,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private mail: MailService,
+    private jwtService: JwtService,
   ) {}
 
   async getAllOrganizers() {
@@ -302,6 +304,27 @@ export class AdminService {
       },
       orderBy: { createdAt: 'desc' }
     });
+  }
+
+  async impersonateOrganizer(targetUserId: string, adminId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { organizerProfile: true },
+    });
+    if (!user || user.role !== 'HOST' || !user.organizerProfile)
+      throw new NotFoundException('Organizador no encontrado');
+    if (user.organizerProfile.status !== 'APPROVED')
+      throw new ForbiddenException('Solo se puede acceder como organizadores APPROVED');
+
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role,
+      name: user.name,
+      organizerProfileId: user.organizerProfile.id,
+      impersonatedBy: adminId,
+    };
+    return { impersonation_token: this.jwtService.sign(payload) };
   }
 
   async toggleEventFeatured(id: string, isFeatured: boolean, durationDays?: number) {

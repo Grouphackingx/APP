@@ -1,11 +1,16 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { resetPassword } from '../../lib/api';
 
-export default function ResetPasswordPage() {
+export default function ResetPasswordPageWrapper() {
+  return <Suspense><ResetPasswordPage /></Suspense>;
+}
+
+function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');

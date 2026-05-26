@@ -16,6 +16,12 @@ async function fetchAPI<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   const res = await fetch(`${API_BASE}${endpoint}`, { ...restOptions, headers });
   if (!res.ok) {
+    if (res.status === 401 && token && typeof window !== 'undefined') {
+      localStorage.removeItem('ot_host_token');
+      localStorage.removeItem('ot_host_user');
+      window.location.href = '/login';
+      return {} as T;
+    }
     const error = await res.json().catch(() => ({ message: 'Error del servidor' }));
     throw new Error(error.message || `Error ${res.status}`);
   }
@@ -169,11 +175,11 @@ export async function getOrganizerMembers(token: string) {
   return fetchAPI<OrganizerMember[]>('/organizer-members', { token, cache: 'no-store' });
 }
 
-export async function createOrganizerMember(data: { name: string; email: string; password: string; memberRole: 'ADMIN' | 'STAFF' }, token: string) {
+export async function createOrganizerMember(data: { name: string; email: string; phone?: string; password: string; memberRole: 'ADMIN' | 'STAFF' }, token: string) {
   return fetchAPI<OrganizerMember>('/organizer-members', { method: 'POST', body: JSON.stringify(data), token });
 }
 
-export async function updateOrganizerMember(id: string, data: { name?: string; memberRole?: 'ADMIN' | 'STAFF'; password?: string }, token: string) {
+export async function updateOrganizerMember(id: string, data: { name?: string; phone?: string; avatarUrl?: string; memberRole?: 'ADMIN' | 'STAFF'; password?: string }, token: string) {
   return fetchAPI<OrganizerMember>(`/organizer-members/${id}`, { method: 'PATCH', body: JSON.stringify(data), token });
 }
 

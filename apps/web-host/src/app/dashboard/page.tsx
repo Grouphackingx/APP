@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../lib/AuthContext';
 import { getEvents, deleteEvent } from '../../lib/api';
@@ -10,6 +11,8 @@ import { AttendeesList } from '../../components/AttendeesList';
 import { TicketScanner } from '../../components/TicketScanner';
 import { OrganizerUsers } from '../../components/OrganizerUsers';
 import { OrganizerProfile } from '../../components/OrganizerProfile';
+import { useConfirm, useToast } from '../../components/UIHelpers';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('es-EC', {
@@ -19,15 +22,32 @@ function formatDate(d: string) {
   });
 }
 
-export default function DashboardPage() {
+type View = 'dashboard' | 'events' | 'create' | 'edit' | 'attendees' | 'scanner' | 'users' | 'profile';
+const VALID_VIEWS: View[] = ['dashboard', 'events', 'create', 'edit', 'attendees', 'scanner', 'users', 'profile'];
+
+export default function DashboardPageWrapper() {
+  return <Suspense><DashboardPage /></Suspense>;
+}
+
+function DashboardPage() {
   const { user, token, logout } = useAuth();
+  const { showConfirm, modalNode } = useConfirm();
+  const { showToast, toastNode } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  type View = 'dashboard' | 'events' | 'create' | 'edit' | 'attendees' | 'scanner' | 'users' | 'profile';
-  const [view, setView] = useState<View>(() => {
-    // Staff members land directly on the scanner
-    return 'dashboard';
-  });
+
+  const initialView = ((): View => {
+    const v = searchParams.get('view') as View;
+    return VALID_VIEWS.includes(v) ? v : 'dashboard';
+  })();
+  const [view, setViewState] = useState<View>(initialView);
+
+  const setView = (v: View) => {
+    setViewState(v);
+    router.replace(`/dashboard?view=${v}`, { scroll: false });
+  };
   const navigate = (v: string) => setView(v as View);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
@@ -106,16 +126,21 @@ export default function DashboardPage() {
     setView('edit');
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!token) return;
-    if (window.confirm('¿Estás seguro de que deseas eliminar este evento?')) {
-      try {
-        await deleteEvent(id, token);
-        fetchEvents();
-      } catch (err: any) {
-        alert(err.message || 'Error al eliminar el evento');
-      }
-    }
+    showConfirm(
+      'Eliminar evento',
+      '¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.',
+      async () => {
+        try {
+          await deleteEvent(id, token);
+          fetchEvents();
+        } catch (err: any) {
+          showToast(err.message || 'Error al eliminar el evento.', 'error');
+        }
+      },
+      'danger'
+    );
   };
 
   if (user && user.role === 'HOST' && user.organizerProfile?.status !== 'APPROVED') {
@@ -447,6 +472,8 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+      {modalNode}
+      {toastNode}
     </div>
   );
 }

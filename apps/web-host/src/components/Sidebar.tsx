@@ -28,8 +28,8 @@ export function Sidebar({ user, activeView, onNavigate, onLogout }: SidebarProps
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <AfroEventosLogo variant="light" height={50} />
-        <span className="logo-badge">HOST</span>
+        <AfroEventosLogo variant="light" height={45} />
+        <span className="logo-badge">Organizador</span>
       </div>
 
       <nav className="sidebar-nav">

@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 4)
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack)
+**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 5)
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin
 
 ---
 
@@ -147,6 +147,9 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | POST   | `/api/admin/users`                  | JWT (ADMIN) | OK     | Crear Admin/Editor (envía credenciales por email) |
 | PATCH  | `/api/admin/users/:id`              | JWT (ADMIN) | OK     | Editar Admin/Editor                     |
 | DELETE | `/api/admin/users/:id`              | JWT (ADMIN) | OK     | Eliminar Admin/Editor                   |
+| GET    | `/api/admin/organizers`             | JWT (ADMIN/EDITOR) | OK | Listar organizadores                  |
+| PATCH  | `/api/admin/organizers/:id/status`  | JWT (ADMIN/EDITOR) | OK | Aprobar / Rechazar / Bloquear organizador |
+| POST   | `/api/admin/organizers/:id/impersonate` | JWT (ADMIN) | OK | Generar JWT de 1h para acceder como el organizador |
 | GET    | `/api/admin/events`                 | JWT (ADMIN) | OK     | Directorio global de eventos            |
 | PATCH  | `/api/admin/events/:id/featured`    | JWT (ADMIN) | OK     | Activar/desactivar evento destacado     |
 
@@ -184,6 +187,9 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | Escáner de Tickets   | OK     | 3 tabs: Cámara QR, Buscar por ID corto, Token JWT manual            |
 | Usuarios             | OK     | OrganizerMembers (ADMIN/STAFF): crear, editar, eliminar, avatar     |
 | Perfil               | OK     | Info personal, datos de organización (solo HOST), cambio contraseña |
+| **Vista persistente en URL** | OK | `?view=X` en URL — al recargar se restaura la sección activa  |
+| **Modales personalizados** | OK | Sin confirm/alert nativo — `useConfirm()` + `useToast()` vía `UIHelpers.tsx` |
+| **Modo Vista Admin** | OK     | Banner morado fijo cuando el admin accede como organizador (`/auth/impersonate`) |
 
 ### Web Admin (Puerto 4202)
 
@@ -192,9 +198,9 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | Login                 | OK     | Login + link "¿Olvidaste tu contraseña?" → `/forgot-password`      |
 | Forgot Password       | OK     | Solicitar reset de contraseña por email                            |
 | Reset Password        | OK     | Nueva contraseña + confirmación + auto-redirect 3s al login        |
-| Panel Inicio          | OK     | Resumen del sistema con stats de organizaciones                    |
-| Gestión Organizadores | OK     | Tabla + avatar/logo, acciones: Aprobar, Editar, Eliminar           |
-| Modal Edición Org     | OK     | Email, org, representante, ubicación, plan, estado, contraseña, logo |
+| Panel Inicio          | OK     | Resumen del sistema con stats de organizaciones (incluye stat Bloqueados) |
+| Gestión Organizadores | OK     | Tabla + avatar/logo; acciones: Aprobar, **Bloquear 🔒/Desbloquear 🔓**, **Acceder como 👁**, Editar, Eliminar |
+| Modal Edición Org     | OK     | Email, org, representante, ubicación, plan, estado (incl. BLOCKED), contraseña, logo |
 | Analíticas            | OK     | Métricas de eventos, tickets y revenue por organizador             |
 | Gestión de Eventos    | OK     | Directorio global con tabs (Activos/Inactivos/Borrador)            |
 | Destacar Evento       | OK     | Botón Destacar con duración en días + expiración automática (cron) |
@@ -203,6 +209,8 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | **Banners Publicitarios** | OK | CRUD de banners (1-3) con upload, preview 16:3, activar/desactivar, toast feedback |
 | Gestión de Planes     | OK     | CRUD completo (nombre, precio, límite de eventos)                  |
 | Gestión de Usuarios   | OK     | CRUD Admin/Editor; envía credenciales por email al crear           |
+| **Vista persistente en URL** | OK | `?view=X` en URL — al recargar se restaura la sección activa  |
+| **Modales personalizados** | OK | Sin confirm/alert nativo — `ConfirmModal` + `ToastStack` inline   |
 
 ---
 
@@ -438,6 +446,10 @@ Web Client (SSR) → getBanners() → GET /api/banners → [banners activos orde
   - `uploads/organizers/{orgId}/members/{memberId}/avatar/` — avatares de miembros
   - `uploads/users/{id}/avatar/` — fotos de perfil de clientes
   - `uploads/banners/` — imágenes de banners publicitarios (UUID + extensión)
+- **Bloqueo de organizadores en tiempo real**: `JwtStrategy.validate()` consulta la BD en cada request. Si el organizador está BLOCKED, lanza 401. `fetchAPI` en web-host intercepta el 401 y limpia localStorage + redirige a `/login`. Latencia máxima = tiempo hasta el próximo request autenticado.
+- **Impersonación — seguridad**: El JWT de impersonación tiene duración 1h (no 24h). Incluye `impersonatedBy: adminId` como campo de auditoría. Si el organizador es bloqueado mientras se impersona, el siguiente request devuelve 401 y cierra la sesión de impersonación automáticamente.
+- **Impersonación — React Strict Mode**: En desarrollo, React ejecuta useEffect dos veces. En la segunda ejecución la URL ya es `/dashboard` y el token sería null → redirige a login. Fix: `useRef(done)` previene la doble ejecución en `/auth/impersonate/page.tsx`.
+- **Suspense para useSearchParams**: En Next.js 14+, `useSearchParams()` requiere un Suspense boundary para no bloquear el prerender. Patrón aplicado: `export default function Wrapper() { return <Suspense><Page /></Suspense>; }` — aplicado en dashboard y reset-password de ambos paneles.
 - **Banners — límite**: máximo 3 banners en la plataforma (validado solo en la UI Admin; no hay guard en el backend)
 - **BannerSlider — carga SSR**: `getBanners()` se llama en el server component de `page.tsx` con `.catch(() => [])`. Si la API está caída, la sección de banners simplemente no se renderiza (no lanza error al usuario).
 - **Favicons**: SVG puro en `/public/favicon.svg` de las 3 apps. El web-host usa `<link>` en JSX por ser `'use client'` y no poder exportar `metadata`.
@@ -533,6 +545,11 @@ Cuando `sellOnSite: true` en una zona:
 - **Galería de eventos rediseñada: imagen principal + thumbnails, adapta aspect ratio, 1 img = simple** ✅ (25 May 2026)
 - **sellOnSite en zonas: full-stack (schema, DTO, API, Web-Host forms, Web-Client display)** ✅ (25 May 2026)
 - **Tipo de localidad por defecto "Entradas" (no "Asientos Numerados"), precio/capacidad por defecto 0** ✅ (25 May 2026)
+- **Bloqueo de Organizadores full-stack** — enum BLOCKED, JWT strategy verifica en cada request, 401 auto-logout en web-host, botón 🔒/🔓 en admin ✅ (25 May 2026)
+- **Modales personalizados** — UIHelpers.tsx (web-host), ConfirmModal/InputModal/ToastStack inline (web-admin); eliminados todos los confirm/alert/prompt nativos ✅ (25 May 2026)
+- **Persistencia de vista en URL** — `?view=X` en ambos dashboards (web-admin y web-host), Suspense boundary para useSearchParams ✅ (25 May 2026)
+- **Badge sidebar "Organizador"** (antes "HOST") + logo -10% tamaño ✅ (25 May 2026)
+- **Impersonación de Organizadores** — endpoint `/admin/organizers/:id/impersonate` JWT 1h, botón 👁 en web-admin, `/auth/impersonate` auto-login, ImpersonationBanner morado en web-host ✅ (25 May 2026)
 
 ---
 

@@ -17,12 +17,14 @@ interface User {
   isMember?: boolean;
   memberRole?: 'ADMIN' | 'STAFF';
   organizerProfileId?: string;
+  impersonatedBy?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isImpersonating: boolean;
   loginUser: (token: string, user: User) => void;
   updateUser: (updates: Partial<User>) => void;
   logout: () => void;
@@ -32,6 +34,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
   isLoading: true,
+  isImpersonating: false,
   loginUser: () => { /* noop */ },
   updateUser: () => { /* noop */ },
   logout: () => { /* noop */ },
@@ -84,8 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   };
 
+  const isImpersonating = !!user?.impersonatedBy;
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, loginUser, updateUser, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, isImpersonating, loginUser, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -39,6 +39,9 @@ export class AuthService {
             if (user.role === 'HOST' && user.organizerProfile?.status === 'REJECTED') {
                 throw new UnauthorizedException('Tu solicitud de cuenta de organizador fue rechazada. Contacta a soporte para más detalles.');
             }
+            if (user.role === 'HOST' && user.organizerProfile?.status === 'BLOCKED') {
+                throw new UnauthorizedException('Tu cuenta ha sido suspendida. Contacta a soporte para más información.');
+            }
             const payload = {
                 email: user.email,
                 sub: user.id,

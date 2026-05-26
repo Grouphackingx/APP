@@ -2,6 +2,7 @@
 
 import './global.css';
 import { AuthProvider } from '../lib/AuthContext';
+import { ImpersonationBanner } from '../components/ImpersonationBanner';
 
 export default function RootLayout({
   children,
@@ -15,7 +16,10 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.svg" />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ImpersonationBanner />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
