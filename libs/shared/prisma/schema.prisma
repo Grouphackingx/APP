@@ -108,6 +108,7 @@ model Zone {
   capacity  Int
   
   isReservedSeating Boolean @default(false)
+  sellOnSite        Boolean @default(false)
   seats             Seat[]
 }
 

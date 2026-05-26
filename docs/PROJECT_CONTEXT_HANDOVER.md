@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 25 de Mayo de 2026 (Sesión 3)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación)
+**Última Actualización:** 25 de Mayo de 2026 (Sesión 4)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -79,6 +79,7 @@
 │           ├── FeaturedEventsSection.tsx # 3 layouts adaptativos según cantidad de destacados
 │           ├── FeaturedCarousel.tsx  # Carrusel deslizante de tarjetas para 3+ destacados
 │           ├── EventsGrid.tsx        # Grid con botón "Mostrar más" (paginación client-side)
+│           ├── OrganizerCTA.tsx      # Sección CTA para organizadores (Server Component, neuromarketing)
 │   │
 │   ├── web-host/                # Port 4201. Next.js Dashboard Organizador.
 │   │   └── src/app/
@@ -201,6 +202,7 @@ model Event {
 
 model Zone {
   id, eventId → Event, name, price (Decimal), capacity, isReservedSeating
+  sellOnSite Boolean @default(false)   // si true: muestra aviso "en el lugar", no genera asientos
   description?
   → seats Seat[]
 }
@@ -475,6 +477,111 @@ start-all.bat
 ---
 
 ## 12. Registro de Cambios
+
+### Sesión del 25 de Mayo de 2026 (Tarde/Sesión 4) — OrganizerCTA + Navbar Dropdown + Galería Rediseñada + sellOnSite en Zonas + UX Web-Host
+
+#### OrganizerCTA — nuevo componente (`apps/web-client/src/components/OrganizerCTA.tsx`)
+
+Server Component (sin `'use client'`). Sección CTA al final del homepage, visible solo sin búsqueda activa. Diseño split 2 columnas:
+- **Izquierda**: Eyebrow tag, headline en Anton (`¿Organizas eventos? Publica gratis.`), subtexto, botón CTA primario → `NEXT_PUBLIC_HOST_URL/register`, punto pulsante animado de social proof.
+- **Derecha** (oculta en móvil): Mock de dashboard CSS con stats, fila de evento y barra de progreso.
+
+Técnicas de neuromarketing aplicadas: loss aversion ("NO TE ENCUENTRA"), identidad colectiva ("música afro, bomba, marimba, Ecuador"), reciprocidad ("Completamente gratis — siempre"), simplicidad ("en minutos, sin tecnicismos").
+
+**`apps/web-client/src/app/page.tsx`** — import + `{!query && <OrganizerCTA />}` después del BannerSlider.
+
+**`apps/web-client/src/app/global.css`** — bloque `.octa-*` añadido al final: `.octa-section`, `.octa-inner` (grid 2 col), `.octa-headline` (Anton, `clamp(2.6rem, 4.5vw, 4.4rem)`), `.octa-accent` (verde), `.octa-mock` (mock dashboard), `.octa-proof-dot` (animación pulse). Responsive: 1 columna en ≤768px, mock oculto en móvil.
+
+---
+
+#### Navbar Dropdown (`apps/web-client/src/components/Navbar.tsx`)
+
+El nombre de usuario ahora reemplaza al botón "Mi Perfil" con un dropdown:
+- Botón `👤 {user.name} ▾` con chevron animado al abrir/cerrar
+- Dropdown: "Mi Perfil" (Link a `/my-profile`) + divider + "Salir" (rojo)
+- Cierre automático al hacer clic fuera (via `useRef` + `mousedown` listener)
+- CSS nuevo en `global.css`: `.nav-profile-menu`, `.nav-profile-btn`, `.nav-profile-chevron`, `.nav-profile-dropdown`, `.nav-profile-dropdown-item`, `.nav-profile-dropdown-divider`, `.nav-profile-dropdown-item--danger`
+
+---
+
+#### Web-Host Login (`apps/web-host/src/app/login/page.tsx`)
+
+- Título `<h1>Host</h1>` → `<h1>Organizador</h1>`
+- Eliminado `<p>Panel de Organizador de Eventos</p>` (subtítulo)
+- Logo envuelto en `<a href={NEXT_PUBLIC_SITE_URL}>` → clic en logo lleva al Portal de Clientes (:4200)
+
+---
+
+#### Zonas de Upload — Proporciones Visuales (Web Host)
+
+**`apps/web-host/src/app/global.css`**:
+- Eliminado `height: 200px` de `.file-label` (era fijo para todos los uploads)
+- Nuevas clases con `aspect-ratio`: `.file-label--banner { aspect-ratio: 2000/576 }`, `.file-label--square { aspect-ratio: 1/1 }`, `.file-label--portrait { aspect-ratio: 3/4 }`
+- Nueva clase `.image-upload-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }` — cuadrada y retrato lado a lado
+- `input::-webkit-calendar-picker-indicator { filter: invert(1); }` — icono de calendario blanco
+
+**`apps/web-host/src/components/CreateEventForm.tsx`** y **`EditEventForm.tsx`**:
+- Banner label: `className="file-label file-label--banner"`, texto actualizado con "Relación 126:36"
+- Cuadrada + retrato: envueltas en `<div className="image-upload-pair">`
+- Cuadrada: `file-label--square`, retrato: `file-label--portrait`
+
+---
+
+#### Footer Tagline (`apps/web-client/src/components/Footer.tsx`)
+
+Tagline cambiado a: _"La plataforma de eventos más moderna. Encuentra a donde ir, comprar entradas y disfrutar."_
+
+---
+
+#### Galería de Eventos Rediseñada (`apps/web-client/src/app/eventos/[id]/EventDetailClient.tsx`)
+
+Nuevo componente `EventGallery({ urls })`:
+- **1 imagen**: muestra completa, sin controles, sin fondo, sin borde
+- **2+ imágenes**: galería con imagen principal (`evg-main`) + strip de thumbnails (`evg-thumbs`), flechas prev/next superpuestas, contador de posición, thumbnails clickeables con borde verde al estar activo
+- Se adapta a cualquier relación de aspecto (sin `height` fijo — usa `height: auto`)
+- Fondo e borde del contenedor principal: transparentes (`background: transparent; border: none`)
+
+CSS nuevo en `global.css`: `.evg-section`, `.evg-title`, `.evg-main` (position relative), `.evg-main-img` (max-height: 600px, object-fit: contain), `.evg-arrow`, `.evg-arrow--prev/next`, `.evg-counter`, `.evg-thumbs`, `.evg-thumb`, `.evg-thumb--active { border-color: var(--color-primary) }`
+
+---
+
+#### sellOnSite en Zonas — Full-Stack
+
+Nueva opción por zona para indicar que las entradas se venden presencialmente.
+
+**`libs/shared/prisma/schema.prisma`** — `sellOnSite Boolean @default(false)` añadido al modelo `Zone`. `npx prisma db push` ejecutado.
+
+**`libs/shared/src/lib/dto/events.dto.ts`** — `@IsBoolean() @IsOptional() sellOnSite?: boolean` en `CreateZoneDto`. `capacity` cambiado a `@Min(0)` (permite 0 para zonas sellOnSite).
+
+**`apps/api/src/app/events/events.service.ts`** — `create()` y `update()`:
+- Guarda `sellOnSite`, fuerza `price: 0 / capacity: 0` cuando es true
+- No crea `seats` cuando `sellOnSite: true` (spread condicional)
+
+**`apps/web-client/src/lib/api.ts`** — `sellOnSite?: boolean` añadido a la interfaz `Zone`.
+
+**`apps/web-host/src/components/CreateEventForm.tsx`** y **`EditEventForm.tsx`**:
+- `sellOnSite?: boolean` en interface `ZoneInput`
+- Checkbox en cada zona: "Entradas disponibles en el lugar y día del evento"
+- Al activar: oculta los inputs de precio y capacidad (renderizado condicional con `!zone.sellOnSite`)
+- En EditForm: checkbox deshabilitado si la zona ya tiene ventas (`zone.hasSold`)
+- Payload incluye `sellOnSite` y normaliza `price/capacity` a 0 si es true
+
+**`apps/web-client/src/app/eventos/[id]/EventDetailClient.tsx`**:
+- Zonas con `sellOnSite: true` renderizan un bloque especial con píldora verde: "🎟️ Entradas disponibles en el lugar y día del evento"
+- No se muestra precio, ni selector de asientos, ni contador de disponibles
+- `allZonesFree` actualizado: `z.sellOnSite` también cuenta como "sin compra online"
+
+---
+
+#### UX Web-Host — Valores por Defecto en Creación de Eventos
+
+**`apps/web-host/src/components/CreateEventForm.tsx`**:
+- Tipo de localidad por defecto: `"Entradas"` (antes: "Asientos Numerados") — `useState(false)` en `hasSeatingChart`
+- Orden de botones: `🎫 Entradas` a la izquierda, `🪑 Asientos Numerados` a la derecha (ambos formularios)
+- Precio por defecto de zona: `0` (antes: `25`)
+- Capacidad por defecto de zona: `0` (antes: `50` / `10` al agregar)
+
+---
 
 ### Sesión del 25 de Mayo de 2026 — UI/UX Portal Cliente: Destacados Adaptativos + Carrusel + Grid con Paginación
 

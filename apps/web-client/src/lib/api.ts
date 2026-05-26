@@ -74,6 +74,7 @@ export interface Zone {
   price: string | number;
   capacity: number;
   isReservedSeating: boolean;
+  sellOnSite?: boolean;
   seats?: Seat[];
 }
 

@@ -6,6 +6,44 @@ import type { EventItem, Seat, PurchaseResponse } from '../../../lib/api';
 import { lockSeats, purchaseTickets } from '../../../lib/api';
 import { useAuth } from '../../../lib/AuthContext';
 
+function EventGallery({ urls }: { urls: string[] }) {
+  const [active, setActive] = useState(0);
+
+  // Una sola imagen: mostrar completa sin controles
+  if (urls.length === 1) {
+    return (
+      <div className="evg-section">
+        <h3 className="evg-title">Galería</h3>
+        <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+          <img src={urls[0]} alt="Galería" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        </div>
+      </div>
+    );
+  }
+
+  // 2+ imágenes: galería con imagen principal + thumbnails
+  return (
+    <div className="evg-section">
+      <h3 className="evg-title">Galería</h3>
+
+      <div className="evg-main">
+        <img key={active} src={urls[active]} alt={`Galería ${active + 1}`} className="evg-main-img" />
+        <button className="evg-arrow evg-arrow--prev" onClick={() => setActive(i => (i - 1 + urls.length) % urls.length)} aria-label="Anterior">‹</button>
+        <button className="evg-arrow evg-arrow--next" onClick={() => setActive(i => (i + 1) % urls.length)} aria-label="Siguiente">›</button>
+        <div className="evg-counter">{active + 1} / {urls.length}</div>
+      </div>
+
+      <div className="evg-thumbs">
+        {urls.map((url, i) => (
+          <button key={i} className={`evg-thumb${i === active ? ' evg-thumb--active' : ''}`} onClick={() => setActive(i)} aria-label={`Ver imagen ${i + 1}`}>
+            <img src={url} alt={`Miniatura ${i + 1}`} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-EC', {
@@ -94,7 +132,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
   };
 
   const totalPrice = selectedSeats.reduce((sum, s) => sum + s.price, 0);
-  const allZonesFree = event.zones.length > 0 && event.zones.every(z => Number(z.price) === 0);
+  const allZonesFree = event.zones.length > 0 && event.zones.every(z => Number(z.price) === 0 || z.sellOnSite);
 
   const handlePurchase = async () => {
     if (!token || selectedSeats.length === 0) return;
@@ -218,16 +256,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
               )}
 
               {event.galleryUrls && event.galleryUrls.length > 0 && (
-                <div className="event-detail-gallery" style={{ marginTop: '2rem' }}>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Galería</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    {event.galleryUrls.map((url, i) => (
-                      <div key={i} className="gallery-item" style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', position: 'relative' }}>
-                        <img src={url} alt={`Galería ${i + 1}`} style={{ width: '100%', height: 'auto', display: 'block' }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <EventGallery urls={event.galleryUrls} />
               )}
 
               {error && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>⚠️ {error}</div>}
@@ -272,6 +301,25 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                   {event.zones.map((zone) => {
                     const availableCount = (zone.seats || []).filter((s) => !s.isSold && !soldSeatIds.includes(s.id)).length;
                     const isSoldOut = availableCount === 0;
+
+                    if (zone.sellOnSite) {
+                      return (
+                        <div key={zone.id} className="zone-item-sidebar" style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px dashed var(--border-color)' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
+                            <span style={{ flexShrink: 0, width: '12px', height: '12px', borderRadius: '50%', backgroundColor: stringToColor(zone.name), display: 'inline-block', marginTop: '0.3rem' }} />
+                            <div>
+                              <h3 style={{ margin: 0, fontWeight: 600 }}>{zone.name}</h3>
+                              {zone.description && <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem', fontWeight: 400, lineHeight: '1.4' }}>{zone.description}</div>}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', padding: '0.5rem 0.75rem', background: 'rgba(106,196,77,0.08)', border: '1px solid rgba(106,196,77,0.2)', borderRadius: 'var(--radius-md)' }}>
+                                <span style={{ fontSize: '1rem' }}>🎟️</span>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 500 }}>Entradas disponibles en el lugar y día del evento</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={zone.id} className="zone-item-sidebar" style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px dashed var(--border-color)', opacity: isSoldOut ? 0.7 : 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontWeight: 600 }}>

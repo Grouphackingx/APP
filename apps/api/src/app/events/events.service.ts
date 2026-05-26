@@ -87,14 +87,17 @@ export class EventsService {
                     create: zones.map(zone => ({
                         name: zone.name,
                         description: zone.description,
-                        price: zone.price,
-                        capacity: zone.capacity,
-                        seats: {
-                            create: Array.from({ length: zone.capacity }).map((_, index) => ({
-                                number: `${index + 1}`,
-                                isSold: false,
-                            })),
-                        },
+                        price: zone.sellOnSite ? 0 : zone.price,
+                        capacity: zone.sellOnSite ? 0 : zone.capacity,
+                        sellOnSite: zone.sellOnSite ?? false,
+                        ...(zone.sellOnSite ? {} : {
+                            seats: {
+                                create: Array.from({ length: zone.capacity }).map((_, index) => ({
+                                    number: `${index + 1}`,
+                                    isSold: false,
+                                })),
+                            },
+                        }),
                     })),
                 },
             },
@@ -297,8 +300,9 @@ export class EventsService {
                             data: {
                                 name: zone.name,
                                 description: zone.description || null,
-                                price: zone.price,
-                                capacity: newCapacity,
+                                price: zone.sellOnSite ? 0 : zone.price,
+                                capacity: zone.sellOnSite ? 0 : newCapacity,
+                                sellOnSite: zone.sellOnSite ?? false,
                             }
                         });
 
@@ -337,14 +341,17 @@ export class EventsService {
                                 eventId: id,
                                 name: zone.name,
                                 description: zone.description || null,
-                                price: zone.price,
-                                capacity: newCapacity,
-                                seats: {
-                                    create: Array.from({ length: newCapacity }).map((_, i) => ({
-                                        number: `${i + 1}`,
-                                        isSold: false
-                                    }))
-                                }
+                                price: zone.sellOnSite ? 0 : zone.price,
+                                capacity: zone.sellOnSite ? 0 : newCapacity,
+                                sellOnSite: zone.sellOnSite ?? false,
+                                ...(zone.sellOnSite ? {} : {
+                                    seats: {
+                                        create: Array.from({ length: newCapacity }).map((_, i) => ({
+                                            number: `${i + 1}`,
+                                            isSold: false
+                                        }))
+                                    }
+                                }),
                             }
                         });
                     }

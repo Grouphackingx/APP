@@ -19,8 +19,12 @@ export class CreateZoneDto {
     price!: number;
 
     @IsNumber()
-    @Min(1)
+    @Min(0)
     capacity!: number;
+
+    @IsBoolean()
+    @IsOptional()
+    sellOnSite?: boolean;
 }
 
 export class CreateEventDto {

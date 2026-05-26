@@ -57,7 +57,7 @@ export function Footer() {
         </div>
 
         <p className="footer-tagline">
-          La plataforma de eventos más moderna. Descubre, compra y disfruta.
+          La plataforma de eventos más moderna. Encuentra a donde ir, comprar entradas y disfrutar.
         </p>
 
         <div className="footer-legal-links">

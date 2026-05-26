@@ -40,10 +40,11 @@ export default function LoginPage() {
             marginBottom: '1rem',
           }}
         >
-          <AfroEventosLogo variant="light" height={68} />
+          <a href={process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:4200'} rel="noopener noreferrer">
+            <AfroEventosLogo variant="light" height={68} />
+          </a>
         </div>
-        <h1>Host</h1>
-        <p className="auth-subtitle">Panel de Organizador de Eventos</p>
+        <h1>Organizador</h1>
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}
 

@@ -11,6 +11,7 @@ interface ZoneInput {
   capacity: number | string;
   hasSold?: boolean;
   soldCount?: number;
+  sellOnSite?: boolean;
 }
 
 interface EventData {
@@ -37,6 +38,7 @@ interface EventData {
     description?: string;
     price: number;
     capacity: number;
+    sellOnSite?: boolean;
     seats?: { isSold: boolean }[];
   }[];
 }
@@ -112,6 +114,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         capacity: z.capacity,
         hasSold: soldCount > 0,
         soldCount,
+        sellOnSite: z.sellOnSite ?? false,
       };
     }) || [{ name: 'General', description: '', price: 25, capacity: 50, hasSold: false, soldCount: 0 }]
   );
@@ -131,7 +134,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const updateZone = (
     index: number,
     field: keyof ZoneInput,
-    value: string | number,
+    value: string | number | boolean,
   ) => {
     const updated = [...zones];
     updated[index] = {
@@ -291,8 +294,9 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
           id: z.id,
           name: z.name,
           description: z.description,
-          price: Number(z.price),
-          capacity: Number(z.capacity),
+          price: z.sellOnSite ? 0 : Number(z.price),
+          capacity: z.sellOnSite ? 0 : Number(z.capacity),
+          sellOnSite: z.sellOnSite ?? false,
         })),
       };
 
@@ -336,7 +340,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
 
 
         <div className="form-group">
-          <label>Banner Panorámico (Recomendado: 2000x576)</label>
+          <label>Banner Panorámico (Recomendado: 2000x576 — Relación 126:36)</label>
           <div className="image-upload-container">
             <input
               type="file"
@@ -352,7 +356,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
               className="file-input"
               hidden
             />
-            <label htmlFor="bannerUpload" className="file-label">
+            <label htmlFor="bannerUpload" className="file-label file-label--banner">
               {bannerImagePreview ? (
                 <div
                   className="image-preview"
@@ -370,73 +374,75 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
           </div>
         </div>
 
-        <div className="form-group">
-          <label>Imagen Cuadrada (Relación 1:1)</label>
-          <div className="image-upload-container">
-            <input
-              type="file"
-              id="squareUpload"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  setSquareImageFile(file);
-                  setSquareImagePreview(URL.createObjectURL(file));
-                }
-              }}
-              className="file-input"
-              hidden
-            />
-            <label htmlFor="squareUpload" className="file-label">
-              {squareImagePreview ? (
-                <div
-                  className="image-preview"
-                  style={{ backgroundImage: `url(${squareImagePreview})` }}
-                >
-                  <div className="image-overlay">Cambiar Imagen</div>
-                </div>
-              ) : (
-                <div className="upload-placeholder">
-                  <span>🖼️ Cargar Imagen</span>
-                  <small>(Max 5MB)</small>
-                </div>
-              )}
-            </label>
+        <div className="image-upload-pair">
+          <div className="form-group">
+            <label>Imagen Cuadrada (Relación 1:1)</label>
+            <div className="image-upload-container">
+              <input
+                type="file"
+                id="squareUpload"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setSquareImageFile(file);
+                    setSquareImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+                className="file-input"
+                hidden
+              />
+              <label htmlFor="squareUpload" className="file-label file-label--square">
+                {squareImagePreview ? (
+                  <div
+                    className="image-preview"
+                    style={{ backgroundImage: `url(${squareImagePreview})` }}
+                  >
+                    <div className="image-overlay">Cambiar Imagen</div>
+                  </div>
+                ) : (
+                  <div className="upload-placeholder">
+                    <span>🖼️ Cargar Imagen</span>
+                    <small>(Max 5MB)</small>
+                  </div>
+                )}
+              </label>
+            </div>
           </div>
-        </div>
 
-        <div className="form-group">
-          <label>Imagen Retrato (Relación 3:4) — usada en tarjetas de eventos</label>
-          <div className="image-upload-container">
-            <input
-              type="file"
-              id="portraitUpload"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  setPortraitImageFile(file);
-                  setPortraitImagePreview(URL.createObjectURL(file));
-                }
-              }}
-              className="file-input"
-              hidden
-            />
-            <label htmlFor="portraitUpload" className="file-label">
-              {portraitImagePreview ? (
-                <div
-                  className="image-preview"
-                  style={{ backgroundImage: `url(${portraitImagePreview})`, aspectRatio: '3/4', backgroundSize: 'cover', backgroundPosition: 'center' }}
-                >
-                  <div className="image-overlay">Cambiar Imagen</div>
-                </div>
-              ) : (
-                <div className="upload-placeholder">
-                  <span>🖼️ Cargar Imagen 3:4</span>
-                  <small>(Recomendado: 1200×1600px — Max 5MB)</small>
-                </div>
-              )}
-            </label>
+          <div className="form-group">
+            <label>Imagen Retrato (Relación 3:4)</label>
+            <div className="image-upload-container">
+              <input
+                type="file"
+                id="portraitUpload"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setPortraitImageFile(file);
+                    setPortraitImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+                className="file-input"
+                hidden
+              />
+              <label htmlFor="portraitUpload" className="file-label file-label--portrait">
+                {portraitImagePreview ? (
+                  <div
+                    className="image-preview"
+                    style={{ backgroundImage: `url(${portraitImagePreview})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                  >
+                    <div className="image-overlay">Cambiar Imagen</div>
+                  </div>
+                ) : (
+                  <div className="upload-placeholder">
+                    <span>🖼️ Cargar Imagen 3:4</span>
+                    <small>(Recomendado: 1200×1600px — Max 5MB)</small>
+                  </div>
+                )}
+              </label>
+            </div>
           </div>
         </div>
 
@@ -666,17 +672,17 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
             >
               <button
                 type="button"
-                className={`btn ${hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setHasSeatingChart(true)}
-              >
-                🪑 Asientos Numerados
-              </button>
-              <button
-                type="button"
                 className={`btn ${!hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setHasSeatingChart(false)}
               >
                 🎫 Entradas
+              </button>
+              <button
+                type="button"
+                className={`btn ${hasSeatingChart ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setHasSeatingChart(true)}
+              >
+                🪑 Asientos Numerados
               </button>
             </div>
             <p
@@ -782,6 +788,27 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                   />
                 </div>
               </div>
+              <div className="zone-sell-onsite" style={{ marginTop: '0.75rem' }}>
+                <label className="zone-sell-onsite-label" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: zone.hasSold ? 'not-allowed' : 'pointer', userSelect: 'none', opacity: zone.hasSold ? 0.5 : 1 }}>
+                  <input
+                    type="checkbox"
+                    checked={zone.sellOnSite ?? false}
+                    onChange={(e) => updateZone(i, 'sellOnSite', e.target.checked)}
+                    disabled={zone.hasSold}
+                    style={{ width: '1rem', height: '1rem', accentColor: 'var(--color-primary)', cursor: zone.hasSold ? 'not-allowed' : 'pointer' }}
+                  />
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                    Entradas disponibles en el lugar y día del evento
+                  </span>
+                </label>
+                {zone.sellOnSite && (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--color-primary)', marginTop: '0.35rem', marginLeft: '1.6rem' }}>
+                    El precio y la capacidad no aplican para esta zona.
+                  </p>
+                )}
+              </div>
+
+              {!zone.sellOnSite && (
               <div
                 className="form-row"
                 style={{ gap: '0.5rem', marginTop: '1rem' }}
@@ -815,6 +842,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                   )}
                 </div>
               </div>
+              )}
             </div>
           ))}
         </div>

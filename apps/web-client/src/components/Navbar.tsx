@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../lib/AuthContext';
 import SearchBar from './SearchBar';
@@ -7,6 +8,18 @@ import { AfroEventosLogo } from './AfroEventosLogo';
 
 export function Navbar() {
   const { user, logout, isLoading } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleOutsideClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [menuOpen]);
 
   return (
     <nav className="navbar" id="main-navbar">
@@ -20,31 +33,40 @@ export function Navbar() {
 
           {isLoading ? null : user ? (
             <>
-              <span
-                style={{
-                  padding: '0.4rem 0.8rem',
-                  fontSize: '0.8rem',
-                  color: 'var(--text-accent)',
-                  background: 'var(--bg-glass-light)',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid var(--border-color)',
-                }}
-              >
-                👋 {user.name}
-              </span>
               <Link href="/my-tickets" id="nav-my-tickets">
                 <span className="btn btn-accent btn-sm">🎫 Mis Tickets</span>
               </Link>
-              <Link href="/my-profile" id="nav-my-profile">
-                <span className="btn btn-secondary btn-sm">👤 Mi Perfil</span>
-              </Link>
-              <button
-                onClick={logout}
-                className="btn btn-secondary btn-sm"
-                id="logout-btn"
-              >
-                Salir
-              </button>
+
+              {/* Dropdown de perfil */}
+              <div className="nav-profile-menu" ref={menuRef}>
+                <button
+                  className="btn btn-secondary btn-sm nav-profile-btn"
+                  onClick={() => setMenuOpen(prev => !prev)}
+                  id="nav-my-profile"
+                >
+                  👤 {user.name}
+                  <span className="nav-profile-chevron" style={{ transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+                </button>
+
+                {menuOpen && (
+                  <div className="nav-profile-dropdown">
+                    <Link
+                      href="/my-profile"
+                      className="nav-profile-dropdown-item"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      👤 Mi Perfil
+                    </Link>
+                    <div className="nav-profile-dropdown-divider" />
+                    <button
+                      className="nav-profile-dropdown-item nav-profile-dropdown-item--danger"
+                      onClick={() => { logout(); setMenuOpen(false); }}
+                    >
+                      🚪 Salir
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>

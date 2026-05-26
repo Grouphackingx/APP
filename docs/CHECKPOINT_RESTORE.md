@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 3)
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado)
+**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 4)
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack)
 
 ---
 
@@ -154,7 +154,7 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 | Ruta                        | Estado | Descripción                                                |
 | :-------------------------- | :----- | :--------------------------------------------------------- |
-| `/`                         | OK     | Hero split + Carrusel coverflow 3:4 + **Sección Destacados adaptativa** (1→horizontal / 2→side-by-side / 3+→FeaturedCarousel) + Catálogo con "Mostrar más" + **Banner Slider** (al final, si hay banners) |
+| `/`                         | OK     | Hero split + Carrusel coverflow 3:4 + **Sección Destacados adaptativa** (1→horizontal / 2→side-by-side / 3+→FeaturedCarousel) + Catálogo con "Mostrar más" + **Banner Slider** + **OrganizerCTA** (al final, solo sin búsqueda) |
 | `/login`                    | OK     | Login + link "¿Olvidaste tu contraseña?" |
 | `/register`                 | OK     | Registro + pantalla "Revisa tu correo" post-registro |
 | `/verify-email?token=`      | OK     | Verificación de email con estados: verificando / éxito / expirado |
@@ -177,8 +177,8 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | Forgot Password      | OK     | Solicitar reset de contraseña por email (válido 60 min)             |
 | Reset Password       | OK     | Nueva contraseña + confirmación + auto-redirect 3s al login         |
 | Dashboard / Inicio   | OK     | Stats + tabla de eventos con pestañas (Activos/Inactivos/Borrador)  |
-| Crear Evento         | OK     | Formulario completo con zonas, galería, imagen retrato 3:4          |
-| Editar Evento        | OK     | Edición de zonas con protección de ventas activas                   |
+| Crear Evento         | OK     | Formulario completo con zonas, galería, imagen retrato 3:4; tipo por defecto "Entradas", precio/capacidad por defecto 0; checkbox sellOnSite por zona |
+| Editar Evento        | OK     | Edición de zonas con protección de ventas activas; checkbox sellOnSite (deshabilitado si hay ventas) |
 | Eliminar Evento      | OK     | Solo visible si 0 tickets vendidos                                  |
 | Asistentes           | OK     | Compradores por evento + tickets comprados/usados + filtro + búsqueda |
 | Escáner de Tickets   | OK     | 3 tabs: Cámara QR, Buscar por ID corto, Token JWT manual            |
@@ -446,14 +446,22 @@ Web Client (SSR) → getBanners() → GET /api/banners → [banners activos orde
 
 ## 9. Reglas de Negocio — Edición de Zonas
 
-| Campo       | ¿Editable si hay ventas? | Restricción                                 |
-| :---------- | :----------------------- | :------------------------------------------ |
-| Nombre      | No                       | Bloqueado si `soldCount > 0`                |
-| Descripción | Sí                       | Siempre editable                            |
-| Precio      | No                       | Bloqueado si `soldCount > 0`                |
-| Capacidad   | Sí                       | No puede ser menor a `soldCount` (vendidos) |
-| Nueva Zona  | Sí                       | Se puede agregar zonas nuevas siempre       |
-| Eliminar Zona | No (con ventas)        | Solo si la zona no tiene tickets vendidos   |
+| Campo        | ¿Editable si hay ventas? | Restricción                                         |
+| :----------- | :----------------------- | :-------------------------------------------------- |
+| Nombre       | No                       | Bloqueado si `soldCount > 0`                        |
+| Descripción  | Sí                       | Siempre editable                                    |
+| Precio       | No                       | Bloqueado si `soldCount > 0`; oculto si `sellOnSite`|
+| Capacidad    | Sí                       | No puede ser menor a `soldCount`; oculto si `sellOnSite` |
+| sellOnSite   | No                       | Bloqueado si `soldCount > 0`; fuerza price/capacity=0 en backend |
+| Nueva Zona   | Sí                       | Se puede agregar zonas nuevas siempre               |
+| Eliminar Zona| No (con ventas)          | Solo si la zona no tiene tickets vendidos           |
+
+### Comportamiento sellOnSite
+
+Cuando `sellOnSite: true` en una zona:
+- **Backend**: guarda `price: 0, capacity: 0`, no crea asientos (`seats`)
+- **Web Host**: oculta inputs de precio y capacidad; checkbox deshabilitado si hay ventas activas
+- **Web Client**: muestra píldora verde "🎟️ Entradas disponibles en el lugar y día del evento" en lugar del selector de asientos/precio; la zona no contribuye al cálculo de compra online (`allZonesFree`)
 
 ---
 
@@ -517,6 +525,14 @@ Web Client (SSR) → getBanners() → GET /api/banners → [banners activos orde
 - **FeaturedCarousel — carrusel deslizante con scroll infinito, auto-avance y dots dorados** ✅ (25 May 2026)
 - **EventsGrid — grid paginado con botón "Mostrar más", última fila centrada** ✅ (25 May 2026)
 - **Header "Próximos Eventos" condicional (sobre destacados cuando no hay generales)** ✅ (25 May 2026)
+- **OrganizerCTA — sección CTA para organizadores al final del homepage (neuromarketing)** ✅ (25 May 2026)
+- **Navbar dropdown: username reemplaza "Mi Perfil", despliega Mi Perfil + Salir** ✅ (25 May 2026)
+- **Web-Host login: "Organizador", sin subtítulo, logo linkea al Portal de Clientes** ✅ (25 May 2026)
+- **Upload zones: proporciones visuales con aspect-ratio (banner 126:36, cuadrada 1:1, retrato 3:4)** ✅ (25 May 2026)
+- **Icono de calendario blanco en inputs datetime del Web-Host** ✅ (25 May 2026)
+- **Galería de eventos rediseñada: imagen principal + thumbnails, adapta aspect ratio, 1 img = simple** ✅ (25 May 2026)
+- **sellOnSite en zonas: full-stack (schema, DTO, API, Web-Host forms, Web-Client display)** ✅ (25 May 2026)
+- **Tipo de localidad por defecto "Entradas" (no "Asientos Numerados"), precio/capacidad por defecto 0** ✅ (25 May 2026)
 
 ---
 

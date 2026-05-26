@@ -2,6 +2,7 @@ import { getEvents, getBanners, type EventItem, type BannerItem } from '../lib/a
 import { HeroCarousel } from '../components/HeroCarousel';
 import { FeaturedEventsSection } from '../components/FeaturedEventsSection';
 import { BannerSlider } from '../components/BannerSlider';
+import { OrganizerCTA } from '../components/OrganizerCTA';
 import { EventsGrid } from '../components/EventsGrid';
 import Link from 'next/link';
 
@@ -171,6 +172,9 @@ export default async function HomePage(props: {
 
       {/* ── Banner Slider — only on main page (no search) ── */}
       {!query && banners.length > 0 && <BannerSlider banners={banners} />}
+
+      {/* ── Organizer CTA — only on main page (no search) ── */}
+      {!query && <OrganizerCTA />}
     </>
   );
 }
