@@ -15,7 +15,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon.svg" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <AuthProvider>
           <ImpersonationBanner />
           {children}

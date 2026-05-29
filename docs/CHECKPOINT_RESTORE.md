@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 25 de Mayo de 2026 (Sesión 6)
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginado) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes
+**Fecha de Última Actualización:** 28 de Mayo de 2026 (Sesión 7)
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env)
 
 ---
 
@@ -120,7 +120,7 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | PATCH  | `/api/auth/me/basic`                | JWT         | OK     | Actualizar nombre, email, teléfono, avatar |
 | PATCH  | `/api/auth/me/password`             | JWT         | OK     | Cambiar contraseña con verificación bcrypt |
 | PATCH  | `/api/auth/me/organizer-profile`    | JWT (HOST)  | OK     | Datos de organización (403 si es miembro) |
-| GET    | `/api/events`                       | No          | OK     | Listar eventos con zonas y asientos     |
+| GET    | `/api/events?page=&limit=&q=`       | No          | OK     | Listar eventos PUBLISHED paginados — `{ data, total, page, limit, totalPages }` |
 | GET    | `/api/events/:id`                   | No          | OK     | Detalle por slug o UUID                 |
 | POST   | `/api/events`                       | JWT (HOST)  | OK     | Crear evento con zonas + genera slug    |
 | PATCH  | `/api/events/:id`                   | JWT (HOST)  | OK     | Editar evento, zonas, descripciones + notifica compradores si se cancela o reprograma |
@@ -132,7 +132,7 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | GET    | `/api/orders/attendees/me`          | JWT (HOST)  | OK     | Lista de asistentes del organizador     |
 | POST   | `/api/tickets/validate`             | JWT         | OK     | Validar ticket QR (VALID → USED)        |
 | POST   | `/api/tickets/validate-by-id`       | JWT         | OK     | Validar por ID corto (#c288f2ae)        |
-| POST   | `/api/upload`                       | Opcional    | OK     | Subir imágenes (logo/event/user-avatar/member-avatar/banner) |
+| POST   | `/api/upload`                       | Opcional    | OK     | Subir imágenes → Sharp convierte a WebP + comprime. Límite: `NEXT_PUBLIC_MAX_UPLOAD_MB`. Formatos: `NEXT_PUBLIC_ALLOWED_IMAGE_TYPES`. Storage: `STORAGE_PROVIDER` (local o cloudinary) |
 | GET    | `/api/banners`                      | No          | OK     | Banners activos ordenados (público — para web-client) |
 | GET    | `/api/banners/admin`                | JWT (ADMIN/EDITOR) | OK | Todos los banners incluyendo inactivos          |
 | POST   | `/api/banners`                      | JWT (ADMIN/EDITOR) | OK | Crear banner publicitario                       |
@@ -147,10 +147,10 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | POST   | `/api/admin/users`                  | JWT (ADMIN) | OK     | Crear Admin/Editor (envía credenciales por email) |
 | PATCH  | `/api/admin/users/:id`              | JWT (ADMIN) | OK     | Editar Admin/Editor                     |
 | DELETE | `/api/admin/users/:id`              | JWT (ADMIN) | OK     | Eliminar Admin/Editor                   |
-| GET    | `/api/admin/organizers`             | JWT (ADMIN/EDITOR) | OK | Listar organizadores                  |
+| GET    | `/api/admin/organizers?page=&limit=`| JWT (ADMIN/EDITOR) | OK | Listar organizadores paginados — `{ data, total, page, limit, totalPages }` |
 | PATCH  | `/api/admin/organizers/:id/status`  | JWT (ADMIN/EDITOR) | OK | Aprobar / Rechazar / Bloquear organizador |
 | POST   | `/api/admin/organizers/:id/impersonate` | JWT (ADMIN) | OK | Generar JWT de 1h para acceder como el organizador |
-| GET    | `/api/admin/events`                 | JWT (ADMIN) | OK     | Directorio global de eventos            |
+| GET    | `/api/admin/events?page=&limit=`    | JWT (ADMIN) | OK     | Directorio global de eventos paginado — `{ data, total, page, limit, totalPages }` |
 | PATCH  | `/api/admin/events/:id/featured`    | JWT (ADMIN) | OK     | Activar/desactivar evento destacado     |
 | GET    | `/api/admin/config`                 | JWT (ADMIN) | OK     | Obtener configuración global del sistema (paidEventsEnabled) |
 | PATCH  | `/api/admin/config`                 | JWT (ADMIN) | OK     | Actualizar toggle global de pasarela de pagos |
@@ -488,14 +488,14 @@ Cuando `sellOnSite: true` en una zona:
 
 - [ ] Integración real con Stripe (reemplazar el mock)
 - [ ] Reportes financieros para organizadores
-- [ ] Paginación en endpoints (eventos, órdenes, organizadores)
+- [ ] Deploy en VPS (Dockerfiles + docker-compose.prod.yml + Nginx + SSL)
 
 ### Prioridad Media
 
 - [ ] Sistema de categorías de eventos
 - [ ] Optimizar queries de findAll (no traer todos los seats si no es necesario)
-- [ ] CDN para imágenes (actualmente servidas estáticamente desde NestJS)
 - [ ] Galería de imágenes en edición: evitar acumulación de imágenes al reeditar
+- [ ] Paginación en endpoints restantes: `GET /orders` y `GET /orders/attendees/me`
 
 ### Prioridad Baja
 
@@ -557,6 +557,15 @@ Cuando `sellOnSite: true` en una zona:
 - **Impersonación de Organizadores** — endpoint `/admin/organizers/:id/impersonate` JWT 1h, botón 👁 en web-admin, `/auth/impersonate` auto-login, ImpersonationBanner morado en web-host ✅ (25 May 2026)
 - **Control de Pasarela de Pagos** — SystemConfig singleton, override por org (null/true/false), toggle global en admin UI, card + columna "Pagos" en tabla de orgs, banner naranja + precio/capacidad bloqueados en formularios web-host, enforcement backend ✅ (25 May 2026)
 - **Límite de eventos por plan — conteo anual por aniversario** — helper `getAnnualPeriodStart()`, cuenta eventos desde la última fecha de aniversario del perfil, error message incluye fecha de renovación en español ✅ (25 May 2026)
+- **Paginación real en API** — `GET /events`, `GET /admin/organizers`, `GET /admin/events` devuelven `{ data, total, page, limit, totalPages }`; `GET /events` filtra solo PUBLISHED en BD ✅ (28 May 2026)
+- **EventsGrid paginación real** — muestra 3 por fila (ROW_SIZE), carga 12 del API cuando se agotan; filtra `excludeIds` para no duplicar destacados; `useState<boolean>` para deshabilitar botón correctamente ✅ (28 May 2026)
+- **generalTotal correcto** — si todos los eventos caben en página 1 usa conteo exacto; si hay más páginas estima `total - featured.length` ✅ (28 May 2026)
+- **Dashboard admin paginación** — controles Anterior/Siguiente en tablas; funciones sin default params para evitar stale closure ✅ (28 May 2026)
+- **Sistema de imágenes configurable desde .env** — `STORAGE_PROVIDER` (local/cloudinary), `NEXT_PUBLIC_MAX_UPLOAD_MB`, `NEXT_PUBLIC_ALLOWED_IMAGE_TYPES`, `UPLOAD_IMAGE_QUALITY`; validación en frontend + backend ✅ (28 May 2026)
+- **Sharp WebP** — toda imagen subida se convierte a WebP con calidad configurable; escritura atómica via `.tmp` para evitar corrupción ✅ (28 May 2026)
+- **Cloudinary listo** — cuando `STORAGE_PROVIDER=cloudinary`, Sharp comprime primero y luego sube el WebP; credenciales en `.env` ✅ (28 May 2026)
+- **Code review — 7 bugs corregidos** — WebP corrupción, doble URL encoding en búsqueda, generalTotal, useTransition async, stale closure, queries redundantes en create(), role type cleanup ✅ (28 May 2026)
+- **Hydration warning fix** — `suppressHydrationWarning` en `<body>` de los 3 layouts; soluciona warning de extensiones del navegador ✅ (28 May 2026)
 
 ---
 
@@ -566,5 +575,7 @@ Cuando `sellOnSite: true` en una zona:
 - **Galería de imágenes en edición**: Las imágenes de galería se acumulan en vez de reemplazarse.
 - **Ticket sin relación a Seat en BD**: Requiere decodificar todos los JWTs para encontrar compradores de un evento (costoso con muchos tickets). Mejora futura: agregar `eventId` al modelo `Order`.
 - **Límite de 3 banners no validado en backend**: El límite existe solo en la UI Admin. Un POST directo a `/api/banners` podría crear más de 3. Mejora futura: agregar validación en `BannersService.create()`.
-- **BannerSlider sin transición entre slides**: El cambio de imagen es abrupto (no hay fade ni slide). Mejora futura: añadir `opacity` o `translateX` entre slides (el FeaturedCarousel ya usa translateX como referencia).
-- **FeaturedCarousel — límite de 3 tarjetas visibles fijo**: En pantallas muy anchas podría mostrarse espacio vacío a los lados. Mejora futura: hacer `VISIBLE` responsivo (3 en desktop, 2 en tablet, 1 en móvil).
+- **BannerSlider sin transición entre slides**: El cambio de imagen es abrupto (no hay fade ni slide). Mejora futura: añadir `opacity` o `translateX` entre slides.
+- **FeaturedCarousel — límite de 3 tarjetas visibles fijo**: En pantallas muy anchas podría mostrarse espacio vacío. Mejora futura: hacer `VISIBLE` responsivo.
+- **findAll incluye todos los seats**: `GET /events` incluye todos los `seats` de todas las zonas. Con muchos eventos esto es pesado. Mejora futura: no incluir seats en listado general, solo en detalle de evento.
+- **generalTotal estimado (no exacto) cuando hay múltiples páginas**: Si hay eventos destacados en páginas 2+, el "Mostrar más" puede aparecer un clic de más antes de terminar. Impacto mínimo — solo un fetch extra vacío.

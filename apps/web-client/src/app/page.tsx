@@ -44,8 +44,12 @@ export default async function HomePage(props: {
 
     const featuredIds = new Set(featuredEvents.map((e) => e.id));
     generalEvents = result.data.filter((e) => !featuredIds.has(e.id));
-    // total from backend already counts only PUBLISHED; subtract featured to get general count
-    generalTotal = Math.max(0, result.total - featuredEvents.length);
+    // If the API returned fewer items than the limit, we have ALL events already —
+    // use the exact count. Otherwise estimate from total minus known featured count.
+    const LIMIT = 12;
+    generalTotal = result.data.length < LIMIT
+      ? generalEvents.length
+      : Math.max(generalEvents.length, result.total - featuredEvents.length);
   } catch (err: unknown) {
     error = err instanceof Error ? err.message : 'No se pudieron cargar los eventos';
   }
@@ -173,6 +177,7 @@ export default async function HomePage(props: {
               initialTotal={generalTotal}
               query={query}
               limit={12}
+              excludeIds={[...new Set(featuredEvents.map((e) => e.id))]}
             />
           )}
         </div>

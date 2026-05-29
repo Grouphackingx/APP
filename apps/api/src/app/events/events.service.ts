@@ -115,7 +115,18 @@ export class EventsService {
 
         const slug = await this.generateUniqueSlug(eventData.title);
 
-        const paidEnabled = await this.getPaymentStatusForOrganizer(organizerId);
+        // Resolve payment status using the already-fetched profile — avoid a redundant DB query
+        let paidEnabled: boolean;
+        if (profile.paidEventsEnabled !== null && profile.paidEventsEnabled !== undefined) {
+            paidEnabled = profile.paidEventsEnabled;
+        } else {
+            const config = await this.prisma.systemConfig.upsert({
+                where: { id: 'global' },
+                create: { id: 'global', paidEventsEnabled: false },
+                update: {},
+            });
+            paidEnabled = config.paidEventsEnabled;
+        }
         if (!paidEnabled && zones?.length) {
             zones.forEach(z => { if (!z.sellOnSite) z.price = 0; });
         }

@@ -190,19 +190,19 @@ function AdminDashboard() {
 
   useEffect(() => {
     if (!token || !user) return;
-    loadOrganizers();
+    loadOrganizers(1);
     loadAnalytics();
     if (user.role === 'ADMIN') {
       loadPlans();
       loadAdminUsers();
-      loadEvents();
+      loadEvents(1);
       getSystemConfig(token as string).then(setSystemConfig).catch(console.error);
     } else if (user.role === 'EDITOR') {
-      loadEvents();
+      loadEvents(eventsPage);
     }
   }, [token, user]);
 
-  const loadEvents = async (page = eventsPage) => {
+  const loadEvents = async (page: number) => {
     try {
       const res = await getAllEventsAdmin(token as string, page, 20);
       setEvents(res.data);
@@ -221,14 +221,14 @@ function AdminDashboard() {
         if (isNaN(duration) || duration <= 0) { showToast('Ingresa un número de días válido.', 'warning'); return; }
         try {
           await setEventFeatured(id, true, duration, token as string);
-          loadEvents();
+          loadEvents(eventsPage);
         } catch { showToast('Error al destacar el evento.', 'error'); }
       });
     } else {
       showConfirm('Quitar de destacados', '¿Deseas quitar este evento de la sección de destacados?', async () => {
         try {
           await setEventFeatured(id, false, null, token as string);
-          loadEvents();
+          loadEvents(eventsPage);
         } catch { showToast('Error al actualizar el evento.', 'error'); }
       });
     }
@@ -241,7 +241,7 @@ function AdminDashboard() {
 
   const handleEventUpdated = () => {
     setView('events');
-    loadEvents();
+    loadEvents(eventsPage);
   };
 
   const handleDeleteEvent = (ev: any) => {
@@ -253,7 +253,7 @@ function AdminDashboard() {
     showConfirm('Eliminar evento', `¿Estás seguro de eliminar "${ev.title}"? Esta acción no se puede deshacer.`, async () => {
       try {
         await deleteEvent(ev.id, token as string);
-        loadEvents();
+        loadEvents(eventsPage);
       } catch (err: any) {
         showToast(err.message || 'Error al eliminar el evento.', 'error');
       }
@@ -291,7 +291,7 @@ function AdminDashboard() {
     }
   };
 
-  const loadOrganizers = async (page = orgsPage) => {
+  const loadOrganizers = async (page: number) => {
     setLoading(true);
     try {
       const res = await getOrganizers(token as string, page, 20);
@@ -312,7 +312,7 @@ function AdminDashboard() {
     showConfirm('Cambiar estado', `¿Cambiar el estado de este organizador a "${labels[nextStatus]}"?`, async () => {
       try {
         await setOrganizerStatus(id, nextStatus, token as string);
-        loadOrganizers();
+        loadOrganizers(orgsPage);
       } catch { showToast('Error al cambiar el estado.', 'error'); }
     });
   };
@@ -325,7 +325,7 @@ function AdminDashboard() {
       async () => {
         try {
           await setOrganizerStatus(id, newStatus, token as string);
-          loadOrganizers();
+          loadOrganizers(orgsPage);
         } catch { showToast(`Error al ${isBlocked ? 'desbloquear' : 'bloquear'} el organizador.`, 'error'); }
       },
       isBlocked ? 'default' : 'warning'
@@ -368,7 +368,7 @@ function AdminDashboard() {
     showConfirm(`Pagos: ${orgName}`, `¿Cambiar a "${nextLabel}"?`, async () => {
       try {
         await setOrgPaymentGateway(orgId, next, token as string);
-        loadOrganizers();
+        loadOrganizers(orgsPage);
         showToast(`Pagos de ${orgName}: ${nextLabel}.`);
       } catch { showToast('Error al actualizar.', 'error'); }
     });
@@ -386,7 +386,7 @@ function AdminDashboard() {
       const { id, userId, createdAt, updatedAt, ...cleanData } = editFormData;
       await updateOrganizer(editingOrgData.id, cleanData, token as string);
       setEditingOrgData(null);
-      loadOrganizers();
+      loadOrganizers(orgsPage);
       showToast('Organizador actualizado correctamente.');
     } catch (err) {
       showToast('Error al actualizar el organizador. Revisa los campos.', 'error');
@@ -401,7 +401,7 @@ function AdminDashboard() {
       await createOrganizer(createFormData, token as string);
       setIsCreatingOrg(false);
       setCreateFormData({});
-      loadOrganizers();
+      loadOrganizers(orgsPage);
       showToast('Organizador creado correctamente.');
     } catch (err: any) {
       showToast(err.message || 'Error al crear el organizador.', 'error');
@@ -413,7 +413,7 @@ function AdminDashboard() {
     showConfirm('Eliminar organizador', `¿Estás seguro de eliminar permanentemente a "${name}"? Esta acción no se puede deshacer.`, async () => {
       try {
         await deleteOrganizer(id, token as string);
-        loadOrganizers();
+        loadOrganizers(orgsPage);
         showToast('Organizador eliminado.');
       } catch { showToast('No se pudo eliminar. El organizador puede tener eventos asociados.', 'error'); }
     }, 'danger');

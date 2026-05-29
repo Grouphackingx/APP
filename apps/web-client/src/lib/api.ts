@@ -132,7 +132,7 @@ export interface PaginatedEvents {
 
 export async function getEvents(query?: string, page = 1, limit = 12): Promise<PaginatedEvents> {
   const params = new URLSearchParams();
-  if (query) params.set('q', encodeURIComponent(query));
+  if (query) params.set('q', query); // URLSearchParams encodes automatically — no encodeURIComponent needed
   params.set('page', String(page));
   params.set('limit', String(limit));
   return fetchAPI<PaginatedEvents>(`/events?${params.toString()}`, { cache: 'no-store' });

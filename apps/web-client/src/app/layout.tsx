@@ -26,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           <div className="bg-animated" />
           <Navbar />

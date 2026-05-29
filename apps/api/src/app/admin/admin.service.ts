@@ -14,7 +14,7 @@ export class AdminService {
 
   async getAllOrganizers(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
-    const where = { role: 'HOST' as const };
+    const where = { role: 'HOST' as 'HOST' };
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({
         where,

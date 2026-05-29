@@ -42,18 +42,26 @@ class MulterExceptionFilter implements ExceptionFilter {
 // ── Sharp: optimize to WebP ───────────────────────────────────────────────────
 async function optimizeImage(inputPath: string): Promise<string> {
   const nameWithoutExt = basename(inputPath, extname(inputPath));
-  const outputPath = join(dirname(inputPath), `${nameWithoutExt}.webp`);
+  const finalPath = join(dirname(inputPath), `${nameWithoutExt}.webp`);
+  // Write to a .tmp file first to avoid reading+writing the same path
+  // when the uploaded file is already a .webp (would corrupt it).
+  const tmpPath = `${finalPath}.tmp`;
 
-  await sharp(inputPath)
-    .webp({ quality: IMAGE_QUALITY })
-    .toFile(outputPath);
+  try {
+    await sharp(inputPath)
+      .webp({ quality: IMAGE_QUALITY })
+      .toFile(tmpPath);
+    fs.renameSync(tmpPath, finalPath);
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+    throw err;
+  }
 
-  // Remove original only if it was a different format
-  if (inputPath !== outputPath) {
+  if (inputPath !== finalPath) {
     try { fs.unlinkSync(inputPath); } catch { /* ignore */ }
   }
 
-  return outputPath;
+  return finalPath;
 }
 
 // ── Local storage helpers ─────────────────────────────────────────────────────

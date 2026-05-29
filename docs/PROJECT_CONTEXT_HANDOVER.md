@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 25 de Mayo de 2026 (Sesión 6)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario
+**Última Actualización:** 28 de Mayo de 2026 (Sesión 7)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -139,6 +139,17 @@ MAIL_SECURE=false
 MAIL_USER=
 MAIL_PASS=
 MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
+
+# Almacenamiento de imágenes (local = VPS | cloudinary = CDN)
+STORAGE_PROVIDER=local
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Límites y formatos de imágenes (afectan backend + 3 frontends)
+NEXT_PUBLIC_MAX_UPLOAD_MB=2.5
+NEXT_PUBLIC_ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
+UPLOAD_IMAGE_QUALITY=80
 ```
 
 ---
@@ -1039,6 +1050,47 @@ Ver detalle completo en CHECKPOINT_RESTORE.md secciones "Sesión del 17-20 de Ma
 - 8 campos nuevos en schema `User` (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)
 - Endpoints `GET/PATCH /api/auth/me` protegidos con JwtAuthGuard
 - Toast amarillo al intentar seleccionar asientos sin autenticación (auto-cierre 4s)
+
+### Sesión del 28 de Mayo de 2026 (Sesión 7) — Paginación Real + Sistema de Imágenes + Code Review
+
+#### Paginación Real en API
+
+- **`GET /api/events?page=&limit=`** — devuelve `{ data, total, page, limit, totalPages }`, filtra solo `PUBLISHED`, default `limit=12`
+- **`GET /api/admin/organizers?page=&limit=`** — ídem, default `limit=20`
+- **`GET /api/admin/events?page=&limit=`** — ídem, default `limit=20`
+- **`EventsGrid`** — paginación real: muestra 3 eventos por fila (ROW_SIZE=3), carga 12 del API cuando se agotan los cargados. Recibe `excludeIds` para no duplicar eventos destacados. `useTransition` reemplazado por `useState<boolean>` para deshabilitar correctamente el botón durante la carga
+- **`page.tsx`** — `generalTotal` calculado correctamente: si `result.data.length < limit` (todos los eventos en una página) usa `generalEvents.length` exacto; si hay más páginas, estima `result.total - featuredEvents.length`
+- **web-admin dashboard** — controles Anterior/Siguiente en tablas de organizadores y eventos; `loadOrganizers(page)` y `loadEvents(page)` siempre reciben la página explícita (sin default params para evitar stale closure)
+
+#### Sistema de Imágenes — Completamente Configurable desde `.env`
+
+| Variable | Descripción | Default |
+|---|---|---|
+| `STORAGE_PROVIDER` | `local` (VPS) o `cloudinary` (CDN) | `local` |
+| `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET` | Credenciales Cloudinary | vacío |
+| `NEXT_PUBLIC_MAX_UPLOAD_MB` | Tamaño máximo de subida (MB) | `2.5` |
+| `NEXT_PUBLIC_ALLOWED_IMAGE_TYPES` | Formatos permitidos (MIME) | `image/jpeg,image/png,image/webp` |
+| `UPLOAD_IMAGE_QUALITY` | Calidad WebP 1-100 | `80` |
+
+- **Sharp WebP**: toda imagen subida se convierte a WebP con la calidad configurada, sin redimensionar (el organizador sube cada imagen con la proporción correcta). Fix crítico: escribe a `.tmp` primero para evitar corrupción si el archivo ya es `.webp`
+- **Cloudinary**: cuando `STORAGE_PROVIDER=cloudinary`, Sharp comprime primero y luego sube el WebP optimizado (ahorra cuota de Cloudinary)
+- **`MulterExceptionFilter`**: captura errores de Multer y devuelve mensajes en español
+- **Validación en 2 capas**: frontend (selector de archivos + check `file.size`) + backend (Multer limits + fileFilter)
+- Labels de los formularios (`Max XMB`) leen `process.env.NEXT_PUBLIC_MAX_UPLOAD_MB` dinámicamente
+
+#### Code Review — 7 Bugs Corregidos
+
+| Severidad | Archivo | Fix |
+|---|---|---|
+| Crítico | `upload.controller.ts` | Sharp corrupción WebP: escritura atómica via `.tmp` + rename |
+| Alto | `web-client/lib/api.ts` | Doble URL encoding: eliminado `encodeURIComponent` en `params.set()` |
+| Medio | `page.tsx` | `generalTotal` incorrecto cuando featured events en páginas 2+ |
+| Medio | `EventsGrid.tsx` | `useTransition` async no deshabilita botón en React 18 → `useState<boolean>` |
+| Medio | `dashboard/page.tsx` | Stale closure en paginación → siempre pasar página explícita |
+| Optimización | `events.service.ts` | `create()` reutiliza perfil ya cargado, evita query redundante a BD |
+| Limpieza | `admin.service.ts` | `role: 'HOST' as const` → `role: 'HOST' as 'HOST'` |
+
+- **Hydration error fix**: `suppressHydrationWarning` en `<body>` de los 3 layouts — soluciona warning causado por extensiones del navegador (ej: Grammarly) que inyectan atributos en el DOM
 
 ### Sesión del 25 de Mayo de 2026 — Control de Pasarela de Pagos + Límites Anuales por Aniversario
 

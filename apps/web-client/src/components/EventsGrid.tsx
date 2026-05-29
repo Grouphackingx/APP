@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { EventCard } from './EventCard';
 import { getEvents, type EventItem } from '../lib/api';
 
@@ -11,36 +11,41 @@ interface Props {
   initialTotal: number;
   query?: string;
   limit?: number;
+  excludeIds?: string[];
 }
 
-export function EventsGrid({ initialEvents, initialTotal, query, limit = 12 }: Props) {
+export function EventsGrid({ initialEvents, initialTotal, query, limit = 12, excludeIds = [] }: Props) {
   const [events, setEvents] = useState<EventItem[]>(initialEvents);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(1);
   const [visible, setVisible] = useState(ROW_SIZE);
-  const [isPending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
 
-  // hasMore = still events to show visually OR more pages on server
+  const excludeSet = new Set(excludeIds);
   const hasMore = visible < events.length || events.length < total;
 
-  const loadMore = () => {
+  const loadMore = async () => {
+    if (loading) return;
+
     if (visible < events.length) {
-      // show next row from already-loaded events
       setVisible((prev) => prev + ROW_SIZE);
-    } else {
-      // fetch next page, then reveal one more row
+      return;
+    }
+
+    setLoading(true);
+    try {
       const nextPage = page + 1;
-      startTransition(async () => {
-        try {
-          const res = await getEvents(query, nextPage, limit);
-          setEvents((prev) => [...prev, ...res.data]);
-          setTotal(res.total);
-          setPage(nextPage);
-          setVisible((prev) => prev + ROW_SIZE);
-        } catch {
-          // silently ignore
-        }
-      });
+      const res = await getEvents(query, nextPage, limit);
+      // Filter out featured events that are already shown above the grid
+      const fresh = res.data.filter((e) => !excludeSet.has(e.id));
+      setEvents((prev) => [...prev, ...fresh]);
+      setTotal(res.total);
+      setPage(nextPage);
+      setVisible((prev) => prev + ROW_SIZE);
+    } catch {
+      // silently ignore network errors
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,8 +59,8 @@ export function EventsGrid({ initialEvents, initialTotal, query, limit = 12 }: P
 
       {hasMore && (
         <div className="show-more-wrapper">
-          <button className="show-more-btn" onClick={loadMore} disabled={isPending}>
-            {isPending ? 'Cargando...' : <>Mostrar más <span className="show-more-icon">↓</span></>}
+          <button className="show-more-btn" onClick={loadMore} disabled={loading}>
+            {loading ? 'Cargando...' : <>Mostrar más <span className="show-more-icon">↓</span></>}
           </button>
         </div>
       )}
