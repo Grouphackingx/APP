@@ -12,12 +12,20 @@ export class AdminService {
     private jwtService: JwtService,
   ) {}
 
-  async getAllOrganizers() {
-    return this.prisma.user.findMany({
-      where: { role: 'HOST' },
-      include: { organizerProfile: true },
-      orderBy: { createdAt: 'desc' }
-    });
+  async getAllOrganizers(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where = { role: 'HOST' as const };
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        include: { organizerProfile: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async getOrganizersAnalytics() {
@@ -288,22 +296,17 @@ export class AdminService {
 
   // --- EVENTS MANAGEMENT ---
 
-  async getAllEvents() {
-    return this.prisma.event.findMany({
-      include: {
-        organizer: {
-          include: {
-            organizerProfile: true
-          }
-        },
-        zones: {
-          include: {
-            seats: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+  async getAllEvents(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const include = {
+      organizer: { include: { organizerProfile: true } },
+      zones: { include: { seats: true } },
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.event.findMany({ include, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      this.prisma.event.count(),
+    ]);
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async impersonateOrganizer(targetUserId: string, adminId: string) {

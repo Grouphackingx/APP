@@ -73,8 +73,11 @@ export async function deleteEvent(id: string, token: string) {
 
 // Admin Integrations
 
-export async function getOrganizers(token: string) {
-  return fetchAPI<any[]>('/admin/organizers', { token, cache: 'no-store' });
+export async function getOrganizers(token: string, page = 1, limit = 20) {
+  return fetchAPI<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+    `/admin/organizers?page=${page}&limit=${limit}`,
+    { token, cache: 'no-store' },
+  );
 }
 
 export async function getOrganizersAnalytics(token: string) {
@@ -211,8 +214,11 @@ export async function deleteAdminUser(id: string, token: string) {
 // Admin Events Integration
 
 
-export async function getAllEventsAdmin(token: string) {
-  return fetchAPI<any[]>('/admin/events', { token, cache: 'no-store' });
+export async function getAllEventsAdmin(token: string, page = 1, limit = 20) {
+  return fetchAPI<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+    `/admin/events?page=${page}&limit=${limit}`,
+    { token, cache: 'no-store' },
+  );
 }
 
 export async function setEventFeatured(id: string, isFeatured: boolean, durationDays: number | null, token: string) {

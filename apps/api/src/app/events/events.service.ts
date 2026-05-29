@@ -158,10 +158,10 @@ export class EventsService {
         });
     }
 
-    async findAll(query?: string) {
+    async findAll(query?: string, page = 1, limit = 12) {
         await this.updatePastEventsStatus();
-        const where: Prisma.EventWhereInput = {};
-        
+        const where: Prisma.EventWhereInput = { status: 'PUBLISHED' };
+
         if (query) {
             where.OR = [
                 { title: { contains: query, mode: 'insensitive' } },
@@ -169,11 +169,18 @@ export class EventsService {
             ];
         }
 
-        return this.prisma.event.findMany({
-            where,
-            include: { zones: { include: { seats: true } }, organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } } },
-            orderBy: { date: 'asc' },
-        });
+        const skip = (page - 1) * limit;
+        const include = {
+            zones: { include: { seats: true } },
+            organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } },
+        };
+
+        const [data, total] = await Promise.all([
+            this.prisma.event.findMany({ where, include, orderBy: { date: 'asc' }, skip, take: limit }),
+            this.prisma.event.count({ where }),
+        ]);
+
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 
     async findMyEvents(organizerId: string) {

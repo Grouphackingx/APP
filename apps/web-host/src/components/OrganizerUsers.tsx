@@ -69,6 +69,7 @@ export function OrganizerUsers({ token }: Props) {
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setError(`La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`); e.target.value = ''; return; }
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   }
@@ -280,7 +281,7 @@ export function OrganizerUsers({ token }: Props) {
                   onClick={() => fileInputRef.current?.click()}>
                   {avatarPreview ? 'Cambiar foto' : 'Subir foto'}
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+                <input ref={fileInputRef} type="file" accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'} style={{ display: 'none' }} onChange={handleAvatarChange} />
               </div>
 
               {/* Nombre */}

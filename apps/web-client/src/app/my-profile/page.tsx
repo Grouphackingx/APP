@@ -88,6 +88,7 @@ export default function MyProfilePage() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user || !token) return;
+    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setAlert({ type: 'error', msg: `La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.` }); e.target.value = ''; return; }
 
     // Immediate local preview
     const localUrl = URL.createObjectURL(file);
@@ -177,7 +178,7 @@ export default function MyProfilePage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'}
             style={{ display: 'none' }}
             onChange={handleAvatarChange}
             disabled={uploadingAvatar}

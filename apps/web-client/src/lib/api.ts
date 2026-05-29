@@ -122,9 +122,20 @@ export interface EventItem {
   createdAt: string;
 }
 
-export async function getEvents(query?: string): Promise<EventItem[]> {
-  const url = query ? `/events?q=${encodeURIComponent(query)}` : '/events';
-  return fetchAPI<EventItem[]>(url, { cache: 'no-store' });
+export interface PaginatedEvents {
+  data: EventItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export async function getEvents(query?: string, page = 1, limit = 12): Promise<PaginatedEvents> {
+  const params = new URLSearchParams();
+  if (query) params.set('q', encodeURIComponent(query));
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+  return fetchAPI<PaginatedEvents>(`/events?${params.toString()}`, { cache: 'no-store' });
 }
 
 export async function getEventById(id: string): Promise<EventItem> {

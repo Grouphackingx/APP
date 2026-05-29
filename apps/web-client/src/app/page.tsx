@@ -28,21 +28,24 @@ export default async function HomePage(props: {
   let banners: BannerItem[] = [];
   let error = '';
 
+  let generalTotal = 0;
+
   try {
     banners = await getBanners().catch(() => []);
-    const allEvents = await getEvents(query);
-    const published = allEvents.filter((e) => e.status === 'PUBLISHED');
+    const result = await getEvents(query, 1, 12);
 
     const now = new Date();
 
-    featuredEvents = published.filter(
+    featuredEvents = result.data.filter(
       (e) =>
         e.isFeatured &&
         (!e.featuredUntil || new Date(e.featuredUntil) > now)
     );
 
     const featuredIds = new Set(featuredEvents.map((e) => e.id));
-    generalEvents = published.filter((e) => !featuredIds.has(e.id));
+    generalEvents = result.data.filter((e) => !featuredIds.has(e.id));
+    // total from backend already counts only PUBLISHED; subtract featured to get general count
+    generalTotal = Math.max(0, result.total - featuredEvents.length);
   } catch (err: unknown) {
     error = err instanceof Error ? err.message : 'No se pudieron cargar los eventos';
   }
@@ -165,7 +168,12 @@ export default async function HomePage(props: {
               )}
             </div>
           ) : generalEvents.length === 0 ? null : (
-            <EventsGrid events={generalEvents} />
+            <EventsGrid
+              initialEvents={generalEvents}
+              initialTotal={generalTotal}
+              query={query}
+              limit={12}
+            />
           )}
         </div>
       </section>

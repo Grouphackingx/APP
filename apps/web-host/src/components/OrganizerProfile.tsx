@@ -266,10 +266,11 @@ export function OrganizerProfile({ token }: Props) {
             </button>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>JPG, PNG o WebP. Recomendado: 200×200 px</p>
           </div>
-          <input ref={avatarRef} type="file" accept="image/*" style={{ display: 'none' }}
+          <input ref={avatarRef} type="file" accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'} style={{ display: 'none' }}
             onChange={e => {
               const f = e.target.files?.[0];
               if (!f) return;
+              if (f.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setBasicErr(`La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`); e.target.value = ''; return; }
               setAvatarFile(f);
               setAvatarPreview(URL.createObjectURL(f));
             }} />
@@ -349,10 +350,11 @@ export function OrganizerProfile({ token }: Props) {
               </button>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>Aparecerá en el sidebar del panel</p>
             </div>
-            <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }}
+            <input ref={logoRef} type="file" accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'} style={{ display: 'none' }}
               onChange={e => {
                 const f = e.target.files?.[0];
                 if (!f) return;
+                if (f.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setOrgErr(`La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`); e.target.value = ''; return; }
                 setLogoFile(f);
                 setLogoPreview(URL.createObjectURL(f));
               }} />

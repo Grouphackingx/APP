@@ -68,6 +68,7 @@ export default function RegisterHostPage() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setError(`La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`); e.target.value = ''; return; }
 
     setUploadingLogo(true);
     try {
@@ -193,7 +194,7 @@ export default function RegisterHostPage() {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem' }}>Logo de la Organización (Opcional)</label>
-                  <input type="file" accept="image/*" ref={logoInputRef} style={{ display: 'none' }} onChange={handleLogoUpload} />
+                  <input type="file" accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'} ref={logoInputRef} style={{ display: 'none' }} onChange={handleLogoUpload} />
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => logoInputRef.current?.click()} disabled={uploadingLogo}>
                     {uploadingLogo ? 'Subiendo...' : 'Subir Imagen'}
                   </button>

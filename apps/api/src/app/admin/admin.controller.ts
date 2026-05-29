@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Delete, Post, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Post, Param, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -13,8 +13,11 @@ export class AdminController {
 
   @Get('organizers')
   @Roles(Role.ADMIN, Role.EDITOR)
-  getAllOrganizers() {
-    return this.adminService.getAllOrganizers();
+  getAllOrganizers(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.adminService.getAllOrganizers(
+      page ? Math.max(1, parseInt(page, 10)) : 1,
+      limit ? Math.min(100, Math.max(1, parseInt(limit, 10))) : 20,
+    );
   }
 
   @Get('analytics/organizers')
@@ -104,8 +107,11 @@ export class AdminController {
 
   @Get('events')
   @Roles(Role.ADMIN, Role.EDITOR)
-  getAllEvents() {
-    return this.adminService.getAllEvents();
+  getAllEvents(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.adminService.getAllEvents(
+      page ? Math.max(1, parseInt(page, 10)) : 1,
+      limit ? Math.min(100, Math.max(1, parseInt(limit, 10))) : 20,
+    );
   }
 
   // --- SYSTEM CONFIG ---

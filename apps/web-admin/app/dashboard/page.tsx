@@ -91,6 +91,9 @@ function AdminDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [organizers, setOrganizers] = useState<any[]>([]);
+  const [orgsPage, setOrgsPage] = useState(1);
+  const [orgsTotalPages, setOrgsTotalPages] = useState(1);
+  const [orgsTotal, setOrgsTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const initialView = ((): ViewType => {
@@ -104,6 +107,9 @@ function AdminDashboard() {
     router.replace(`/dashboard?view=${v}`, { scroll: false });
   };
   const [events, setEvents] = useState<any[]>([]);
+  const [eventsPage, setEventsPage] = useState(1);
+  const [eventsTotalPages, setEventsTotalPages] = useState(1);
+  const [eventsTotal, setEventsTotal] = useState(0);
   const [activeEventTab, setActiveEventTab] = useState<'ACTIVOS' | 'BORRADOR' | 'INACTIVOS'>('ACTIVOS');
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [editingOrgData, setEditingOrgData] = useState<any>(null);
@@ -141,6 +147,7 @@ function AdminDashboard() {
   const handleEditLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !token) return;
+    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { showToast(`La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, 'error'); e.target.value = ''; return; }
     setUploadingLogo(true);
     try {
       const orgId = editingOrgData.id;
@@ -156,6 +163,7 @@ function AdminDashboard() {
   const handleCreateLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !token) return;
+    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { showToast(`La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, 'error'); e.target.value = ''; return; }
     setUploadingLogo(true);
     try {
       const tempId = createFormData.email ? createFormData.email.replace(/[^a-zA-Z0-9]/g, '_') : 'temp_' + Date.now();
@@ -194,10 +202,13 @@ function AdminDashboard() {
     }
   }, [token, user]);
 
-  const loadEvents = async () => {
+  const loadEvents = async (page = eventsPage) => {
     try {
-      const data = await getAllEventsAdmin(token as string);
-      setEvents(data);
+      const res = await getAllEventsAdmin(token as string, page, 20);
+      setEvents(res.data);
+      setEventsPage(res.page);
+      setEventsTotalPages(res.totalPages);
+      setEventsTotal(res.total);
     } catch (error) {
       console.error('Failed to load events', error);
     }
@@ -280,11 +291,14 @@ function AdminDashboard() {
     }
   };
 
-  const loadOrganizers = async () => {
+  const loadOrganizers = async (page = orgsPage) => {
     setLoading(true);
     try {
-      const data = await getOrganizers(token as string);
-      setOrganizers(data);
+      const res = await getOrganizers(token as string, page, 20);
+      setOrganizers(res.data);
+      setOrgsPage(res.page);
+      setOrgsTotalPages(res.totalPages);
+      setOrgsTotal(res.total);
     } catch (error) {
       console.error('Failed to load organizers', error);
     } finally {
@@ -781,6 +795,29 @@ function AdminDashboard() {
                   </tbody>
                 </table>
               )}
+              {orgsTotalPages > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Página {orgsPage} de {orgsTotalPages} — {orgsTotal} organizadores
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      disabled={orgsPage <= 1}
+                      onClick={() => loadOrganizers(orgsPage - 1)}
+                    >
+                      ← Anterior
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      disabled={orgsPage >= orgsTotalPages}
+                      onClick={() => loadOrganizers(orgsPage + 1)}
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -910,6 +947,29 @@ function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+              )}
+              {eventsTotalPages > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Página {eventsPage} de {eventsTotalPages} — {eventsTotal} eventos
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      disabled={eventsPage <= 1}
+                      onClick={() => loadEvents(eventsPage - 1)}
+                    >
+                      ← Anterior
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      disabled={eventsPage >= eventsTotalPages}
+                      onClick={() => loadEvents(eventsPage + 1)}
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </>
@@ -1227,7 +1287,7 @@ function AdminDashboard() {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem' }}>Logo de la Organización</label>
-                  <input type="file" accept="image/*" ref={editLogoInputRef} style={{ display: 'none' }} onChange={handleEditLogoUpload} />
+                  <input type="file" accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'} ref={editLogoInputRef} style={{ display: 'none' }} onChange={handleEditLogoUpload} />
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => editLogoInputRef.current?.click()} disabled={uploadingLogo}>
                     {uploadingLogo ? 'Subiendo...' : 'Cambiar Imagen'}
                   </button>
@@ -1343,7 +1403,7 @@ function AdminDashboard() {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem' }}>Logo de la Organización (Opcional)</label>
-                  <input type="file" accept="image/*" ref={createLogoInputRef} style={{ display: 'none' }} onChange={handleCreateLogoUpload} />
+                  <input type="file" accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'} ref={createLogoInputRef} style={{ display: 'none' }} onChange={handleCreateLogoUpload} />
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => createLogoInputRef.current?.click()} disabled={uploadingLogo}>
                     {uploadingLogo ? 'Subiendo...' : 'Subir Imagen'}
                   </button>
@@ -1587,6 +1647,7 @@ function BannersView({ token }: { token: string }) {
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;
+    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { showToast(`La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, 'error'); return; }
     setUploading(true);
     try {
       const url = await uploadBannerImage(file, token);
@@ -1923,7 +1984,7 @@ function BannersView({ token }: { token: string }) {
                   </div>
                 )}
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
+              <input ref={fileInputRef} type="file" accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'} style={{ display: 'none' }} onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
               {formData.imageUrl && !uploading && (
                 <button
                   onClick={() => fileInputRef.current?.click()}

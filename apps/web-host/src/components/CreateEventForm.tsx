@@ -121,9 +121,9 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) {
         setMessage({
-          text: 'La imagen del croquis no debe superar 5MB',
+          text: `La imagen del croquis no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB`,
           type: 'error',
         });
         return;
@@ -143,10 +143,10 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
       }
 
       const newFiles = Array.from(files);
-      const invalidSize = newFiles.some((f) => f.size > 5 * 1024 * 1024);
+      const invalidSize = newFiles.some((f) => f.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024);
       if (invalidSize) {
         setMessage({
-          text: 'Alguna imagen supera los 5MB',
+          text: `Alguna imagen supera los ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB`,
           type: 'error',
         });
         return;
@@ -306,10 +306,11 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
             <input
               type="file"
               id="bannerUpload"
-              accept="image/*"
+              accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
+                  if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setMessage({ text: `La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, type: 'error' }); e.target.value = ''; return; }
                   setBannerImageFile(file);
                   setBannerImagePreview(URL.createObjectURL(file));
                 }
@@ -328,7 +329,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
               ) : (
                 <div className="upload-placeholder">
                   <span>🖼️ Cargar Banner</span>
-                  <small>(Max 5MB)</small>
+                  <small>(Max {process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'}MB)</small>
                 </div>
               )}
             </label>
@@ -342,10 +343,11 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
               <input
                 type="file"
                 id="squareUpload"
-                accept="image/*"
+                accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
+                    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setMessage({ text: `La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, type: 'error' }); e.target.value = ''; return; }
                     setSquareImageFile(file);
                     setSquareImagePreview(URL.createObjectURL(file));
                   }
@@ -364,7 +366,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                 ) : (
                   <div className="upload-placeholder">
                     <span>🖼️ Cargar Imagen</span>
-                    <small>(Max 5MB)</small>
+                    <small>(Max {process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'}MB)</small>
                   </div>
                 )}
               </label>
@@ -377,10 +379,11 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
               <input
                 type="file"
                 id="portraitUpload"
-                accept="image/*"
+                accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
+                    if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setMessage({ text: `La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, type: 'error' }); e.target.value = ''; return; }
                     setPortraitImageFile(file);
                     setPortraitImagePreview(URL.createObjectURL(file));
                   }
@@ -399,7 +402,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                 ) : (
                   <div className="upload-placeholder">
                     <span>🖼️ Cargar Imagen 3:4</span>
-                    <small>(Recomendado: 1200×1600px — Max 5MB)</small>
+                    <small>(Recomendado: 1200×1600px — Max {process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'}MB)</small>
                   </div>
                 )}
               </label>
@@ -591,7 +594,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                 <input
                   type="file"
                   id="galleryUpload"
-                  accept="image/*"
+                  accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'}
                   multiple
                   onChange={handleGalleryChange}
                   className="file-input"
@@ -663,7 +666,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
                 <input
                   type="file"
                   id="seatingMapUpload"
-                  accept="image/*"
+                  accept={process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp'}
                   onChange={handleSeatingMapImageChange}
                   className="file-input"
                   hidden
