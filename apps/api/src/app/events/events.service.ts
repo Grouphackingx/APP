@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
@@ -17,8 +17,12 @@ function toSlug(text: string): string {
 }
 
 @Injectable()
-export class EventsService {
+export class EventsService implements OnModuleInit {
     constructor(private prisma: PrismaService, private mail: MailService, private jwt: JwtService) { }
+
+    async onModuleInit() {
+        await this.backfillSlugs();
+    }
 
     private getAnnualPeriodStart(profileCreatedAt: Date): Date {
         const now = new Date();
