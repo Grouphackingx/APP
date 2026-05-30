@@ -1,0 +1,15 @@
+node_modules
+dist
+.nx/cache
+.git
+.gitignore
+*.md
+*.log
+.env
+.env.*
+!.env.example
+apps/web-client/.next
+apps/web-host/.next
+apps/web-admin/.next
+uploads
+tmp

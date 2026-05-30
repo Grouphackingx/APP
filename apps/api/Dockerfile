@@ -10,6 +10,7 @@ WORKDIR /app
 COPY --from=builder /app/dist/apps/api ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/libs/shared/prisma ./prisma
-RUN npm install -g prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma
+RUN mkdir -p uploads
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma || npx prisma db push --schema=./prisma/schema.prisma && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
