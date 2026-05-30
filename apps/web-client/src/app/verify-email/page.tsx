@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { verifyEmail, resendVerification } from '../../lib/api';
@@ -8,7 +8,7 @@ import '../login/auth.css';
 
 type State = 'loading' | 'success' | 'error' | 'resend';
 
-export default function VerifyEmailPage() {
+function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const resendParam = searchParams.get('resend');
@@ -166,3 +166,5 @@ export default function VerifyEmailPage() {
     </div>
   );
 }
+
+export default function VerifyEmailPageWrapper() { return <Suspense><VerifyEmailPage /></Suspense>; }

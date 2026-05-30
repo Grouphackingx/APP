@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { resetPassword } from '../../lib/api';
 import '../login/auth.css';
 
-export default function ResetPasswordPage() {
+function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -162,3 +162,5 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
+
+export default function ResetPasswordPageWrapper() { return <Suspense><ResetPasswordPage /></Suspense>; }
