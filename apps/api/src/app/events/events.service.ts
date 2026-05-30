@@ -4,6 +4,8 @@ import { MailService } from '../mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateEventDto, UpdateEventDto, CreateZoneDto } from '@open-ticket/shared';
 import { Prisma } from '@prisma/client';
+import * as fs from 'fs';
+import * as path from 'path';
 
 function toSlug(text: string): string {
     return text
@@ -186,7 +188,7 @@ export class EventsService implements OnModuleInit {
 
         const skip = (page - 1) * limit;
         const include = {
-            zones: { include: { seats: true } },
+            zones: { include: { seats: { select: { isSold: true } } } },
             organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } },
         };
 
@@ -269,6 +271,18 @@ export class EventsService implements OnModuleInit {
         }
     }
 
+    private deleteOrphanedGalleryFiles(oldUrls: string[], newUrls: string[]) {
+        const removed = oldUrls.filter(u => !newUrls.includes(u));
+        for (const url of removed) {
+            try {
+                // URL is like http://host/uploads/organizers/...  → strip origin
+                const pathname = new URL(url).pathname; // /uploads/organizers/...
+                const filePath = path.join(process.cwd(), pathname);
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            } catch { /* ignore — URL may be external (Cloudinary) or already gone */ }
+        }
+    }
+
     async update(id: string, updateData: UpdateEventDto) {
         const { zones, ...rawBasicData } = updateData;
 
@@ -311,6 +325,14 @@ export class EventsService implements OnModuleInit {
                         id, 'rescheduled', currentEvent.title, oldDateStr, newDateStr, newLocation, newCity,
                     ).catch(() => null);
                 }
+            }
+        }
+
+        // Delete orphaned gallery files before saving new gallery
+        if (basicData.galleryUrls) {
+            const currentEvent = await this.prisma.event.findUnique({ where: { id }, select: { galleryUrls: true } });
+            if (currentEvent) {
+                this.deleteOrphanedGalleryFiles(currentEvent.galleryUrls, basicData.galleryUrls as string[]);
             }
         }
 

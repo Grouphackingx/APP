@@ -645,7 +645,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                 </button>
               </div>
             ))}
-            {galleryFiles.length < 3 && (
+            {existingGalleryUrls.length + galleryFiles.length < 3 && (
               <>
                 <input
                   type="file"
