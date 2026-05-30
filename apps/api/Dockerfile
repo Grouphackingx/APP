@@ -3,6 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
+RUN npx prisma generate --schema=./libs/shared/prisma/schema.prisma
 RUN npx nx build api --skip-nx-cache
 
 FROM node:20-alpine
