@@ -18,17 +18,18 @@ ENV NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL
 ENV NEXT_PUBLIC_MAX_UPLOAD_MB=$NEXT_PUBLIC_MAX_UPLOAD_MB
 ENV NEXT_PUBLIC_ALLOWED_IMAGE_TYPES=$NEXT_PUBLIC_ALLOWED_IMAGE_TYPES
 
-RUN npx nx build web-host --skip-nx-cache
+WORKDIR /app/apps/web-host
+RUN npx next build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=builder /app/dist/apps/web-host/.next/standalone ./
-COPY --from=builder /app/dist/apps/web-host/.next/static ./apps/web-host/.next/static
-COPY --from=builder /app/apps/web-host/public ./apps/web-host/public
+COPY --from=builder /app/apps/web-host/.next/standalone ./
+COPY --from=builder /app/apps/web-host/.next/static ./.next/static
+COPY --from=builder /app/apps/web-host/public ./public
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-CMD ["node", "apps/web-host/server.js"]
+CMD ["node", "server.js"]
