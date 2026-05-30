@@ -1,0 +1,15 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npx nx build api --skip-nx-cache
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/dist/apps/api ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/libs/shared/prisma ./prisma
+RUN npm install -g prisma
+EXPOSE 3000
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma || npx prisma db push --schema=./prisma/schema.prisma && node dist/main.js"]
