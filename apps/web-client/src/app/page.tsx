@@ -56,6 +56,7 @@ export default async function HomePage(props: {
 
   const toCarouselShape = (e: EventItem): CarouselEvent => ({
     id: e.id,
+    slug: e.slug ?? null,
     title: e.title,
     portraitImageUrl: e.portraitImageUrl ?? null,
     squareImageUrl: e.squareImageUrl ?? null,
