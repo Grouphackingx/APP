@@ -7,6 +7,7 @@ RUN npx prisma generate --schema=./libs/shared/prisma/schema.prisma
 RUN npx nx build api --skip-nx-cache
 
 FROM node:20-alpine
+RUN apk add --no-cache openssl
 WORKDIR /app
 COPY --from=builder /app/dist/apps/api ./dist
 COPY --from=builder /app/node_modules ./node_modules
