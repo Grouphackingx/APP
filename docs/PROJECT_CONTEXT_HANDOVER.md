@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 30 de Mayo de 2026 (Sesión 9)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **API en producción (Coolify)** + **Dockerfiles frontends listos para deploy**
+**Última Actualización:** 30 de Mayo de 2026 (Sesión 10)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -466,7 +466,9 @@ start-all.bat
 - [x] ~~Paginación en endpoints~~ ✅ (28 May 2026)
 - [x] ~~Deploy API en producción~~ ✅ (30 May 2026) → `https://api.afroeventos.com/api`
 - [x] ~~Dockerfiles frontends con output standalone~~ ✅ (30 May 2026)
-- [ ] Deploy frontends en Coolify (web-client → afroeventos.com, web-host → host.afroeventos.com, web-admin → admin.afroeventos.com)
+- [x] ~~Deploy frontends en Coolify~~ ✅ (30 May 2026) → `https://afroeventos.com`, `https://host.afroeventos.com`, `https://admin.afroeventos.com`
+- [x] ~~Schema de BD aplicado en producción~~ ✅ (30 May 2026) → `prisma db push` en CMD del API Dockerfile
+- [x] ~~Primer usuario ADMIN creado en producción~~ ✅ (30 May 2026) → usuario "Blade" (`dmxwilly@gmail.com`)
 
 ### Prioridad Media
 
@@ -1053,6 +1055,77 @@ Ver detalle completo en CHECKPOINT_RESTORE.md secciones "Sesión del 17-20 de Ma
 - 8 campos nuevos en schema `User` (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)
 - Endpoints `GET/PATCH /api/auth/me` protegidos con JwtAuthGuard
 - Toast amarillo al intentar seleccionar asientos sin autenticación (auto-cierre 4s)
+
+### Sesión del 30 de Mayo de 2026 (Sesión 10) — Deploy Completo en Producción
+
+#### Estado final de producción
+
+| Servicio | URL | Estado |
+| :--- | :--- | :--- |
+| API (NestJS) | `https://api.afroeventos.com/api` | Running |
+| Web Client | `https://afroeventos.com` | Running |
+| Web Host | `https://host.afroeventos.com` | Running |
+| Web Admin | `https://admin.afroeventos.com` | Running |
+| PostgreSQL | interno Coolify | Running + schema aplicado |
+| Redis | interno Coolify | Running |
+
+#### Problemas resueltos
+
+| Error | Causa | Fix |
+| :--- | :--- | :--- |
+| `Could not create project graph` en build | `withNx` wrapper en `next.config.js` llama al daemon NX — no disponible en Docker | Removido `withNx`, cambiado a `WORKDIR /app/apps/<app> && RUN npx next build` |
+| `useSearchParams() should be wrapped in a suspense boundary` | Next.js App Router require Suspense para páginas que usan `useSearchParams` | Añadido wrapper `<Suspense>` en `reset-password` y `verify-email` en web-client |
+| `Cannot find module '/app/server.js'` | Next.js standalone en monorepo coloca `server.js` en `apps/<app>/server.js`, no en la raíz | Corregidas rutas en el runner stage del Dockerfile para los 3 frontends |
+| `The table 'public.Event' does not exist` | `prisma migrate deploy` no hace nada sin archivos de migración — las tablas nunca se crean | Cambiado a `prisma db push` en CMD del API Dockerfile (crea schema sin migration files) |
+| TypeScript: `eventSlug does not exist in type` | Faltaba campo `eventSlug` en el tipo del Record en `my-tickets/page.tsx` | Añadido `eventSlug: string \| null` al tipo |
+
+#### Archivos modificados (Sesión 10)
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `apps/api/Dockerfile` | CMD cambiado de `prisma migrate deploy` a `prisma db push` (crea tablas en DB vacía) |
+| `apps/web-client/next.config.js` | Removido `withNx`, añadido `output: 'standalone'` |
+| `apps/web-host/next.config.js` | Ídem |
+| `apps/web-admin/next.config.js` | Ídem |
+| `apps/web-client/Dockerfile` | Nuevo — patrón standalone correcto con rutas `apps/web-client/*` |
+| `apps/web-host/Dockerfile` | Nuevo — ídem para web-host |
+| `apps/web-admin/Dockerfile` | Nuevo — ídem para web-admin |
+| `apps/web-client/src/app/reset-password/page.tsx` | Añadido wrapper `<Suspense>` |
+| `apps/web-client/src/app/verify-email/page.tsx` | Ídem |
+| `apps/web-client/src/app/my-tickets/page.tsx` | Añadido `eventSlug: string \| null` al tipo del Record |
+
+#### Primer admin en producción
+
+Creado directamente en el contenedor de la API (Coolify Terminal):
+
+```bash
+node -e "
+const { PrismaClient } = require('./node_modules/@prisma/client');
+const bcrypt = require('./node_modules/bcrypt');
+const prisma = new PrismaClient();
+bcrypt.hash('<TU_PASSWORD>', 10).then(hash =>
+  prisma.user.create({
+    data: { name: 'Blade', email: 'dmxwilly@gmail.com', password: hash, role: 'ADMIN', emailVerified: true }
+  })
+).then(u => { console.log('Creado:', u.email, u.role); prisma.\$disconnect(); });
+"
+```
+
+> **Nota**: Para futuros admins, usar el endpoint `POST /api/admin/users` desde el panel admin (requiere estar logueado como ADMIN).
+
+#### URLs de producción verificadas
+
+- `https://afroeventos.com` — Portal de usuarios (abre correctamente, muestra "Aún no hay eventos publicados")
+- `https://host.afroeventos.com` — Panel de organizadores (abre)
+- `https://admin.afroeventos.com` — Panel de administración (abre, login con `dmxwilly@gmail.com` / `Cybercloud.440440440`)
+
+#### Notas técnicas importantes
+
+- **`prisma db push` vs `prisma migrate deploy`**: Se usa `db push` porque no hay archivos de migración generados. En una DB ya existente con data real, `db push` es seguro mientras no haya cambios destructivos de schema (columns dropped). Si en el futuro se necesita control de migraciones, ejecutar `npx prisma migrate dev --name init` localmente para generar los archivos y volver a `migrate deploy`.
+- **NEXT_PUBLIC_* variables**: Deben configurarse en Coolify como "Available at Buildtime" (no solo Runtime) porque se bakean en el JS del cliente durante el `docker build`.
+- **Standalone path structure**: Next.js en monorepo NX coloca los archivos del runner en `apps/<appname>/` dentro del directorio standalone. El `server.js` está en `apps/<appname>/server.js`, los estáticos en `apps/<appname>/.next/static/`, y el `public/` en `apps/<appname>/public/`.
+
+---
 
 ### Sesión del 30 de Mayo de 2026 (Sesión 9) — Dockerfiles Frontends para Deploy en Coolify
 

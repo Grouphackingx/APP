@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 30 de Mayo de 2026 (Sesión 9)
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **API desplegada en producción en Coolify** (`https://api.afroeventos.com/api`) + **Dockerfiles frontends listos para Coolify**
+**Fecha de Última Actualización:** 30 de Mayo de 2026 (Sesión 10)
+**Estado del Proyecto:** COMPLETO Y EN PRODUCCIÓN — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **TODOS LOS SERVICIOS EN PRODUCCIÓN**: API + 3 frontends (Coolify) + DB schema aplicado + admin "Blade" creado
 
 ---
 
@@ -89,6 +89,8 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 
 ## 2. Credenciales de Prueba
 
+### Local (desarrollo)
+
 | Rol                    | Email                      | Password       | Dónde usarlo                           |
 | :--------------------- | :------------------------- | :------------- | :------------------------------------- |
 | Administrador Global   | `admin@admin.com`          | `admin123`     | `http://localhost:4202` (web-admin)    |
@@ -97,6 +99,12 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | Cliente (User)         | `dmxwilly@gmail.com`       | `willy2024`    | `http://localhost:4200` (Portal Cliente) |
 | Cliente (User)         | `cliente@openticket.com`   | `cliente123`   | `http://localhost:4200` (Portal Cliente) |
 | Staff (Validator)      | `staff@openticket.com`     | `staff123`     | Mobile App (Expo Go)                   |
+
+### Producción (Coolify)
+
+| Rol | Email | Dónde usarlo |
+| :-- | :---- | :----------- |
+| Administrador Global ("Blade") | `dmxwilly@gmail.com` | `https://admin.afroeventos.com` — contraseña guardada de forma segura fuera del repo |
 
 > **NOTA**: Los tokens JWT duran **24 horas**. Si la API devuelve 401, cerrar sesión y volver a entrar.
 
