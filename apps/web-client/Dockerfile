@@ -26,10 +26,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app/apps/web-client/.next/standalone ./
-COPY --from=builder /app/apps/web-client/.next/static ./.next/static
-COPY --from=builder /app/apps/web-client/public ./public
+COPY --from=builder /app/apps/web-client/.next/static ./apps/web-client/.next/static
+COPY --from=builder /app/apps/web-client/public ./apps/web-client/public
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-CMD ["node", "server.js"]
+CMD ["node", "apps/web-client/server.js"]
