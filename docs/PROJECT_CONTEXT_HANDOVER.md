@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 28 de Mayo de 2026 (Sesión 7)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env)
+**Última Actualización:** 30 de Mayo de 2026 (Sesión 8)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **API en producción (Coolify)**
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -463,7 +463,9 @@ start-all.bat
 
 - [ ] Integración real con Stripe
 - [ ] Reportes financieros para organizadores
-- [ ] Paginación en endpoints
+- [x] ~~Paginación en endpoints~~ ✅ (28 May 2026)
+- [x] ~~Deploy API en producción~~ ✅ (30 May 2026) → `https://api.afroeventos.com/api`
+- [ ] Deploy frontends en producción (web-client, web-host, web-admin)
 
 ### Prioridad Media
 
@@ -1050,6 +1052,58 @@ Ver detalle completo en CHECKPOINT_RESTORE.md secciones "Sesión del 17-20 de Ma
 - 8 campos nuevos en schema `User` (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)
 - Endpoints `GET/PATCH /api/auth/me` protegidos con JwtAuthGuard
 - Toast amarillo al intentar seleccionar asientos sin autenticación (auto-cierre 4s)
+
+### Sesión del 30 de Mayo de 2026 (Sesión 8) — Deploy API en Producción (Coolify)
+
+#### Estado del Deploy
+
+- **URL**: `https://api.afroeventos.com/api` — corriendo y respondiendo `{"message":"Hello API"}`
+- **Plataforma**: Coolify v4.1.1 sobre servidor localhost
+- **Imagen**: Docker multistage (`node:20-alpine`)
+- **Base de datos**: `afroeventos-postgres` (PostgreSQL 16-alpine, interno Coolify)
+- **Cache**: `afroeventos-redis` (Redis 7.2, interno Coolify)
+- **Almacenamiento imágenes**: Volume Mount en `/app/uploads` (persistente entre deployments)
+
+#### Archivos modificados/creados
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `apps/api/Dockerfile` | Agregado `apk add openssl` (Prisma lo requiere en alpine), `prisma generate` antes del build NX, `mkdir -p uploads`, `npm install --legacy-peer-deps` en lugar de `npm ci` |
+| `.dockerignore` | Nuevo — excluye `node_modules`, `dist`, `.next`, `uploads`, `.env*`, `.git` del build context |
+| `.gitignore` | Agregada sección `# Environment files` con `.env`, `.env.*`, `!.env.example` |
+| `.env.production` | Creado localmente (no commiteado) con variables de producción reales |
+
+#### Variables de entorno en Coolify
+
+Configuradas en la pestaña Environment Variables del servicio `afroeventos-api`:
+- `DATABASE_URL` — PostgreSQL interno Coolify
+- `REDIS_URL` — Redis interno Coolify
+- `JWT_SECRET` — clave de 64 chars generada aleatoriamente
+- `PORT=3000`
+- `NEXT_PUBLIC_API_URL=https://api.afroeventos.com/api`
+- `NEXT_PUBLIC_SITE_URL=https://afroeventos.com`
+- `NEXT_PUBLIC_HOST_URL=https://host.afroeventos.com`
+- `NEXT_PUBLIC_ADMIN_URL=https://admin.afroeventos.com`
+- Variables MAIL (vacías por ahora), STORAGE_PROVIDER=local, límites de imágenes
+
+#### Errores resueltos durante el deploy
+
+| Error | Causa | Fix |
+| :--- | :--- | :--- |
+| `open Dockerfile: no such file or directory` | Coolify apuntaba a `/Dockerfile` (raíz) | Cambiar a `/apps/api/Dockerfile` en Configuration → General |
+| `npm ci lockfile out of sync` | `yaml@2.9.0` faltaba en lock file | Cambiar a `npm install --legacy-peer-deps` en Dockerfile |
+| `Module '"@prisma/client"' has no exported member 'Role'` | Prisma Client no generado antes del build | Agregar `npx prisma generate` antes de `npx nx build api` |
+| `Prisma failed to detect libssl / Please manually install OpenSSL` | `node:20-alpine` no incluye OpenSSL | Agregar `apk add --no-cache openssl` en etapa final |
+
+#### Configuración Coolify
+
+| Campo | Valor |
+| :--- | :--- |
+| Base Directory | `/` |
+| Dockerfile Location | `/apps/api/Dockerfile` |
+| Persistent Volume | `afroeventos-uploads` → `/app/uploads` |
+
+---
 
 ### Sesión del 28 de Mayo de 2026 (Sesión 7) — Paginación Real + Sistema de Imágenes + Code Review
 

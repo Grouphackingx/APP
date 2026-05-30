@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 28 de Mayo de 2026 (Sesión 7)
-**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env)
+**Fecha de Última Actualización:** 30 de Mayo de 2026 (Sesión 8)
+**Estado del Proyecto:** COMPLETO Y VERIFICADO — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **API desplegada en producción en Coolify** (`https://api.afroeventos.com/api`)
 
 ---
 
@@ -488,7 +488,8 @@ Cuando `sellOnSite: true` en una zona:
 
 - [ ] Integración real con Stripe (reemplazar el mock)
 - [ ] Reportes financieros para organizadores
-- [ ] Deploy en VPS (Dockerfiles + docker-compose.prod.yml + Nginx + SSL)
+- [x] ~~Deploy en VPS (Dockerfiles + docker-compose.prod.yml + Nginx + SSL)~~ → **Deploy en Coolify completado (30 May 2026)**
+- [ ] Deploy frontends en producción (web-client, web-host, web-admin)
 
 ### Prioridad Media
 
@@ -566,6 +567,7 @@ Cuando `sellOnSite: true` en una zona:
 - **Cloudinary listo** — cuando `STORAGE_PROVIDER=cloudinary`, Sharp comprime primero y luego sube el WebP; credenciales en `.env` ✅ (28 May 2026)
 - **Code review — 7 bugs corregidos** — WebP corrupción, doble URL encoding en búsqueda, generalTotal, useTransition async, stale closure, queries redundantes en create(), role type cleanup ✅ (28 May 2026)
 - **Hydration warning fix** — `suppressHydrationWarning` en `<body>` de los 3 layouts; soluciona warning de extensiones del navegador ✅ (28 May 2026)
+- **API desplegada en producción (Coolify)** — `https://api.afroeventos.com/api` — Docker multistage, Prisma generate en builder, OpenSSL en runtime, volumen persistente `/app/uploads`, variables de entorno configuradas, PostgreSQL + Redis internos ✅ (30 May 2026)
 
 ---
 
