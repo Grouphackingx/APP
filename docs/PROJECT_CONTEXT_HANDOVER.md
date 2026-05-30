@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 30 de Mayo de 2026 (Sesión 8)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **API en producción (Coolify)**
+**Última Actualización:** 30 de Mayo de 2026 (Sesión 9)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **API en producción (Coolify)** + **Dockerfiles frontends listos para deploy**
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -465,7 +465,8 @@ start-all.bat
 - [ ] Reportes financieros para organizadores
 - [x] ~~Paginación en endpoints~~ ✅ (28 May 2026)
 - [x] ~~Deploy API en producción~~ ✅ (30 May 2026) → `https://api.afroeventos.com/api`
-- [ ] Deploy frontends en producción (web-client, web-host, web-admin)
+- [x] ~~Dockerfiles frontends con output standalone~~ ✅ (30 May 2026)
+- [ ] Deploy frontends en Coolify (web-client → afroeventos.com, web-host → host.afroeventos.com, web-admin → admin.afroeventos.com)
 
 ### Prioridad Media
 
@@ -1052,6 +1053,55 @@ Ver detalle completo en CHECKPOINT_RESTORE.md secciones "Sesión del 17-20 de Ma
 - 8 campos nuevos en schema `User` (avatarUrl, idType, idNumber, province, city, birthDate, citizenship)
 - Endpoints `GET/PATCH /api/auth/me` protegidos con JwtAuthGuard
 - Toast amarillo al intentar seleccionar asientos sin autenticación (auto-cierre 4s)
+
+### Sesión del 30 de Mayo de 2026 (Sesión 9) — Dockerfiles Frontends para Deploy en Coolify
+
+#### Archivos creados/modificados
+
+| Archivo | Cambio |
+| :--- | :--- |
+| `apps/web-client/Dockerfile` | Nuevo — build NX standalone, ARGs para NEXT_PUBLIC_*, output port 3000 |
+| `apps/web-host/Dockerfile` | Nuevo — ídem para web-host |
+| `apps/web-admin/Dockerfile` | Nuevo — ídem para web-admin |
+| `apps/web-client/next.config.js` | Agregado `output: 'standalone'` |
+| `apps/web-host/next.config.js` | Agregado `output: 'standalone'` |
+| `apps/web-admin/next.config.js` | Agregado `output: 'standalone'` |
+
+#### Patrón de Dockerfile (igual para los 3)
+
+- **Builder stage**: `node:20-alpine`, instala deps, inyecta `NEXT_PUBLIC_*` como ARGs de build, ejecuta `npx nx build <app> --skip-nx-cache`
+- **Runner stage**: `node:20-alpine`, copia `dist/apps/<app>/.next/standalone`, archivos estáticos y `public/`, corre en port 3000
+- **Variables NEXT_PUBLIC** baked al build time: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_HOST_URL`, `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_MAX_UPLOAD_MB`, `NEXT_PUBLIC_ALLOWED_IMAGE_TYPES`
+
+#### Instrucciones de deploy en Coolify (para cada frontend)
+
+1. **Crear nuevo servicio** en Coolify → "New Resource" → "Application" → seleccionar el repositorio GitHub
+2. **Base Directory**: `/`
+3. **Dockerfile Location**: `/apps/web-client/Dockerfile` (o `web-host` / `web-admin`)
+4. **Port**: `3000`
+5. **Domain**: `afroeventos.com` (o `host.` / `admin.`)
+6. **Build Variables** (en pestaña "Build Variables" — no en Environment Variables):
+
+```
+NEXT_PUBLIC_API_URL=https://api.afroeventos.com/api
+NEXT_PUBLIC_SITE_URL=https://afroeventos.com
+NEXT_PUBLIC_HOST_URL=https://host.afroeventos.com
+NEXT_PUBLIC_ADMIN_URL=https://admin.afroeventos.com
+NEXT_PUBLIC_MAX_UPLOAD_MB=2.5
+NEXT_PUBLIC_ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
+```
+
+> **IMPORTANTE**: Los `NEXT_PUBLIC_*` deben ir en **Build Variables** (no en Environment Variables) porque se bakean en el JS del cliente durante el `docker build`. Las Environment Variables de Coolify solo se inyectan en runtime.
+
+#### Errores comunes esperados
+
+| Error | Causa probable | Fix |
+| :--- | :--- | :--- |
+| `COPY failed: file not found in build context` para `.next/standalone` | `output: 'standalone'` no está en next.config.js | Ya agregado en esta sesión |
+| `server.js not found` | La ruta del server.js no coincide con la estructura NX | Verificar que el path sea `apps/web-client/server.js` dentro del standalone |
+| Variables NEXT_PUBLIC vacías | Configuradas como Env Vars (runtime) en lugar de Build Args | Mover a Build Variables en Coolify |
+
+---
 
 ### Sesión del 30 de Mayo de 2026 (Sesión 8) — Deploy API en Producción (Coolify)
 
