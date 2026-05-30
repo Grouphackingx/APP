@@ -160,6 +160,7 @@ export default function MyTicketsPage() {
       string,
       {
         eventId: string;
+        eventSlug: string | null;
         eventTitle: string;
         eventDate: string;
         eventLocation: string;
