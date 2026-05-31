@@ -45,6 +45,11 @@ export class EventsController {
         return { paidEventsEnabled };
     }
 
+    @Get('categories')
+    getAvailableCategories() {
+        return this.eventsService.getAvailableCategories();
+    }
+
     @Get('backfill-slugs')
     backfillSlugs() {
         return this.eventsService.backfillSlugs();

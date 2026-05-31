@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
+﻿import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
@@ -10,9 +10,9 @@ import * as path from 'path';
 function toSlug(text: string): string {
     return text
         .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
+        .replace(/\p{M}/gu, '')
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\p{M}/gu, '')
         .trim()
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-');
@@ -80,13 +80,13 @@ export class EventsService implements OnModuleInit {
         });
 
         if (!user || !user.organizerProfile) {
-            throw new BadRequestException('Usuario no tiene configurado un perfil de organizador válido.');
+            throw new BadRequestException('Usuario no tiene configurado un perfil de organizador vÃ¡lido.');
         }
 
         const profile = user.organizerProfile;
 
         if (profile.status === 'PENDING') {
-            throw new BadRequestException('Tu cuenta de organizador está PENDIENTE de aprobación por el Administrador Global.');
+            throw new BadRequestException('Tu cuenta de organizador estÃ¡ PENDIENTE de aprobaciÃ³n por el Administrador Global.');
         } else if (profile.status === 'REJECTED') {
             throw new BadRequestException('Tu cuenta de organizador fue rechazada.');
         }
@@ -108,20 +108,20 @@ export class EventsService implements OnModuleInit {
                 const renewDate = new Date(periodStart);
                 renewDate.setFullYear(renewDate.getFullYear() + 1);
                 const renewStr = renewDate.toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' });
-                throw new BadRequestException(`Has alcanzado el límite de ${planDetails.maxEvents} eventos para tu plan (${planDetails.name}). Tu cuota se renueva el ${renewStr}. Actualiza tu suscripción para publicar más.`);
+                throw new BadRequestException(`Has alcanzado el lÃ­mite de ${planDetails.maxEvents} eventos para tu plan (${planDetails.name}). Tu cuota se renueva el ${renewStr}. Actualiza tu suscripciÃ³n para publicar mÃ¡s.`);
             }
         } else {
             // Fallback for missing plan configurations
             if (profile.plan === 'FREE' && currentEventsCount >= 3) {
-                throw new BadRequestException('Has alcanzado el límite de 3 eventos anuales para el plan FREE.');
+                throw new BadRequestException('Has alcanzado el lÃ­mite de 3 eventos anuales para el plan FREE.');
             } else if (profile.plan === 'PLUS' && currentEventsCount >= 12) {
-                throw new BadRequestException('Has alcanzado el límite de 12 eventos anuales para el plan PLUS. Usa ELITE para eventos ilimitados.');
+                throw new BadRequestException('Has alcanzado el lÃ­mite de 12 eventos anuales para el plan PLUS. Usa ELITE para eventos ilimitados.');
             }
         }
 
         const slug = await this.generateUniqueSlug(eventData.title);
 
-        // Resolve payment status using the already-fetched profile — avoid a redundant DB query
+        // Resolve payment status using the already-fetched profile â€” avoid a redundant DB query
         let paidEnabled: boolean;
         if (profile.paidEventsEnabled !== null && profile.paidEventsEnabled !== undefined) {
             paidEnabled = profile.paidEventsEnabled;
@@ -230,6 +230,14 @@ export class EventsService implements OnModuleInit {
         return event;
     }
 
+    async getAvailableCategories(): Promise<string[]> {
+        const rows = await this.prisma.event.groupBy({
+            by: ['category'],
+            where: { status: 'PUBLISHED' },
+        });
+        return rows.map(r => r.category).filter(c => c?.trim()).sort();
+    }
+
     async backfillSlugs() {
         const events = await this.prisma.event.findMany({ where: { slug: null } });
         for (const ev of events) {
@@ -248,7 +256,7 @@ export class EventsService implements OnModuleInit {
         newLocation: string,
         newCity: string,
     ) {
-        // eventId is stored only in the ticket JWT — decode all tickets to find buyers
+        // eventId is stored only in the ticket JWT â€” decode all tickets to find buyers
         const allTickets = await this.prisma.ticket.findMany({
             include: { order: { include: { user: { select: { id: true, email: true, name: true } } } } },
         });
@@ -279,11 +287,11 @@ export class EventsService implements OnModuleInit {
         const removed = oldUrls.filter(u => !newUrls.includes(u));
         for (const url of removed) {
             try {
-                // URL is like http://host/uploads/organizers/...  → strip origin
+                // URL is like http://host/uploads/organizers/...  â†’ strip origin
                 const pathname = new URL(url).pathname; // /uploads/organizers/...
                 const filePath = path.join(process.cwd(), pathname);
                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            } catch { /* ignore — URL may be external (Cloudinary) or already gone */ }
+            } catch { /* ignore â€” URL may be external (Cloudinary) or already gone */ }
         }
     }
 
@@ -385,7 +393,7 @@ export class EventsService implements OnModuleInit {
                         // Cannot reduce capacity below the number of sold seats
                         if (newCapacity < soldCount) {
                             throw new BadRequestException(
-                                `La zona "${zone.name}" tiene ${soldCount} entradas vendidas. No se puede reducir la capacidad por debajo de ese número.`
+                                `La zona "${zone.name}" tiene ${soldCount} entradas vendidas. No se puede reducir la capacidad por debajo de ese nÃºmero.`
                             );
                         }
 

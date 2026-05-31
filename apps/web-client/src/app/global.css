@@ -796,6 +796,12 @@ textarea {
 }
 
 .events-grid > * {
+  flex: 0 1 calc(33.333% - 1rem);
+  min-width: 260px;
+  max-width: 380px;
+}
+
+.events-grid > * {
   flex: 0 0 calc(33.333% - 1rem);
 }
 

@@ -1,4 +1,4 @@
-import { getEvents, getBanners, EVENT_CATEGORIES, type EventItem, type BannerItem } from '../lib/api';
+import { getEvents, getBanners, getEventCategories, type EventItem, type BannerItem } from '../lib/api';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { FeaturedEventsSection } from '../components/FeaturedEventsSection';
 import { BannerSlider } from '../components/BannerSlider';
@@ -28,13 +28,27 @@ export default async function HomePage(props: {
   let featuredEvents: EventItem[] = [];
   let generalEvents: EventItem[] = [];
   let banners: BannerItem[] = [];
+  let availableCategories: string[] = [];
   let error = '';
 
   let generalTotal = 0;
 
+  // Hero always shows the 3 nearest upcoming events regardless of category filter
+  let heroSourceEvents: EventItem[] = [];
+
   try {
-    banners = await getBanners().catch(() => []);
-    const result = await getEvents(query, 1, 12, category);
+    [banners, availableCategories] = await Promise.all([
+      getBanners().catch(() => []),
+      getEventCategories().catch(() => []),
+    ]);
+
+    const [result, heroResult] = await Promise.all([
+      getEvents(query, 1, 12, category),
+      // Hero fetch: unfiltered by category, enough to find 3 upcoming
+      category ? getEvents(query, 1, 12) : Promise.resolve(null),
+    ]);
+
+    heroSourceEvents = (heroResult ?? result).data;
 
     const now = new Date();
 
@@ -66,16 +80,15 @@ export default async function HomePage(props: {
     bannerImageUrl: e.bannerImageUrl ?? null,
   });
 
-  const allPublished = [...featuredEvents, ...generalEvents];
   const now = new Date();
-  const heroEvents = allPublished
+  const heroUpcoming = heroSourceEvents
     .filter((e) => new Date(e.date) > now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3)
     .map(toCarouselShape);
 
   const carouselEvents: CarouselEvent[] =
-    heroEvents.length > 0 ? heroEvents : allPublished.slice(0, 3).map(toCarouselShape);
+    heroUpcoming.length > 0 ? heroUpcoming : heroSourceEvents.slice(0, 3).map(toCarouselShape);
 
   return (
     <>
@@ -151,8 +164,8 @@ export default async function HomePage(props: {
             </div>
           ) : null}
 
-          {/* ── Category pills ── */}
-          {!query && (
+          {/* ── Category pills — only show if there are multiple categories ── */}
+          {!query && availableCategories.length > 1 && (
             <div className="category-pills">
               <Link
                 href="/"
@@ -160,7 +173,7 @@ export default async function HomePage(props: {
               >
                 Todos
               </Link>
-              {EVENT_CATEGORIES.map((cat) => (
+              {availableCategories.map((cat) => (
                 <Link
                   key={cat}
                   href={`/?category=${encodeURIComponent(cat)}`}
