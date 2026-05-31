@@ -1,4 +1,4 @@
-import { baseLayout, ctaButton, formatDate, formatTime } from './base.layout';
+import { baseLayout, ctaButton, formatDate, formatTime, iconCircle } from './base.layout';
 
 interface EventRescheduledProps {
   buyerName: string;
@@ -14,8 +14,8 @@ export function eventRescheduledTemplate(p: EventRescheduledProps): string {
   const content = `
   <!-- HERO -->
   <tr>
-    <td style="background:linear-gradient(160deg,#0d1117 0%,#111318 100%);padding:48px 40px 36px;text-align:center;border-top:3px solid #f59e0b;">
-      <div style="display:inline-block;width:72px;height:72px;border-radius:50%;background:rgba(245,158,11,0.12);border:2px solid rgba(245,158,11,0.35);line-height:72px;font-size:34px;margin-bottom:20px;">📅</div>
+    <td bgcolor="#111318" style="background:linear-gradient(160deg,#0d1117 0%,#111318 100%);padding:48px 40px 36px;text-align:center;border-top:3px solid #f59e0b;">
+      ${iconCircle('📅', '#13100a', 'rgba(245,158,11,0.5)')}
       <h1 class="hero-text" style="margin:0 0 12px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.2;">
         El evento fue reprogramado
       </h1>

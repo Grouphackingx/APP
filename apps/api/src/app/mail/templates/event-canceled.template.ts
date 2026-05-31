@@ -1,4 +1,4 @@
-import { baseLayout, ctaButton, formatDate, formatTime } from './base.layout';
+import { baseLayout, ctaButton, formatDate, formatTime, iconCircle } from './base.layout';
 
 interface EventCanceledProps {
   buyerName: string;
@@ -14,8 +14,8 @@ export function eventCanceledTemplate(p: EventCanceledProps): string {
   const content = `
   <!-- HERO -->
   <tr>
-    <td style="background:linear-gradient(160deg,#1a0d0d 0%,#111318 100%);padding:48px 40px 36px;text-align:center;border-top:3px solid #ef4444;">
-      <div style="display:inline-block;width:72px;height:72px;border-radius:50%;background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.4);line-height:72px;font-size:34px;margin-bottom:20px;">⚠️</div>
+    <td bgcolor="#111318" style="background:linear-gradient(160deg,#1a0d0d 0%,#111318 100%);padding:48px 40px 36px;text-align:center;border-top:3px solid #ef4444;">
+      ${iconCircle('⚠️', '#1a0d0d', 'rgba(239,68,68,0.5)')}
       <h1 class="hero-text" style="margin:0 0 12px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.2;">
         Evento cancelado
       </h1>
@@ -81,10 +81,10 @@ export function eventCanceledTemplate(p: EventCanceledProps): string {
 
   <!-- SECURITY NOTICE -->
   <tr>
-    <td style="background-color:#0d0f13;padding:20px 40px;border-top:1px solid #1e2229;">
-      <p style="margin:0;font-size:12px;color:#374151;text-align:center;line-height:1.6;">
-        Este correo fue enviado a <strong style="color:#4b5563;">${'???'}</strong> porque tienes una compra asociada a este evento.<br/>
-        Si crees que es un error, contáctanos en <a href="mailto:soporte@afroeventos.com" style="color:#6AC44D;text-decoration:none;">soporte@afroeventos.com</a>
+    <td bgcolor="#0d0f13" style="background-color:#0d0f13;padding:20px 40px;border-top:1px solid #1e2229;">
+      <p style="margin:0;font-size:12px;color:#374151;text-align:center;line-height:1.6;font-family:Arial,sans-serif;">
+        Recibiste este correo porque tienes una compra asociada a este evento.<br/>
+        ¿Preguntas? <a href="mailto:soporte@afroeventos.com" style="color:#6AC44D;text-decoration:none;">soporte@afroeventos.com</a>
       </p>
     </td>
   </tr>`;

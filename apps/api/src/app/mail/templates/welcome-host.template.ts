@@ -71,19 +71,25 @@ export function welcomeHostTemplate({ name, organizationName, hostUrl }: Welcome
 
 function stepRow(num: string, icon: string, title: string, desc: string, active: boolean): string {
   const color = active ? '#6AC44D' : '#374151';
+  const bgColor = active ? '#0f1a10' : '#111a13';
   const textColor = active ? '#e5e7eb' : '#6b7280';
   return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:16px;">
     <tr>
       <td width="40" valign="top" style="padding-right:14px;padding-top:2px;">
-        <div style="width:32px;height:32px;background:${active ? '#0f1a10' : '#111a13'};
-                    border:2px solid ${color};border-radius:50%;
-                    text-align:center;line-height:28px;font-size:13px;font-weight:700;color:${color};">
-          ${active ? icon : num}
-        </div>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td width="32" height="32" align="center" valign="middle" bgcolor="${bgColor}"
+                style="background-color:${bgColor};border:2px solid ${color};border-radius:16px;
+                       font-size:13px;font-weight:700;color:${color};text-align:center;
+                       vertical-align:middle;line-height:32px;font-family:Arial,sans-serif;">
+              ${active ? icon : num}
+            </td>
+          </tr>
+        </table>
       </td>
       <td valign="top">
-        <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:${textColor};">${title}</p>
-        <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5;">${desc}</p>
+        <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:${textColor};font-family:Arial,sans-serif;">${title}</p>
+        <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5;font-family:Arial,sans-serif;">${desc}</p>
       </td>
     </tr>
   </table>`;

@@ -1,4 +1,4 @@
-import { baseLayout, ctaButton } from './base.layout';
+import { baseLayout, ctaButton, iconCircle } from './base.layout';
 
 interface AccountCreatedByAdminProps {
   name: string;
@@ -36,8 +36,8 @@ export function accountCreatedByAdminTemplate(p: AccountCreatedByAdminProps): st
   const content = `
   <!-- HERO -->
   <tr>
-    <td style="background:linear-gradient(160deg,#0a1a10 0%,#111318 100%);padding:48px 40px 36px;text-align:center;border-top:3px solid ${cfg.color};">
-      <div style="display:inline-block;width:72px;height:72px;border-radius:50%;background:rgba(106,196,77,0.12);border:2px solid rgba(106,196,77,0.3);line-height:72px;font-size:34px;margin-bottom:20px;">${cfg.icon}</div>
+    <td bgcolor="#111318" style="background:linear-gradient(160deg,#0a1a10 0%,#111318 100%);padding:48px 40px 36px;text-align:center;border-top:3px solid ${cfg.color};">
+      ${iconCircle(cfg.icon, '#0f1a10', 'rgba(106,196,77,0.4)')}
       <h1 class="hero-text" style="margin:0 0 12px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.2;">
         Tu cuenta está lista
       </h1>

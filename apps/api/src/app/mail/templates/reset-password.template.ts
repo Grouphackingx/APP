@@ -1,4 +1,4 @@
-import { baseLayout, ctaButton } from './base.layout';
+import { baseLayout, ctaButton, iconCircle } from './base.layout';
 
 interface ResetPasswordData {
   name: string;
@@ -12,9 +12,8 @@ export function resetPasswordTemplate({ name, resetUrl, expiresInMinutes }: Rese
   const content = `
     <!-- HERO -->
     <tr>
-      <td style="background-color:#111318;padding:52px 40px 40px;text-align:center;" class="pd-mobile">
-        <div style="display:inline-block;width:72px;height:72px;background:#13100a;border:2px solid #f59e0b;
-                    border-radius:50%;text-align:center;line-height:72px;font-size:32px;margin-bottom:24px;">🔑</div>
+      <td bgcolor="#111318" style="background-color:#111318;padding:52px 40px 40px;text-align:center;" class="pd-mobile">
+        ${iconCircle('🔑', '#13100a', '#f59e0b')}
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f59e0b;">
           Recuperar contraseña
         </p>

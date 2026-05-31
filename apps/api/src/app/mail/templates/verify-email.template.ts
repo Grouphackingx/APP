@@ -1,4 +1,4 @@
-import { baseLayout, ctaButton } from './base.layout';
+import { baseLayout, ctaButton, iconCircle } from './base.layout';
 
 interface VerifyEmailData {
   name: string;
@@ -12,9 +12,8 @@ export function verifyEmailTemplate({ name, verifyUrl, expiresInHours }: VerifyE
   const content = `
     <!-- HERO -->
     <tr>
-      <td style="background:linear-gradient(160deg,#111318 0%,#0c150e 100%);padding:52px 40px 40px;text-align:center;" class="pd-mobile">
-        <div style="display:inline-block;width:72px;height:72px;background:#0f1a10;border:2px solid #6AC44D;
-                    border-radius:50%;text-align:center;line-height:72px;font-size:32px;margin-bottom:24px;">✉️</div>
+      <td bgcolor="#111318" style="background:linear-gradient(160deg,#111318 0%,#0c150e 100%);padding:52px 40px 40px;text-align:center;" class="pd-mobile">
+        ${iconCircle('✉️', '#0f1a10', '#6AC44D')}
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#6AC44D;">
           Verifica tu correo
         </p>

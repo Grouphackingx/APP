@@ -1,4 +1,4 @@
-import { baseLayout, ctaButton, divider } from './base.layout';
+import { baseLayout, ctaButton, divider, iconCircle } from './base.layout';
 
 interface HostApprovedData {
   name: string;
@@ -12,9 +12,8 @@ export function hostApprovedTemplate({ name, organizationName, hostUrl }: HostAp
   const content = `
     <!-- HERO BADGE -->
     <tr>
-      <td style="background:linear-gradient(160deg,#111318 0%,#0a1a0a 100%);padding:52px 40px 40px;text-align:center;" class="pd-mobile">
-        <div style="display:inline-block;width:72px;height:72px;background:#0f1a10;border:2px solid #6AC44D;
-                    border-radius:50%;text-align:center;line-height:72px;font-size:34px;margin-bottom:24px;">🎊</div>
+      <td bgcolor="#111318" style="background:linear-gradient(160deg,#111318 0%,#0a1a0a 100%);padding:52px 40px 40px;text-align:center;" class="pd-mobile">
+        ${iconCircle('🎊', '#0f1a10', '#6AC44D')}
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#6AC44D;">
           Cuenta aprobada
         </p>

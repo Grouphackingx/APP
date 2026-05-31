@@ -1,4 +1,4 @@
-import { baseLayout, ctaButton } from './base.layout';
+import { baseLayout, ctaButton, iconCircle } from './base.layout';
 
 interface HostRejectedData {
   name: string;
@@ -13,9 +13,8 @@ export function hostRejectedTemplate({ name, organizationName, reason, siteUrl }
   const content = `
     <!-- HERO -->
     <tr>
-      <td style="background-color:#111318;padding:52px 40px 36px;text-align:center;" class="pd-mobile">
-        <div style="display:inline-block;width:64px;height:64px;background:#1a1010;border:2px solid #374151;
-                    border-radius:50%;text-align:center;line-height:64px;font-size:28px;margin-bottom:24px;">📋</div>
+      <td bgcolor="#111318" style="background-color:#111318;padding:52px 40px 36px;text-align:center;" class="pd-mobile">
+        ${iconCircle('📋', '#1a1010', '#374151', 64)}
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#9ca3af;">
           Actualización de tu solicitud
         </p>
