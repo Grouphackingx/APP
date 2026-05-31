@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 30 de Mayo de 2026 (Sesión 10)
-**Estado del Proyecto:** COMPLETO Y EN PRODUCCIÓN — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **TODOS LOS SERVICIOS EN PRODUCCIÓN**: API + 3 frontends (Coolify) + DB schema aplicado + admin "Blade" creado
+**Fecha de Última Actualización:** 30 de Mayo de 2026 (Sesión 11)
+**Estado del Proyecto:** COMPLETO Y EN PRODUCCIÓN — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **UI Polish**: precios ocultos en EventCard, hover shadows navbar eliminados, logos sidebars y footer clicables + **TODOS LOS SERVICIOS EN PRODUCCIÓN**: API + 3 frontends (Coolify) + DB schema aplicado + admin "Blade" creado
 
 ---
 
@@ -498,7 +498,7 @@ Cuando `sellOnSite: true` en una zona:
 - [ ] Reportes financieros para organizadores
 - [x] ~~Deploy en VPS (Dockerfiles + docker-compose.prod.yml + Nginx + SSL)~~ → **Deploy en Coolify completado (30 May 2026)**
 - [x] ~~Dockerfiles frontends con output standalone~~ ✅ (30 May 2026)
-- [ ] Deploy frontends en Coolify (web-client → afroeventos.com, web-host → host.afroeventos.com, web-admin → admin.afroeventos.com)
+- [x] ~~Deploy frontends en Coolify~~ ✅ (30 May 2026) → `https://afroeventos.com`, `https://host.afroeventos.com`, `https://admin.afroeventos.com`
 
 ### Prioridad Media
 
@@ -578,6 +578,11 @@ Cuando `sellOnSite: true` en una zona:
 - **Hydration warning fix** — `suppressHydrationWarning` en `<body>` de los 3 layouts; soluciona warning de extensiones del navegador ✅ (28 May 2026)
 - **API desplegada en producción (Coolify)** — `https://api.afroeventos.com/api` — Docker multistage, Prisma generate en builder, OpenSSL en runtime, volumen persistente `/app/uploads`, variables de entorno configuradas, PostgreSQL + Redis internos ✅ (30 May 2026)
 - **Dockerfiles frontends para Coolify** — `apps/{web-client,web-host,web-admin}/Dockerfile` con `output: 'standalone'`, ARGs para NEXT_PUBLIC_*, runner stage mínimo en node:20-alpine ✅ (30 May 2026)
+- **EventCard sin precios** — eliminada función `getMinPrice()` y bloque JSX de precio en `EventCard.tsx`; el precio se descubre en el detalle de evento ✅ (30 May 2026)
+- **Hover shadows navbar eliminados** — removidos `box-shadow`, `transform: translateY` y fondo oscuro del hover de botones auth; root cause: `padding + background` en wrapper `<a>` de `.navbar-links`; fix: selectores ID de alta especificidad en `global.css` ✅ (30 May 2026)
+- **Logos clicables en sidebars** — logos de `web-host/Sidebar.tsx` y `web-admin/Sidebar.tsx` abren el Portal de Clientes en nueva pestaña vía `<a href={NEXT_PUBLIC_SITE_URL}>` ✅ (30 May 2026)
+- **Logo footer clicable** — `AfroEventosLogo` en `Footer.tsx` envuelto en `<Link href="/">` ✅ (30 May 2026)
+- **`.tsbuildinfo` excluido de git** — `*.tsbuildinfo` añadido a `.gitignore`, archivos destrackeados con `git rm --cached` ✅ (30 May 2026)
 
 ---
 

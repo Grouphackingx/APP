@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 30 de Mayo de 2026 (Sesión 10)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado
+**Última Actualización:** 30 de Mayo de 2026 (Sesión 11)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -501,6 +501,46 @@ start-all.bat
 ---
 
 ## 12. Registro de Cambios
+
+### Sesión del 30 de Mayo de 2026 (Sesión 11) — UI Polish: Precios, Hover Shadows, Logos Clicables
+
+#### Cambios realizados
+
+**`apps/web-client/src/components/EventCard.tsx`**
+- Eliminada función `getMinPrice()` y toda la lógica de precio mínimo
+- Eliminado el bloque JSX `event-card-footer` / `event-card-price`
+- Las tarjetas de eventos en la página principal ya no muestran precios (aplica UX: el precio se descubre en la página de detalle)
+
+**`apps/web-client/src/app/global.css`**
+- Reducido gap de `.navbar-links` de `0.5rem` a `0.375rem` (menos espacio entre elementos de navegación)
+- Añadidas reglas ID-específicas para neutralizar el padding y hover de los wrappers `<a>` alrededor de los botones auth:
+  ```css
+  #nav-login, #nav-register, #nav-my-tickets { padding: 0; }
+  #nav-login:hover, #nav-register:hover, #nav-my-tickets:hover { background: transparent; }
+  ```
+- Eliminado `transform: translateY(-2px)` y `box-shadow: 0 4px 12px rgba(0,0,0,0.3)` de `.btn-primary:hover` — eliminada sombra/glow verde alrededor de "Registrarse"
+- `.btn-accent:hover` cambiado a `filter: brightness(1.12)` en lugar de fondo oscuro + borde verde
+
+**`apps/web-client/src/components/Footer.tsx`**
+- Logo `AfroEventosLogo` en el pie de página envuelto en `<Link href="/" aria-label="Ir al inicio">` — ahora es clicable y lleva a la página de inicio
+
+**`apps/web-host/src/components/Sidebar.tsx`**
+- Logo `AfroEventosLogo` envuelto en `<a href={process.env.NEXT_PUBLIC_SITE_URL || 'https://afroeventos.com'} target="_blank" rel="noopener noreferrer">` — clic abre el Portal de Clientes en nueva pestaña
+
+**`apps/web-admin/components/Sidebar.tsx`**
+- Mismo patrón de `<a>` que web-host — logo Admin abre el Portal de Clientes en nueva pestaña
+
+**`.gitignore`**
+- Añadido `*.tsbuildinfo` bajo sección "compiled output" — los artefactos de build de TypeScript ya no son trackeados por git
+
+#### Commits
+- `9ff6fd6` — UI Polish: hover shadows removed, navbar spacing tightened, logos clickable
+- `de3d5a6` — .gitignore updated to exclude `*.tsbuildinfo`
+
+#### Causa raíz del glow verde en "Registrarse"
+El efecto glow no venía de `box-shadow` directamente en el botón, sino de `.navbar-links a { padding: 0.5rem 1rem }` + `.navbar-links a:hover { background: var(--bg-card-hover) }` aplicándose al `<a>` wrapper que envuelve el `<span>` del botón. Al hacer hover, el fondo oscuro se veía alrededor del `<span>` como un borde/glow. La solución fue usar selectores ID de alta especificidad para anular el padding y el hover en los wrappers específicos.
+
+---
 
 ### Sesión del 25 de Mayo de 2026 (Sesión 5) — Bloqueo de Organizadores + Modales Personalizados + Persistencia URL + Impersonación Admin
 
