@@ -36,7 +36,9 @@ export function Footer() {
     <footer className="footer" id="main-footer">
       <div className="footer-inner">
         <div className="footer-brand">
-          <AfroEventosLogo variant="light" height={60} />
+          <Link href="/" aria-label="Ir al inicio">
+            <AfroEventosLogo variant="light" height={60} />
+          </Link>
         </div>
 
         {/* Social icons */}

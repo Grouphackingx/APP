@@ -18,7 +18,15 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <AfroEventosLogo variant="light" height={50} />
+        <a
+          href={process.env.NEXT_PUBLIC_SITE_URL || 'https://afroeventos.com'}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ir al portal de clientes"
+          style={{ display: 'flex', alignItems: 'center' }}
+        >
+          <AfroEventosLogo variant="light" height={50} />
+        </a>
         <span className="logo-badge" style={{ color: '#8b5cf6', borderColor: 'rgba(139,92,246,0.4)', background: 'rgba(139,92,246,0.1)' }}>ADMIN</span>
       </div>
 

@@ -28,7 +28,15 @@ export function Sidebar({ user, activeView, onNavigate, onLogout }: SidebarProps
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <AfroEventosLogo variant="light" height={45} />
+        <a
+          href={process.env.NEXT_PUBLIC_SITE_URL || 'https://afroeventos.com'}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Ir al portal de clientes"
+          style={{ display: 'flex', alignItems: 'center' }}
+        >
+          <AfroEventosLogo variant="light" height={45} />
+        </a>
         <span className="logo-badge">Organizador</span>
       </div>
 

@@ -24,13 +24,6 @@ function isEventSoldOut(event: EventItem): boolean {
   });
 }
 
-function getMinPrice(event: EventItem): number | null {
-  if (!event.zones || event.zones.length === 0) return null;
-  const prices = event.zones.map(z => Number(z.price)).filter(p => !isNaN(p));
-  if (prices.length === 0) return null;
-  return Math.min(...prices);
-}
-
 export function EventCard({
   event,
   index,
@@ -39,7 +32,6 @@ export function EventCard({
   index: number;
 }) {
   const soldOut = isEventSoldOut(event);
-  const minPrice = getMinPrice(event);
 
   return (
     <Link
@@ -77,14 +69,6 @@ export function EventCard({
             {event.city ? `, ${event.city}` : ''}
           </span>
         </div>
-        {minPrice !== null && (
-          <div className="event-card-footer">
-            <div className="event-card-price">
-              {minPrice === 0 ? 'Gratis' : `$${minPrice.toFixed(2)}`}
-              {minPrice > 0 && <span>desde</span>}
-            </div>
-          </div>
-        )}
       </div>
     </Link>
   );
