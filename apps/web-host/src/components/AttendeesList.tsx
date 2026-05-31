@@ -38,6 +38,8 @@ function AttendanceStatus({ bought, used }: { bought: number; used: number }) {
   return <span style={{ color: '#6AC44D', fontWeight: 600 }}>✅ Completa</span>;
 }
 
+const PAGE_SIZE = 20;
+
 export function AttendeesList({ token }: AttendeesListProps) {
   const [attendees, setAttendees] = useState<AttendeeEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,10 +47,12 @@ export function AttendeesList({ token }: AttendeesListProps) {
   const [search, setSearch] = useState('');
   const [selectedEvent, setSelectedEvent] = useState('');
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    getAttendees(token)
-      .then(setAttendees)
+    // Load all attendees at once (search/filter is client-side)
+    getAttendees(token, 1, 10000)
+      .then((res) => setAttendees(res.data))
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [token]);
@@ -60,6 +64,7 @@ export function AttendeesList({ token }: AttendeesListProps) {
   }, [attendees]);
 
   const filtered = useMemo(() => {
+    setPage(1); // reset to page 1 when filter changes
     const q = search.toLowerCase();
     return attendees.filter((a) => {
       const matchEvent = !selectedEvent || a.eventId === selectedEvent;
@@ -70,6 +75,9 @@ export function AttendeesList({ token }: AttendeesListProps) {
       return matchEvent && matchSearch;
     });
   }, [attendees, search, selectedEvent]);
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const totalBought = filtered.reduce((s, a) => s + a.ticketsBought, 0);
   const totalUsed = filtered.reduce((s, a) => s + a.ticketsUsed, 0);
@@ -193,7 +201,7 @@ export function AttendeesList({ token }: AttendeesListProps) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((a) => {
+              {paginated.map((a) => {
                 const key = rowKey(a);
                 const isExpanded = expandedRow === key;
                 return (
@@ -292,6 +300,30 @@ export function AttendeesList({ token }: AttendeesListProps) {
           </table>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            style={{ opacity: page === 1 ? 0.4 : 1 }}
+          >
+            ← Anterior
+          </button>
+          <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            {page} / {totalPages} · {filtered.length} asistentes
+          </span>
+          <button
+            className="btn btn-secondary"
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            style={{ opacity: page === totalPages ? 0.4 : 1 }}
+          >
+            Siguiente →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

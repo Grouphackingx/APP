@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { updateEvent, uploadImage, getPaymentStatus } from '../lib/api';
+import { updateEvent, uploadImage, getPaymentStatus, EVENT_CATEGORIES } from '../lib/api';
 
 interface ZoneInput {
   id?: string;
@@ -86,7 +86,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const [mapEmbedCode, setMapEmbedCode] = useState(initialData?.mapUrl || '');
   const [videoEmbedCode, setVideoEmbedCode] = useState(initialData?.videoUrl || '');
   const [status, setStatus] = useState(initialData?.status || 'DRAFT');
-  const [category, setCategory] = useState(initialData?.category || 'Fiestas y Bailes');
+  const [category, setCategory] = useState<string>(initialData?.category || EVENT_CATEGORIES[0]);
   const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>(initialData?.galleryUrls || []);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
@@ -486,16 +486,9 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
             required
             style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
           >
-            <option value="Fiestas y Bailes">Fiestas y Bailes</option>
-            <option value="Conciertos">Conciertos</option>
-            <option value="Festivales musicales">Festivales musicales</option>
-            <option value="Discotecas">Discotecas</option>
-            <option value="DJ Sessions">DJ Sessions</option>
-            <option value="Eventos Culturales">Eventos Culturales</option>
-            <option value="Eventos Comunitarios">Eventos Comunitarios</option>
-            <option value="Deportes">Deportes</option>
-            <option value="Gastronomía">Gastronomía</option>
-            <option value="Emprendimientos">Emprendimientos</option>
+            {EVENT_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
         </div>
 

@@ -1,4 +1,4 @@
-import { getEvents, getBanners, type EventItem, type BannerItem } from '../lib/api';
+import { getEvents, getBanners, EVENT_CATEGORIES, type EventItem, type BannerItem } from '../lib/api';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { FeaturedEventsSection } from '../components/FeaturedEventsSection';
 import { BannerSlider } from '../components/BannerSlider';
@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 type CarouselEvent = {
   id: string;
+  slug?: string | null;
   title: string;
   portraitImageUrl: string | null;
   squareImageUrl: string | null;
@@ -18,10 +19,11 @@ type CarouselEvent = {
 };
 
 export default async function HomePage(props: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; category?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const query = searchParams.q;
+  const category = searchParams.category;
 
   let featuredEvents: EventItem[] = [];
   let generalEvents: EventItem[] = [];
@@ -32,7 +34,7 @@ export default async function HomePage(props: {
 
   try {
     banners = await getBanners().catch(() => []);
-    const result = await getEvents(query, 1, 12);
+    const result = await getEvents(query, 1, 12, category);
 
     const now = new Date();
 
@@ -149,6 +151,27 @@ export default async function HomePage(props: {
             </div>
           ) : null}
 
+          {/* ── Category pills ── */}
+          {!query && (
+            <div className="category-pills">
+              <Link
+                href="/"
+                className={`category-pill${!category ? ' category-pill--active' : ''}`}
+              >
+                Todos
+              </Link>
+              {EVENT_CATEGORIES.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/?category=${encodeURIComponent(cat)}`}
+                  className={`category-pill${category === cat ? ' category-pill--active' : ''}`}
+                >
+                  {cat}
+                </Link>
+              ))}
+            </div>
+          )}
+
           {error ? (
             <div className="empty-state">
               <div className="empty-icon">⚠️</div>
@@ -177,6 +200,7 @@ export default async function HomePage(props: {
               initialEvents={generalEvents}
               initialTotal={generalTotal}
               query={query}
+              category={category}
               limit={12}
               excludeIds={[...new Set(featuredEvents.map((e) => e.id))]}
             />

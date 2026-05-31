@@ -99,12 +99,20 @@ export default function MyTicketsPage() {
   const { user, token, isLoading: authLoading } = useAuth();
   const [orders, setOrders] = useState<OrderWithTickets[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const LIMIT = 10;
+
   useEffect(() => {
     async function fetchOrders() {
       if (!token) return;
+      setLoading(true);
       try {
-        const data = await getUserOrders(token);
-        setOrders(data);
+        const res = await getUserOrders(token, page, LIMIT);
+        setOrders(res.data);
+        setTotalPages(res.totalPages);
+        setTotal(res.total);
       } catch {
         // ignore
       } finally {
@@ -116,7 +124,7 @@ export default function MyTicketsPage() {
     } else if (!authLoading) {
       setLoading(false);
     }
-  }, [token, authLoading]);
+  }, [token, authLoading, page]);
 
   const totalTickets = orders.reduce((sum, o) => sum + o.tickets.length, 0);
   const validTickets = orders.reduce(
@@ -279,7 +287,7 @@ export default function MyTicketsPage() {
       <div className="my-tickets-stats">
         <div className="ticket-stat-card">
           <div className="ticket-stat-icon">📋</div>
-          <div className="ticket-stat-value">{orders.length}</div>
+          <div className="ticket-stat-value">{total}</div>
           <div className="ticket-stat-label">Órdenes</div>
         </div>
         <div className="ticket-stat-card">
@@ -563,6 +571,30 @@ export default function MyTicketsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="btn btn-secondary"
+            style={{ opacity: page === 1 ? 0.4 : 1 }}
+          >
+            ← Anterior
+          </button>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Página {page} de {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="btn btn-secondary"
+            style={{ opacity: page === totalPages ? 0.4 : 1 }}
+          >
+            Siguiente →
+          </button>
         </div>
       )}
     </div>

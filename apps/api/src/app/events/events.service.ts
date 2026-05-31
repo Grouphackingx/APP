@@ -175,7 +175,7 @@ export class EventsService implements OnModuleInit {
         });
     }
 
-    async findAll(query?: string, page = 1, limit = 12) {
+    async findAll(query?: string, page = 1, limit = 12, category?: string) {
         await this.updatePastEventsStatus();
         const where: Prisma.EventWhereInput = { status: 'PUBLISHED' };
 
@@ -184,6 +184,10 @@ export class EventsService implements OnModuleInit {
                 { title: { contains: query, mode: 'insensitive' } },
                 { location: { contains: query, mode: 'insensitive' } },
             ];
+        }
+
+        if (category) {
+            where.category = { equals: category, mode: 'insensitive' };
         }
 
         const skip = (page - 1) * limit;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createEvent, uploadImage, getPaymentStatus } from '../lib/api';
+import { createEvent, uploadImage, getPaymentStatus, EVENT_CATEGORIES } from '../lib/api';
 
 interface ZoneInput {
   name: string;
@@ -53,7 +53,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
   const [mapEmbedCode, setMapEmbedCode] = useState('');
   const [videoEmbedCode, setVideoEmbedCode] = useState('');
   const [status, setStatus] = useState('DRAFT');
-  const [category, setCategory] = useState('Fiestas y Bailes');
+  const [category, setCategory] = useState<string>(EVENT_CATEGORIES[0]);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [zones, setZones] = useState<ZoneInput[]>([
@@ -430,16 +430,9 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
             required
             style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
           >
-            <option value="Fiestas y Bailes">Fiestas y Bailes</option>
-            <option value="Conciertos">Conciertos</option>
-            <option value="Festivales musicales">Festivales musicales</option>
-            <option value="Discotecas">Discotecas</option>
-            <option value="DJ Sessions">DJ Sessions</option>
-            <option value="Eventos Culturales">Eventos Culturales</option>
-            <option value="Eventos Comunitarios">Eventos Comunitarios</option>
-            <option value="Deportes">Deportes</option>
-            <option value="Gastronomía">Gastronomía</option>
-            <option value="Emprendimientos">Emprendimientos</option>
+            {EVENT_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
         </div>
 

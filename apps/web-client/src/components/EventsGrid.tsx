@@ -10,11 +10,12 @@ interface Props {
   initialEvents: EventItem[];
   initialTotal: number;
   query?: string;
+  category?: string;
   limit?: number;
   excludeIds?: string[];
 }
 
-export function EventsGrid({ initialEvents, initialTotal, query, limit = 12, excludeIds = [] }: Props) {
+export function EventsGrid({ initialEvents, initialTotal, query, category, limit = 12, excludeIds = [] }: Props) {
   const [events, setEvents] = useState<EventItem[]>(initialEvents);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(1);
@@ -35,7 +36,7 @@ export function EventsGrid({ initialEvents, initialTotal, query, limit = 12, exc
     setLoading(true);
     try {
       const nextPage = page + 1;
-      const res = await getEvents(query, nextPage, limit);
+      const res = await getEvents(query, nextPage, limit, category);
       // Filter out featured events that are already shown above the grid
       const fresh = res.data.filter((e) => !excludeSet.has(e.id));
       setEvents((prev) => [...prev, ...fresh]);

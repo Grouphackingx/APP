@@ -2,6 +2,12 @@ const isBrowser = typeof window !== 'undefined';
 const defaultApiUrl = isBrowser ? `http://${window.location.hostname}:3000/api` : 'http://127.0.0.1:3000/api';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || defaultApiUrl;
 
+export const EVENT_CATEGORIES = [
+  'Música', 'Baile', 'Cultura', 'Fiestas', 'Festival',
+  'Conciertos', 'Deportes', 'Gastronomía', 'Arte', 'Teatro',
+  'Conferencia', 'Otro',
+] as const;
+
 interface FetchOptions extends RequestInit {
   token?: string;
 }
@@ -122,8 +128,10 @@ export async function getPublicPlans() {
   return fetchAPI<any[]>('/plans', { cache: 'no-store' });
 }
 
-export async function getAttendees(token: string) {
-  return fetchAPI<any[]>('/orders/attendees/me', { token, cache: 'no-store' });
+export async function getAttendees(token: string, page = 1, limit = 20) {
+  return fetchAPI<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+    `/orders/attendees/me?page=${page}&limit=${limit}`, { token, cache: 'no-store' }
+  );
 }
 
 type TicketValidationResult = {

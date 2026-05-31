@@ -130,9 +130,18 @@ export interface PaginatedEvents {
   totalPages: number;
 }
 
-export async function getEvents(query?: string, page = 1, limit = 12): Promise<PaginatedEvents> {
+export const EVENT_CATEGORIES = [
+  'Música', 'Baile', 'Cultura', 'Fiestas', 'Festival',
+  'Conciertos', 'Deportes', 'Gastronomía', 'Arte', 'Teatro',
+  'Conferencia', 'Otro',
+] as const;
+
+export type EventCategory = typeof EVENT_CATEGORIES[number];
+
+export async function getEvents(query?: string, page = 1, limit = 12, category?: string): Promise<PaginatedEvents> {
   const params = new URLSearchParams();
-  if (query) params.set('q', query); // URLSearchParams encodes automatically — no encodeURIComponent needed
+  if (query) params.set('q', query);
+  if (category) params.set('category', category);
   params.set('page', String(page));
   params.set('limit', String(limit));
   return fetchAPI<PaginatedEvents>(`/events?${params.toString()}`, { cache: 'no-store' });
@@ -196,8 +205,10 @@ export async function purchaseTickets(eventId: string, seatIds: string[], token:
   });
 }
 
-export async function getUserOrders(token: string) {
-  return fetchAPI<any[]>('/orders', { token });
+export async function getUserOrders(token: string, page = 1, limit = 10) {
+  return fetchAPI<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+    `/orders?page=${page}&limit=${limit}`, { token }
+  );
 }
 
 // ===== Profile API =====

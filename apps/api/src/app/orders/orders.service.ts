@@ -240,15 +240,91 @@ export class OrdersService {
     }
 
     /**
-     * Get all attendees for events owned by the organizer.
+     * Get orders for a user (paginated).
      */
-    async getMyEventAttendees(organizerId: string) {
+    async getUserOrders(userId: string, page = 1, limit = 10) {
+        const skip = (page - 1) * limit;
+        const [orders, total] = await Promise.all([
+            this.prisma.order.findMany({
+                where: { userId },
+                include: { tickets: true },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.order.count({ where: { userId } }),
+        ]);
+
+        // Enrich tickets with decoded QR info (event name, zone, seat, etc.)
+        const data = await Promise.all(
+            orders.map(async (order) => {
+                const enrichedTickets = await Promise.all(
+                    order.tickets.map(async (ticket) => {
+                        try {
+                            const decoded = this.jwtService.verify(ticket.qrCodeToken);
+                            let eventTitle = 'Evento';
+                            let eventDate = '';
+                            let eventLocation = '';
+                            let eventCity = '';
+                            let eventSlug: string | null = null;
+                            let hasSeatingChart = true;
+                            if (decoded.eventId) {
+                                const event = await this.prisma.event.findUnique({
+                                    where: { id: decoded.eventId },
+                                    select: { title: true, date: true, location: true, city: true, hasSeatingChart: true, slug: true },
+                                });
+                                if (event) {
+                                    eventTitle = event.title;
+                                    eventDate = event.date.toISOString();
+                                    eventLocation = event.location;
+                                    eventCity = event.city || '';
+                                    hasSeatingChart = event.hasSeatingChart ?? true;
+                                    eventSlug = event.slug || null;
+                                }
+                            }
+                            return {
+                                ...ticket,
+                                eventId: decoded.eventId || null,
+                                eventSlug,
+                                eventTitle,
+                                eventDate,
+                                eventLocation,
+                                eventCity,
+                                hasSeatingChart,
+                                zoneName: decoded.zoneName || 'General',
+                                seatNumber: decoded.seatNumber || '-',
+                            };
+                        } catch {
+                            return {
+                                ...ticket,
+                                eventId: null,
+                                eventTitle: 'Evento',
+                                eventDate: '',
+                                eventLocation: '',
+                                eventCity: '',
+                                zoneName: 'General',
+                                seatNumber: '-',
+                            };
+                        }
+                    }),
+                );
+                return { ...order, tickets: enrichedTickets };
+            }),
+        );
+
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    }
+
+    /**
+     * Get all attendees for events owned by the organizer (paginated).
+     */
+    async getMyEventAttendees(organizerId: string, page = 1, limit = 20) {
         const myEvents = await this.prisma.event.findMany({
             where: { organizerId },
             select: { id: true, title: true },
         });
 
-        if (!myEvents.length) return [];
+        if (!myEvents.length) return { data: [], total: 0, page, limit, totalPages: 0 };
 
         const myEventIds = new Set(myEvents.map((e) => e.id));
         const eventTitles = Object.fromEntries(myEvents.map((e) => [e.id, e.title]));
@@ -316,82 +392,14 @@ export class OrdersService {
             }
         }
 
-        return Array.from(grouped.values()).sort((a, b) =>
+        const sorted = Array.from(grouped.values()).sort((a, b) =>
             a.eventTitle.localeCompare(b.eventTitle),
         );
-    }
 
-    /**
-     * Get orders for a user.
-     */
-    async getUserOrders(userId: string) {
-        const orders = await this.prisma.order.findMany({
-            where: { userId },
-            include: {
-                tickets: true,
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+        const total = sorted.length;
+        const skip = (page - 1) * limit;
+        const data = sorted.slice(skip, skip + limit);
 
-        // Enrich tickets with decoded QR info (event name, zone, seat, etc.)
-        const enrichedOrders = await Promise.all(
-            orders.map(async (order) => {
-                const enrichedTickets = await Promise.all(
-                    order.tickets.map(async (ticket) => {
-                        try {
-                            const decoded = this.jwtService.verify(ticket.qrCodeToken);
-                            // Fetch event title from DB
-                            // Fetch event title from DB
-                            let eventTitle = 'Evento';
-                            let eventDate = '';
-                            let eventLocation = '';
-                            let eventCity = '';
-                            let eventSlug: string | null = null;
-                            let hasSeatingChart = true; // Default to true for backward compatibility
-                            if (decoded.eventId) {
-                                const event = await this.prisma.event.findUnique({
-                                    where: { id: decoded.eventId },
-                                    select: { title: true, date: true, location: true, city: true, hasSeatingChart: true, slug: true },
-                                });
-                                if (event) {
-                                    eventTitle = event.title;
-                                    eventDate = event.date.toISOString();
-                                    eventLocation = event.location;
-                                    eventCity = event.city || '';
-                                    hasSeatingChart = event.hasSeatingChart ?? true;
-                                    eventSlug = event.slug || null;
-                                }
-                            }
-                            return {
-                                ...ticket,
-                                eventId: decoded.eventId || null,
-                                eventSlug,
-                                eventTitle,
-                                eventDate,
-                                eventLocation,
-                                eventCity,
-                                hasSeatingChart,
-                                zoneName: decoded.zoneName || 'General',
-                                seatNumber: decoded.seatNumber || '-',
-                            };
-                        } catch {
-                            return {
-                                ...ticket,
-                                eventId: null,
-                                eventTitle: 'Evento',
-                                eventDate: '',
-                                eventLocation: '',
-                                eventCity: '',
-                                zoneName: 'General',
-                                seatNumber: '-',
-                            };
-                        }
-                    }),
-                );
-                return { ...order, tickets: enrichedTickets };
-            }),
-        );
-
-        return enrichedOrders;
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 }

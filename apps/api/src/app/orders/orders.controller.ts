@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { LockSeatsDto, CreateOrderDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -36,20 +36,28 @@ export class OrdersController {
     }
 
     /**
-     * GET /api/orders
-     * Get current user's orders.
+     * GET /api/orders?page=1&limit=10
+     * Get current user's orders (paginated).
      */
     @Get()
-    getUserOrders(@Request() req: any) {
-        return this.ordersService.getUserOrders(req.user.userId);
+    getUserOrders(
+        @Request() req: any,
+        @Query('page') page = '1',
+        @Query('limit') limit = '10',
+    ) {
+        return this.ordersService.getUserOrders(req.user.userId, parseInt(page), parseInt(limit));
     }
 
     /**
-     * GET /api/orders/attendees/me
-     * Get all attendees for events owned by the authenticated organizer.
+     * GET /api/orders/attendees/me?page=1&limit=20
+     * Get all attendees for events owned by the authenticated organizer (paginated).
      */
     @Get('attendees/me')
-    getMyEventAttendees(@Request() req: { user: { userId: string } }) {
-        return this.ordersService.getMyEventAttendees(req.user.userId);
+    getMyEventAttendees(
+        @Request() req: { user: { userId: string } },
+        @Query('page') page = '1',
+        @Query('limit') limit = '20',
+    ) {
+        return this.ordersService.getMyEventAttendees(req.user.userId, parseInt(page), parseInt(limit));
     }
 }

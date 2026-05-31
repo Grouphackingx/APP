@@ -3066,3 +3066,33 @@ textarea {
   background: var(--border-color);
   margin: 0.25rem 0;
 }
+
+/* ── Category Pills ── */
+.category-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.category-pill {
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  background: transparent;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.category-pill:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.category-pill--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #000;
+  font-weight: 600;
+}
