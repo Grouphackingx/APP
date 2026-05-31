@@ -38,28 +38,34 @@ export function BannerSlider({ banners }: BannerSliderProps) {
 
   if (banners.length === 0) return null;
 
-  const banner = banners[current];
-
   return (
     <section className="banner-slider-section">
       <div className="banner-slider-inner">
       <div className="banner-slider-wrapper">
         <div className="banner-slider-track">
-          {banner.linkUrl ? (
-            <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="banner-slide-link">
-              <img
-                src={resolveUrl(banner.imageUrl)}
-                alt={banner.title || 'Banner publicitario'}
-                className="banner-slide-img"
-              />
-            </a>
-          ) : (
-            <img
-              src={resolveUrl(banner.imageUrl)}
-              alt={banner.title || 'Banner publicitario'}
-              className="banner-slide-img"
-            />
-          )}
+          {banners.map((banner, i) => (
+            <div
+              key={banner.id}
+              className={`banner-slide${i === current ? ' banner-slide--active' : ''}`}
+              aria-hidden={i !== current}
+            >
+              {banner.linkUrl ? (
+                <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="banner-slide-link" tabIndex={i === current ? 0 : -1}>
+                  <img
+                    src={resolveUrl(banner.imageUrl)}
+                    alt={banner.title || 'Banner publicitario'}
+                    className="banner-slide-img"
+                  />
+                </a>
+              ) : (
+                <img
+                  src={resolveUrl(banner.imageUrl)}
+                  alt={banner.title || 'Banner publicitario'}
+                  className="banner-slide-img"
+                />
+              )}
+            </div>
+          ))}
         </div>
 
         {banners.length > 1 && (
