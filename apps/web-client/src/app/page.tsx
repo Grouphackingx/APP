@@ -118,7 +118,7 @@ export default async function HomePage(props: {
                   Explorar Eventos
                 </a>
                 <Link href="/register" className="hero-split-cta-ghost">
-                  Crear Cuenta
+                  Registrarse
                 </Link>
               </div>
             </div>

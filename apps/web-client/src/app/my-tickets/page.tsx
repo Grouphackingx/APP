@@ -259,7 +259,7 @@ export default function MyTicketsPage() {
               Iniciar Sesión
             </Link>
             <Link href="/register" className="btn btn-secondary">
-              Crear Cuenta
+              Registrarse
             </Link>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { registerHost, getPublicPlans, uploadImage } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
+import { AfroEventosLogo } from '../../components/AfroEventosLogo';
 import Link from 'next/link';
 
 
@@ -120,7 +121,25 @@ export default function RegisterHostPage() {
   return (
     <div className="auth-container">
       <div className="auth-card animate-fade-in-up" style={{ maxWidth: '600px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '0.5rem', fontSize: '2.5rem' }}>🚀</div>
+        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+          <a
+            href={process.env.NEXT_PUBLIC_SITE_URL || 'https://afroeventos.com'}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Ir al Portal de Clientes AfroEventos"
+            title="Ir al Portal de Clientes"
+            style={{
+              display: 'inline-block',
+              cursor: 'pointer',
+              opacity: 1,
+              transition: 'opacity 0.2s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.75')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            <AfroEventosLogo height={61} />
+          </a>
+        </div>
         <h1>Únete como Organizador</h1>
         <p className="auth-subtitle">Crea, administra y vende tickets para tus eventos masivos</p>
 
@@ -131,7 +150,19 @@ export default function RegisterHostPage() {
           ))}
         </div>
 
-        {error && <div className="alert alert-error">⚠️ {error}</div>}
+        {error && (
+          <div className="alert alert-error">
+            ⚠️ {error}
+            {error.includes('ya está registrado') && (
+              <div style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                ¿Es tu cuenta?{' '}
+                <Link href="/login" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>
+                  Inicia sesión aquí
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={step === 3 ? handleSubmit : (e) => e.preventDefault()}>
           

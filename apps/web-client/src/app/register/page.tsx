@@ -98,6 +98,14 @@ export default function RegisterPage() {
         {error && (
           <div className="alert alert-error" id="register-error">
             ⚠️ {error}
+            {error.includes('ya está registrado') && (
+              <div style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                ¿Es tu cuenta?{' '}
+                <Link href="/login" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>
+                  Inicia sesión aquí
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

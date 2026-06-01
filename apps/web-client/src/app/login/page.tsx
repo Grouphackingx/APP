@@ -18,11 +18,16 @@ export default function LoginPage() {
   const [unverified, setUnverified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [redirectTo, setRedirectTo] = useState('/');
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const redirect = urlParams.get('redirect');
     if (redirect) setRedirectTo(redirect);
+    if (urlParams.get('expired') === '1') {
+      setSessionExpired(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +56,12 @@ export default function LoginPage() {
       <div className="auth-card animate-fade-in-up">
         <h1>Bienvenido de vuelta</h1>
         <p className="auth-subtitle">Inicia sesión para comprar tus tickets</p>
+
+        {sessionExpired && (
+          <div className="alert alert-error">
+            🔒 Tu sesión cerró por inactividad. Por favor inicia sesión nuevamente.
+          </div>
+        )}
 
         {error && (
           <div className="alert alert-error" id="login-error">

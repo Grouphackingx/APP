@@ -45,18 +45,6 @@ export function Sidebar({
         </a>
         <a
           href="#"
-          className={activeView === 'dashboard' ? 'active' : ''}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate('dashboard');
-          }}
-          style={activeView === 'dashboard' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
-        >
-          <span className="nav-icon">🏢</span>
-          Organizadores
-        </a>
-        <a
-          href="#"
           className={activeView === 'analytics' ? 'active' : ''}
           onClick={(e) => {
             e.preventDefault();
@@ -81,15 +69,27 @@ export function Sidebar({
         </a>
         <a
           href="#"
-          className={activeView === 'banners' ? 'active' : ''}
+          className={activeView === 'dashboard' ? 'active' : ''}
           onClick={(e) => {
             e.preventDefault();
-            onNavigate('banners');
+            onNavigate('dashboard');
           }}
-          style={activeView === 'banners' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+          style={activeView === 'dashboard' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
         >
-          <span className="nav-icon">📢</span>
-          Banners Publicitarios
+          <span className="nav-icon">🏢</span>
+          Organizadores
+        </a>
+        <a
+          href="#"
+          className={activeView === 'asistentes' ? 'active' : ''}
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('asistentes');
+          }}
+          style={activeView === 'asistentes' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+        >
+          <span className="nav-icon">🎟️</span>
+          Asistentes
         </a>
         {user?.role === 'ADMIN' && (
           <a
@@ -105,6 +105,18 @@ export function Sidebar({
             Planes
           </a>
         )}
+        <a
+          href="#"
+          className={activeView === 'banners' ? 'active' : ''}
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('banners');
+          }}
+          style={activeView === 'banners' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+        >
+          <span className="nav-icon">📢</span>
+          Banners Publicitarios
+        </a>
         {user?.role === 'ADMIN' && (
           <a
             href="#"

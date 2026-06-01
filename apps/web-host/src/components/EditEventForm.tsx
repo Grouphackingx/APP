@@ -28,6 +28,7 @@ interface EventData {
   category?: string;
   bannerImageUrl?: string;
   squareImageUrl?: string;
+  portraitImageUrl?: string;
   galleryUrls?: string[];
   imageUrl?: string;
   seatingMapImageUrl?: string;
@@ -96,7 +97,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const [squareImageFile, setSquareImageFile] = useState<File | null>(null);
   const [squareImagePreview, setSquareImagePreview] = useState<string>(initialData?.squareImageUrl || '');
   const [portraitImageFile, setPortraitImageFile] = useState<File | null>(null);
-  const [portraitImagePreview, setPortraitImagePreview] = useState<string>((initialData as any)?.portraitImageUrl || '');
+  const [portraitImagePreview, setPortraitImagePreview] = useState<string>(initialData?.portraitImageUrl || '');
   const [loading, setLoading] = useState(false);
   const [paidEventsEnabled, setPaidEventsEnabled] = useState<boolean | null>(null);
   const [message, setMessage] = useState<{
@@ -248,7 +249,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         }
       }
 
-      let portraitImageUrl = (initialData as any)?.portraitImageUrl || '';
+      let portraitImageUrl = initialData?.portraitImageUrl || '';
       if (portraitImageFile) {
         try {
           portraitImageUrl = await uploadImage(portraitImageFile, token);
@@ -337,7 +338,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
           background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.3)',
           color: '#fb923c', fontSize: '0.875rem', lineHeight: 1.5,
         }}>
-          <strong>Pasarela de pagos no disponible.</strong> Los precios son forzados a $0. Solo se permiten zonas gratuitas o con venta en el lugar.
+          <strong>Venta de tickets inactivo.</strong> Pronto podrás vender entradas en línea 24/7, las personas podrán ingresar a tus eventos solo mostrando un código QR. Ahora puedes crear zonas gratuitas o con venta en el lugar.
         </div>
       )}
 

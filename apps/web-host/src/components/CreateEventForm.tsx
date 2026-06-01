@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createEvent, uploadImage, getPaymentStatus, EVENT_CATEGORIES } from '../lib/api';
+import { createEvent, updateEvent, uploadImage, getPaymentStatus, EVENT_CATEGORIES } from '../lib/api';
 
 interface ZoneInput {
   name: string;
@@ -14,6 +14,7 @@ interface ZoneInput {
 interface CreateEventFormProps {
   token: string;
   onSuccess: () => void;
+  onPreview?: (event: any) => void;
 }
 
 const ecuadorData: Record<string, string[]> = {
@@ -43,7 +44,7 @@ const ecuadorData: Record<string, string[]> = {
   'Zamora Chinchipe': ['Zamora', 'Yantzaza'],
 };
 
-export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
+export function CreateEventForm({ token, onSuccess, onPreview }: CreateEventFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
@@ -78,6 +79,9 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
     type: 'error' | 'success';
   } | null>(null);
   const [paidEventsEnabled, setPaidEventsEnabled] = useState<boolean | null>(null);
+  const [createdEvent, setCreatedEvent] = useState<any>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
 
   useEffect(() => {
     getPaymentStatus(token)
@@ -234,7 +238,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         mapUrl: mapEmbedCode.match(/src="([^"]+)"/)?.[1] || mapEmbedCode,
         videoUrl: videoEmbedCode.match(/src="([^"]+)"/)?.[1] || videoEmbedCode,
         galleryUrls,
-        status: status,
+        status: 'DRAFT',
         category,
         imageUrl,
         bannerImageUrl,
@@ -251,9 +255,8 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
         })),
       };
 
-      await createEvent(eventData, token);
-      setMessage({ text: '🎉 ¡Evento creado exitosamente!', type: 'success' });
-      setTimeout(() => onSuccess(), 1500);
+      const created = await createEvent(eventData, token);
+      setCreatedEvent(created);
     } catch (err: any) {
       setMessage({
         text: err.message || 'Error al crear evento',
@@ -263,6 +266,120 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
       setLoading(false);
     }
   };
+
+  // ── Success screen ──────────────────────────────────────────────────────────
+  if (createdEvent) {
+    const handlePublish = async () => {
+      setPublishing(true);
+      try {
+        await updateEvent(createdEvent.id, { status: 'PUBLISHED' }, token);
+        setCreatedEvent((prev: any) => ({ ...prev, status: 'PUBLISHED' }));
+        setPublished(true);
+      } catch (err: any) {
+        setMessage({ text: err.message || 'Error al publicar el evento', type: 'error' });
+      } finally {
+        setPublishing(false);
+      }
+    };
+
+    return (
+      <div className="animate-fade-in-up" style={{ maxWidth: 540, margin: '3rem auto', textAlign: 'center' }}>
+
+        {/* Icon */}
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%', margin: '0 auto 1.5rem',
+          background: published ? 'rgba(106,196,77,0.12)' : 'rgba(251,191,36,0.1)',
+          border: `2px solid ${published ? 'rgba(106,196,77,0.5)' : 'rgba(251,191,36,0.4)'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.2rem',
+          transition: 'all 0.4s ease',
+        }}>
+          {published ? '✅' : '🎉'}
+        </div>
+
+        <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+          {published ? '¡Evento publicado!' : '¡Evento guardado!'}
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem', lineHeight: 1.6 }}>
+          <strong style={{ color: 'var(--text-primary)' }}>{createdEvent.title}</strong>
+        </p>
+
+        {/* Status pill */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginBottom: '2rem', marginTop: '0.5rem' }}>
+          {published ? (
+            <span style={{ background: 'rgba(106,196,77,0.12)', border: '1px solid rgba(106,196,77,0.35)', color: '#6ac44d', borderRadius: 20, padding: '0.3rem 0.9rem', fontSize: '0.82rem', fontWeight: 600 }}>
+              🟢 Publicado — Visible en AfroEventos
+            </span>
+          ) : (
+            <span style={{ background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)', color: '#94a3b8', borderRadius: 20, padding: '0.3rem 0.9rem', fontSize: '0.82rem', fontWeight: 600 }}>
+              📝 Borrador — aún no visible para los asistentes
+            </span>
+          )}
+        </div>
+
+        {message && (
+          <div className="alert alert-error" style={{ marginBottom: '1rem', textAlign: 'left' }}>
+            ⚠️ {message.text}
+          </div>
+        )}
+
+        {/* CTA 1: Preview */}
+        <button
+          onClick={() => onPreview?.(createdEvent)}
+          style={{
+            width: '100%', padding: '0.95rem', borderRadius: 12, marginBottom: '0.65rem',
+            background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)',
+            color: '#f59e0b', fontWeight: 700, fontSize: '0.95rem',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+            transition: 'background 0.15s ease, border-color 0.15s ease',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(245,158,11,0.18)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(245,158,11,0.1)'; }}
+        >
+          <span style={{ fontSize: '1.1rem' }}>👁️</span>
+          Previsualizar evento
+        </button>
+
+        {/* CTA 2: Publish (only if still draft) */}
+        {!published && (
+          <button
+            onClick={handlePublish}
+            disabled={publishing}
+            style={{
+              width: '100%', padding: '0.95rem', borderRadius: 12, marginBottom: '0.65rem',
+              background: publishing ? 'rgba(106,196,77,0.1)' : 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
+              border: 'none', color: publishing ? '#6ac44d' : '#fff',
+              fontWeight: 700, fontSize: '0.95rem',
+              cursor: publishing ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+              boxShadow: 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {publishing ? (
+              <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Publicando...</>
+            ) : (
+              <><span style={{ fontSize: '1.1rem' }}>🚀</span> Publicar en AfroEventos</>
+            )}
+          </button>
+        )}
+
+        {/* CTA 3: Go to events */}
+        <button
+          onClick={onSuccess}
+          className="btn btn-secondary"
+          style={{ width: '100%', padding: '0.85rem', borderRadius: 12 }}
+        >
+          {published ? '✓ Ir a Mis Eventos' : '← Ir a Mis Eventos sin publicar'}
+        </button>
+
+        {!published && (
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.75rem', lineHeight: 1.5 }}>
+            Puedes publicarlo más tarde desde "Mis Eventos" → editar → cambiar estado.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="form-card animate-fade-in-up">
@@ -281,7 +398,7 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
           background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.3)',
           color: '#fb923c', fontSize: '0.875rem', lineHeight: 1.5,
         }}>
-          <strong>Pasarela de pagos no disponible.</strong> Solo puedes crear zonas gratuitas o con venta en el lugar. Los precios se fijarán automáticamente en $0.
+          <strong>Venta de tickets inactivo.</strong> Pronto podrás vender entradas en línea 24/7, las personas podrán ingresar a tus eventos solo mostrando un código QR. Ahora puedes crear zonas gratuitas o con venta en el lugar.
         </div>
       )}
 
@@ -797,25 +914,6 @@ export function CreateEventForm({ token, onSuccess }: CreateEventFormProps) {
               )}
             </div>
           ))}
-        </div>
-
-        <div className="form-section" style={{ marginTop: '2rem' }}>
-          <div className="form-group">
-            <label htmlFor="status" style={{ fontSize: '1.2rem', color: '#22D3EE' }}>Estado del Evento *</label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              required
-              style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '1.1rem' }}
-            >
-              <option value="DRAFT">📝 Borrador (No publicado en inicio)</option>
-              <option value="PUBLISHED">🟢 Activo (Publicado al inicio)</option>
-            </select>
-            <p className="form-text text-muted" style={{ marginTop: '0.5rem' }}>
-              Determina si el evento ya puede ser visto por los compradores o si aún está en preparación.
-            </p>
-          </div>
         </div>
 
         <button

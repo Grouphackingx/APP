@@ -310,6 +310,40 @@ export async function setOrgPaymentGateway(userId: string, paidEventsEnabled: bo
   });
 }
 
+// Attendees (Web Client users)
+
+export async function getAttendees(token: string, page = 1, limit = 20, search = '') {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) params.append('search', search);
+  return fetchAPI<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>(
+    `/admin/attendees?${params.toString()}`,
+    { token, cache: 'no-store' },
+  );
+}
+
+export async function exportAttendees(token: string, search = '') {
+  const params = new URLSearchParams();
+  if (search) params.append('search', search);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return fetchAPI<any[]>(`/admin/attendees/export${qs}`, { token, cache: 'no-store' });
+}
+
+export async function updateAttendee(id: string, data: { name?: string; email?: string; phone?: string }, token: string) {
+  return fetchAPI<any>(`/admin/attendees/${id}`, { method: 'PATCH', body: JSON.stringify(data), token });
+}
+
+export async function deleteAttendee(id: string, token: string) {
+  return fetchAPI<any>(`/admin/attendees/${id}`, { method: 'DELETE', token });
+}
+
+export async function blockAttendee(id: string, isBlocked: boolean, token: string) {
+  return fetchAPI<any>(`/admin/attendees/${id}/block`, { method: 'PATCH', body: JSON.stringify({ isBlocked }), token });
+}
+
+export async function changeAttendeePassword(id: string, password: string, token: string) {
+  return fetchAPI<any>(`/admin/attendees/${id}/password`, { method: 'PATCH', body: JSON.stringify({ password }), token });
+}
+
 export async function forgotPassword(email: string): Promise<{ message: string }> {
   return fetchAPI('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
 }

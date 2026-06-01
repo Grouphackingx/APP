@@ -357,6 +357,131 @@ export class AdminService {
     });
   }
 
+  // --- ATTENDEES (USER role) ---
+
+  async getAttendees(page = 1, limit = 20, search = '') {
+    const skip = (page - 1) * limit;
+    const where: any = { role: 'USER' as const };
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: {
+          id: true, name: true, email: true, phone: true,
+          isBlocked: true, emailVerified: true, createdAt: true,
+          orders: {
+            select: {
+              id: true, status: true,
+              tickets: { select: { id: true, status: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const mapped = data.map(u => {
+      const allTickets = u.orders.flatMap(o => o.tickets);
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        isBlocked: u.isBlocked,
+        emailVerified: u.emailVerified,
+        createdAt: u.createdAt,
+        totalOrders: u.orders.length,
+        totalTickets: allTickets.length,
+        usedTickets: allTickets.filter(t => t.status === 'USED').length,
+        validTickets: allTickets.filter(t => t.status === 'VALID').length,
+      };
+    });
+    return { data: mapped, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async exportAttendees(search = '') {
+    const where: any = { role: 'USER' as const };
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    const data = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true, name: true, email: true, phone: true,
+        isBlocked: true, emailVerified: true, createdAt: true,
+        orders: { select: { id: true, tickets: { select: { id: true, status: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return data.map(u => {
+      const allTickets = u.orders.flatMap(o => o.tickets);
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone || '',
+        isBlocked: u.isBlocked,
+        emailVerified: u.emailVerified,
+        createdAt: u.createdAt,
+        totalOrders: u.orders.length,
+        totalTickets: allTickets.length,
+        usedTickets: allTickets.filter(t => t.status === 'USED').length,
+        validTickets: allTickets.filter(t => t.status === 'VALID').length,
+      };
+    });
+  }
+
+  async updateAttendee(id: string, data: { name?: string; email?: string; phone?: string }) {
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing || existing.role !== 'USER') throw new NotFoundException('Asistente no encontrado');
+    if (data.email && data.email !== existing.email) {
+      const conflict = await this.prisma.user.findUnique({ where: { email: data.email } });
+      if (conflict) throw new ConflictException('Ya existe un usuario con ese correo');
+    }
+    const { name, email, phone } = data;
+    return this.prisma.user.update({ where: { id }, data: { ...(name && { name }), ...(email && { email }), ...(phone !== undefined && { phone }) } });
+  }
+
+  async deleteAttendee(id: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { id },
+      include: { _count: { select: { orders: true } } },
+    });
+    if (!existing || existing.role !== 'USER') throw new NotFoundException('Asistente no encontrado');
+    if ((existing as any)._count.orders > 0) {
+      throw new ForbiddenException(
+        'No se puede eliminar este asistente porque tiene órdenes de compra registradas. Usa la opción "Bloquear" para restringir su acceso.',
+      );
+    }
+    return this.prisma.user.delete({ where: { id } });
+  }
+
+  async blockAttendee(id: string, isBlocked: boolean) {
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing || existing.role !== 'USER') throw new NotFoundException('Asistente no encontrado');
+    return this.prisma.user.update({ where: { id }, data: { isBlocked } });
+  }
+
+  async changeAttendeePassword(id: string, newPassword: string) {
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing || existing.role !== 'USER') throw new NotFoundException('Asistente no encontrado');
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({ where: { id }, data: { password: hashed } });
+    return { message: 'Contraseña actualizada correctamente' };
+  }
+
   async toggleEventFeatured(id: string, isFeatured: boolean, durationDays?: number) {
     let featuredUntil = null;
     

@@ -1,10 +1,17 @@
-import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException, ForbiddenException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto, UpdateBasicInfoDto, UpdateOrganizerProfileInfoDto } from '@open-ticket/shared';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { MailService } from '../mail/mail.service';
+import { RedisService } from '../redis/redis.service';
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_SECONDS = 10 * 60; // 10 minutos
+
+const MAX_IP_ATTEMPTS = 20;
+const IP_LOCKOUT_SECONDS = 15 * 60; // 15 minutos
 
 @Injectable()
 export class AuthService {
@@ -12,6 +19,7 @@ export class AuthService {
         private prisma: PrismaService,
         private jwtService: JwtService,
         private mail: MailService,
+        private redis: RedisService,
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
@@ -26,12 +34,87 @@ export class AuthService {
         return null;
     }
 
-    async login(loginDto: LoginDto) {
-        const user = await this.validateUser(loginDto.email, loginDto.password);
+    private attemptsKey(email: string) {
+        return `login:attempts:${email.toLowerCase()}`;
+    }
+
+    private async checkLoginLock(email: string) {
+        const key = this.attemptsKey(email);
+        const attempts = parseInt((await this.redis.get(key)) || '0', 10);
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+            const remaining = await this.redis.ttl(key);
+            const mins = Math.ceil(remaining / 60);
+            throw new HttpException(
+                `Demasiados intentos fallidos. Por seguridad, intenta de nuevo en ${mins} minuto${mins !== 1 ? 's' : ''}.`,
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
+    }
+
+    private async recordFailedAttempt(email: string) {
+        const key = this.attemptsKey(email);
+        const count = await this.redis.incr(key);
+        if (count === 1) {
+            // Primer intento fallido: establece el TTL de 10 min
+            await this.redis.expire(key, LOCKOUT_SECONDS);
+        }
+        const remaining = MAX_LOGIN_ATTEMPTS - count;
+        if (remaining <= 0) {
+            const mins = Math.ceil(LOCKOUT_SECONDS / 60);
+            throw new HttpException(
+                `Demasiados intentos fallidos. Por seguridad, intenta de nuevo en ${mins} minuto${mins !== 1 ? 's' : ''}.`,
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
+        throw new UnauthorizedException(
+            `Credenciales inválidas. Te quedan ${remaining} intento${remaining !== 1 ? 's' : ''}.`,
+        );
+    }
+
+    private async clearLoginAttempts(email: string) {
+        await this.redis.del(this.attemptsKey(email));
+    }
+
+    private ipKey(ip: string) {
+        return `ip:failed:${ip}`;
+    }
+
+    private async checkIpLock(ip: string) {
+        if (ip === 'unknown') return;
+        const attempts = parseInt((await this.redis.get(this.ipKey(ip))) || '0', 10);
+        if (attempts >= MAX_IP_ATTEMPTS) {
+            const remaining = await this.redis.ttl(this.ipKey(ip));
+            const mins = Math.ceil(remaining / 60);
+            throw new HttpException(
+                `Demasiadas solicitudes desde tu red. Intenta de nuevo en ${mins} minuto${mins !== 1 ? 's' : ''}.`,
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
+        }
+    }
+
+    private async recordIpFailedAttempt(ip: string) {
+        if (ip === 'unknown') return;
+        const key = this.ipKey(ip);
+        const count = await this.redis.incr(key);
+        if (count === 1) {
+            await this.redis.expire(key, IP_LOCKOUT_SECONDS);
+        }
+    }
+
+    async login(loginDto: LoginDto, ip = 'unknown') {
+        const email = loginDto.email.toLowerCase();
+
+        await this.checkIpLock(ip);
+        await this.checkLoginLock(email);
+
+        const user = await this.validateUser(email, loginDto.password);
 
         if (user) {
             if (!user.emailVerified) {
                 throw new UnauthorizedException('EMAIL_NOT_VERIFIED');
+            }
+            if (user.isBlocked) {
+                throw new UnauthorizedException('Tu cuenta ha sido suspendida. Contacta a soporte para más información.');
             }
             if (user.role === 'HOST' && user.organizerProfile?.status === 'PENDING') {
                 throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
@@ -42,6 +125,7 @@ export class AuthService {
             if (user.role === 'HOST' && user.organizerProfile?.status === 'BLOCKED') {
                 throw new UnauthorizedException('Tu cuenta ha sido suspendida. Contacta a soporte para más información.');
             }
+            await this.clearLoginAttempts(email);
             const payload = {
                 email: user.email,
                 sub: user.id,
@@ -53,39 +137,41 @@ export class AuthService {
 
         // Intentar como miembro de organización
         const member = await this.prisma.organizerMember.findUnique({
-            where: { email: loginDto.email },
+            where: { email },
             include: { organizerProfile: true },
         });
-        if (!member || !(await bcrypt.compare(loginDto.password, member.password))) {
-            throw new UnauthorizedException('Credenciales inválidas');
-        }
-
-        const payload = {
-            sub: member.id,
-            email: member.email,
-            role: 'HOST',
-            isMember: true,
-            memberRole: member.memberRole,
-            organizerProfileId: member.organizerProfileId,
-        };
-        return {
-            access_token: this.jwtService.sign(payload),
-            user: {
-                id: member.id,
+        if (member && (await bcrypt.compare(loginDto.password, member.password))) {
+            await this.clearLoginAttempts(email);
+            const payload = {
+                sub: member.id,
                 email: member.email,
-                name: member.name,
                 role: 'HOST',
                 isMember: true,
                 memberRole: member.memberRole,
                 organizerProfileId: member.organizerProfileId,
-                organizerProfile: member.organizerProfile,
-            },
-        };
+            };
+            return {
+                access_token: this.jwtService.sign(payload),
+                user: {
+                    id: member.id,
+                    email: member.email,
+                    name: member.name,
+                    role: 'HOST',
+                    isMember: true,
+                    memberRole: member.memberRole,
+                    organizerProfileId: member.organizerProfileId,
+                    organizerProfile: member.organizerProfile,
+                },
+            };
+        }
+
+        await this.recordIpFailedAttempt(ip);
+        await this.recordFailedAttempt(email);
     }
 
     async register(registerDto: RegisterDto) {
         const existing = await this.prisma.user.findUnique({ where: { email: registerDto.email } });
-        if (existing) throw new ConflictException('Email already exists');
+        if (existing) throw new ConflictException('Este correo electrónico ya está registrado. Por favor, inicia sesión o usa un correo diferente.');
 
         const hashedPassword = await bcrypt.hash(registerDto.password, 10);
         const emailVerifyToken = crypto.randomBytes(32).toString('hex');
@@ -247,7 +333,7 @@ export class AuthService {
 
     async registerHost(dto: RegisterHostDto) {
         const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
-        if (existing) throw new ConflictException('Email already exists');
+        if (existing) throw new ConflictException('Este correo electrónico ya está registrado. Por favor, inicia sesión o usa un correo diferente.');
 
         const hashedPassword = await bcrypt.hash(dto.password, 10);
         const user = await this.prisma.user.create({

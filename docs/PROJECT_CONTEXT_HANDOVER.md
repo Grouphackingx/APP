@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 30 de Mayo de 2026 (Sesión 11)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado
+**Última Actualización:** 31 de Mayo de 2026 (Sesión 12)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -37,7 +37,7 @@
 | **ORM**             | Prisma 5.22.0                       | Schema como fuente de verdad                 |
 | **Infra**           | Docker Compose                      | PostgreSQL + Redis                           |
 | **Pagos**           | Stripe (simulado)                   | Módulo mock, siempre aprueba                 |
-| **Email**           | Nodemailer + @nestjs/mailer         | SMTP configurable (Gmail / Resend / cualquier SMTP) |
+| **Email**           | Nodemailer + @nestjs/mailer         | Resend SMTP (`smtp.resend.com:587`) — dominio `afroeventos.com` verificado |
 | **Scheduler**       | @nestjs/schedule                    | Cron job de expiración de eventos destacados |
 
 ---
@@ -132,12 +132,12 @@ NEXT_PUBLIC_SITE_URL=http://localhost:4200
 NEXT_PUBLIC_HOST_URL=http://localhost:4201
 NEXT_PUBLIC_ADMIN_URL=http://localhost:4202
 
-# Email (SMTP — dejar vacío para modo silencioso)
-MAIL_HOST=
+# Email (Resend SMTP — dejar vacío para modo silencioso local)
+MAIL_HOST=smtp.resend.com
 MAIL_PORT=587
 MAIL_SECURE=false
-MAIL_USER=
-MAIL_PASS=
+MAIL_USER=resend
+MAIL_PASS=<resend_api_key>
 MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
 
 # Almacenamiento de imágenes (local = VPS | cloudinary = CDN)
@@ -318,6 +318,17 @@ uploads/
 - Configuración SMTP desde variables de entorno (`MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURE`, `MAIL_USER`, `MAIL_PASS`, `MAIL_FROM`).
 - Si `MAIL_HOST` está vacío, el transport se ignora y los emails fallan silenciosamente.
 - Patrón fire-and-forget en todos los callers: `.catch(() => null)` — nunca bloquea el flujo del usuario.
+- **Proveedor en producción**: Resend SMTP (`smtp.resend.com:587`, STARTTLS). Puerto 465 bloqueado por el hosting — usar siempre 587 con `MAIL_SECURE=false`.
+- **Dominio verificado**: `afroeventos.com` en Resend (región us-east-1). Remitente: `no-reply@afroeventos.com`.
+
+### Base Layout (`base.layout.ts`) — Compatibilidad de Clientes de Correo
+
+- `<style>` movido de `<head>` a `<body>` — Gmail elimina todos los estilos en `<head>`.
+- Namespaces VML de Outlook (`xmlns:v`, `xmlns:o`) en el `<html>`.
+- `bgcolor` en todos los `<td>` — fallback para Outlook que ignora `background-color` CSS.
+- Exporta `iconCircle(emoji, bgColor, borderColor, size?)` — tabla HTML para círculos de íconos (reemplaza `<div display:inline-block>` incompatible con Outlook).
+- Logo oficial: `<img src="https://afroeventos.com/logo-blanco.svg" width="160" height="57">` centrado en el header.
+- Sin botones de redes sociales en footer. Footer incluye links a `/politicas-de-privacidad`, `/terminos-y-condiciones` y `soporte@afroeventos.com`.
 
 ### Métodos del MailService
 
@@ -495,12 +506,62 @@ start-all.bat
 - **ValidationPipe Global**: `main.ts` tiene `whitelist: true`. PATCH de eventos usa `@Request()` para evitar filtrado de campos de zona.
 - **NX Daemon**: Activo con `useDaemonProcess: true` y `watch: true` en `project.json`. Hot-reload automático.
 - **Emails vacíos**: Si `MAIL_HOST` está vacío en `.env`, los emails fallan silenciosamente (no bloquean el flujo).
+- **Puerto SMTP en producción**: El puerto 465 (SSL) está bloqueado por el servidor de Coolify. Usar siempre **puerto 587** con `MAIL_SECURE=false` (STARTTLS).
 - **Anti-enumeración**: `forgot-password` y `resend-verification` siempre retornan 200 con el mismo mensaje.
 - **Galería de imágenes**: Al editar un evento, las imágenes de galería se acumulan (no se reemplazan las anteriores).
 
 ---
 
 ## 12. Registro de Cambios
+
+### Sesión del 31 de Mayo de 2026 (Sesión 12) — Emails en Producción: Resend SMTP + 12 Plantillas Mejoradas
+
+#### Cambios realizados
+
+**Configuración de Resend SMTP**
+- Variables `MAIL_*` agregadas en Coolify (panel Environment Variables del servicio `afroeventos-api`)
+- Puerto 465 (SSL) bloqueado por el hosting → se usa **puerto 587 (STARTTLS)** con `MAIL_SECURE=false`
+- Variables definitivas en producción:
+  ```
+  MAIL_HOST=smtp.resend.com
+  MAIL_PORT=587
+  MAIL_SECURE=false
+  MAIL_USER=resend
+  MAIL_PASS=<resend_api_key_en_coolify>
+  MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
+  ```
+
+**`apps/api/src/app/mail/templates/base.layout.ts`** — Reescritura completa:
+- `<style>` movido de `<head>` a `<body>` (Gmail elimina los estilos del `<head>`)
+- Namespaces VML de Outlook añadidos (`xmlns:v`, `xmlns:o`)
+- Metas anti-reformateo para Apple Mail añadidos
+- Logo oficial: `<img src="https://afroeventos.com/logo-blanco.svg" width="160" height="57">` centrado en header
+- `bgcolor` en todos los `<td>` críticos (fallback Outlook)
+- Botones de redes sociales eliminados del footer
+- Links reales a `/politicas-de-privacidad`, `/terminos-y-condiciones` y `soporte@afroeventos.com`
+- Nueva función exportada `iconCircle(emoji, bgColor, borderColor, size?)` — tabla HTML para círculos de íconos compatibles con Outlook (reemplaza `<div display:inline-block>`)
+
+**Todas las plantillas actualizadas** (12 archivos en `apps/api/src/app/mail/templates/`):
+- `welcome-user.template.ts` — `featureRow()` helper migrado a tabla con `bgcolor`
+- `welcome-host.template.ts` — `stepRow()` helper migrado a tabla con `bgcolor`
+- `verify-email.template.ts` — ícono ✉️ migrado a `iconCircle()`
+- `reset-password.template.ts` — ícono 🔑 migrado a `iconCircle()`
+- `host-approved.template.ts` — ícono 🎊 migrado a `iconCircle()`
+- `host-rejected.template.ts` — ícono 📋 migrado a `iconCircle(size=64)`
+- `password-changed.template.ts` — ícono 🔐 migrado a `iconCircle()`
+- `event-canceled.template.ts` — ícono ⚠️ migrado a `iconCircle()` + **bug fix**: eliminado `${'???'}` literal que aparecía en emails
+- `event-rescheduled.template.ts` — ícono 📅 migrado a `iconCircle()`
+- `member-invitation.template.ts` — ícono 🎟️ migrado a `iconCircle()`
+- `account-created-by-admin.template.ts` — ícono dinámico `cfg.icon` migrado a `iconCircle(cfg.icon, ...)`
+
+#### Commits
+- `0a1fb1f` — feat(mail): apply email best practices and Resend SMTP across all 12 templates
+
+#### Funcionalidad verificada en producción
+- forgot-password → email de reset llega correctamente a `dmxwilly@gmail.com`
+- reset-password → confirmación de cambio llega correctamente
+
+---
 
 ### Sesión del 30 de Mayo de 2026 (Sesión 11) — UI Polish: Precios, Hover Shadows, Logos Clicables
 

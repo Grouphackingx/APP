@@ -11,7 +11,8 @@ export class AppService {
 
   async getPlans() {
     return this.prisma.plan.findMany({
-      orderBy: { price: 'asc' }
+      where: { isHidden: false },
+      orderBy: { price: 'asc' },
     });
   }
 }

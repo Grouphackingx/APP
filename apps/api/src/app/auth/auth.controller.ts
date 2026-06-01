@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Patch, Post, HttpCode, UseGuards, Request, ForbiddenException, Query } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, HttpCode, UseGuards, Request, Req, ForbiddenException, Query } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto, UpdateBasicInfoDto, UpdateOrganizerProfileInfoDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -9,8 +10,11 @@ export class AuthController {
 
     @Post('login')
     @HttpCode(200)
-    login(@Body() loginDto: LoginDto) {
-        return this.authService.login(loginDto);
+    login(@Body() loginDto: LoginDto, @Req() req: ExpressRequest) {
+        const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+            || req.socket?.remoteAddress
+            || 'unknown';
+        return this.authService.login(loginDto, ip);
     }
 
     @Post('register')

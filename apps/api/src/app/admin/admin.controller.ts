@@ -134,6 +134,50 @@ export class AdminController {
     return this.adminService.setOrgPaymentGateway(userId, paidEventsEnabled);
   }
 
+  // --- ATTENDEES ---
+
+  @Get('attendees')
+  @Roles(Role.ADMIN, Role.EDITOR)
+  getAttendees(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.adminService.getAttendees(
+      page ? Math.max(1, parseInt(page, 10)) : 1,
+      limit ? Math.min(100, Math.max(1, parseInt(limit, 10))) : 20,
+      search || '',
+    );
+  }
+
+  @Get('attendees/export')
+  @Roles(Role.ADMIN, Role.EDITOR)
+  exportAttendees(@Query('search') search?: string) {
+    return this.adminService.exportAttendees(search || '');
+  }
+
+  @Patch('attendees/:id')
+  @Roles(Role.ADMIN, Role.EDITOR)
+  updateAttendee(@Param('id') id: string, @Body() data: any) {
+    return this.adminService.updateAttendee(id, data);
+  }
+
+  @Delete('attendees/:id')
+  deleteAttendee(@Param('id') id: string) {
+    return this.adminService.deleteAttendee(id);
+  }
+
+  @Patch('attendees/:id/block')
+  @Roles(Role.ADMIN, Role.EDITOR)
+  blockAttendee(@Param('id') id: string, @Body('isBlocked') isBlocked: boolean) {
+    return this.adminService.blockAttendee(id, isBlocked);
+  }
+
+  @Patch('attendees/:id/password')
+  changeAttendeePassword(@Param('id') id: string, @Body('password') password: string) {
+    return this.adminService.changeAttendeePassword(id, password);
+  }
+
   @Patch('events/:id/featured')
   @Roles(Role.ADMIN)
   toggleEventFeatured(

@@ -512,9 +512,10 @@ tr:hover td {
 }
 
 .alert-error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  background: rgba(251, 146, 60, 0.08);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  color: #fb923c;
+  line-height: 1.5;
 }
 
 .alert-success {

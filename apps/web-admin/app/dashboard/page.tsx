@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, getSystemConfig, updateSystemConfig, setOrgPaymentGateway, type Banner } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, getSystemConfig, updateSystemConfig, setOrgPaymentGateway, getAttendees, updateAttendee, deleteAttendee, blockAttendee, changeAttendeePassword, exportAttendees, type Banner } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
 import { EditEventForm } from '../../components/EditEventForm';
 
-type ViewType = 'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event' | 'banners';
+type ViewType = 'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event' | 'banners' | 'asistentes';
 
 // ─── Shared UI Components ────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ function ToastStack({ toasts }: { toasts: { id: number; msg: string; type: 'succ
     document.body
   );
 }
-const VALID_VIEWS: ViewType[] = ['inicio', 'dashboard', 'users', 'plans', 'analytics', 'events', 'edit-event', 'banners'];
+const VALID_VIEWS: ViewType[] = ['inicio', 'dashboard', 'users', 'plans', 'analytics', 'events', 'edit-event', 'banners', 'asistentes'];
 
 export default function AdminDashboardWrapper() {
   return <Suspense><AdminDashboard /></Suspense>;
@@ -182,6 +182,21 @@ function AdminDashboard() {
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
+  // Attendees state
+  const [attendees, setAttendees] = useState<any[]>([]);
+  const [attendeesPage, setAttendeesPage] = useState(1);
+  const [attendeesTotalPages, setAttendeesTotalPages] = useState(1);
+  const [attendeesTotal, setAttendeesTotal] = useState(0);
+  const [attendeesSearch, setAttendeesSearch] = useState('');
+  const [loadingAttendees, setLoadingAttendees] = useState(false);
+  const [editingAttendee, setEditingAttendee] = useState<any>(null);
+  const [attendeeEditForm, setAttendeeEditForm] = useState<any>({});
+  const [attendeeEditError, setAttendeeEditError] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [exportingAttendees, setExportingAttendees] = useState<'csv' | 'xlsx' | null>(null);
+
   useEffect(() => {
     if (!isLoading && (!user || (user.role !== 'ADMIN' && user.role !== 'EDITOR'))) {
       router.push('/login');
@@ -196,9 +211,11 @@ function AdminDashboard() {
       loadPlans();
       loadAdminUsers();
       loadEvents(1);
+      loadAttendees(1, '');
       getSystemConfig(token as string).then(setSystemConfig).catch(console.error);
     } else if (user.role === 'EDITOR') {
       loadEvents(eventsPage);
+      loadAttendees(1, '');
     }
   }, [token, user]);
 
@@ -270,6 +287,152 @@ function AdminDashboard() {
       setAnalyticsData([]); // Prevents infinite loading if error occurs
     } finally {
       setLoadingAnalytics(false);
+    }
+  };
+
+  const loadAttendees = async (page: number, search = attendeesSearch) => {
+    setLoadingAttendees(true);
+    try {
+      const res = await getAttendees(token as string, page, 20, search);
+      setAttendees(res.data);
+      setAttendeesPage(res.page);
+      setAttendeesTotalPages(res.totalPages);
+      setAttendeesTotal(res.total);
+    } catch (error) {
+      console.error('Failed to load attendees', error);
+    } finally {
+      setLoadingAttendees(false);
+    }
+  };
+
+  const handleAttendeeSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadAttendees(1, attendeesSearch);
+  };
+
+  const handleSaveAttendee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAttendeeEditError('');
+    try {
+      await updateAttendee(editingAttendee.id, attendeeEditForm, token as string);
+      setEditingAttendee(null);
+      loadAttendees(attendeesPage);
+      showToast('Asistente actualizado correctamente.');
+    } catch (err: any) {
+      setAttendeeEditError(err.message || 'Error al actualizar.');
+    }
+  };
+
+  const handleBlockAttendee = (attendee: any) => {
+    const blocking = !attendee.isBlocked;
+    showConfirm(
+      blocking ? 'Bloquear asistente' : 'Desbloquear asistente',
+      blocking
+        ? `¿Bloquear a "${attendee.name}"? No podrá iniciar sesión hasta ser desbloqueado.`
+        : `¿Desbloquear a "${attendee.name}"? Podrá volver a iniciar sesión.`,
+      async () => {
+        try {
+          await blockAttendee(attendee.id, blocking, token as string);
+          loadAttendees(attendeesPage);
+          showToast(blocking ? `"${attendee.name}" bloqueado.` : `"${attendee.name}" desbloqueado.`, blocking ? 'warning' : 'success');
+        } catch { showToast('Error al cambiar el estado.', 'error'); }
+      },
+      blocking ? 'warning' : 'default',
+    );
+  };
+
+  const handleDeleteAttendee = (attendee: any) => {
+    if (attendee.totalOrders > 0) {
+      showConfirm(
+        'No se puede eliminar',
+        `"${attendee.name}" tiene ${attendee.totalOrders} orden${attendee.totalOrders !== 1 ? 'es' : ''} de compra registrada${attendee.totalOrders !== 1 ? 's' : ''}. Los registros de compra deben conservarse. Usa "Bloquear" para restringir su acceso.`,
+        () => {},
+        'warning',
+      );
+      return;
+    }
+    showConfirm(
+      'Eliminar asistente',
+      `¿Eliminar permanentemente la cuenta de "${attendee.name}"? Esta acción no se puede deshacer.`,
+      async () => {
+        try {
+          await deleteAttendee(attendee.id, token as string);
+          loadAttendees(attendeesPage);
+          showToast('Asistente eliminado.');
+        } catch (err: any) { showToast(err.message || 'No se pudo eliminar.', 'error'); }
+      },
+      'danger',
+    );
+  };
+
+  const buildExportRows = (data: any[]) => {
+    const headers = ['Nombre', 'Correo', 'Teléfono', 'Estado', 'Email Verificado', 'Tickets Totales', 'Tickets Usados', 'Tickets Válidos', 'Órdenes', 'Fecha de Registro'];
+    const rows = data.map(a => [
+      a.name,
+      a.email,
+      a.phone || '',
+      a.isBlocked ? 'Bloqueado' : 'Activo',
+      a.emailVerified ? 'Sí' : 'No',
+      a.totalTickets,
+      a.usedTickets,
+      a.validTickets,
+      a.totalOrders,
+      new Date(a.createdAt).toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    ]);
+    return { headers, rows };
+  };
+
+  const handleExportAttendees = async (format: 'csv' | 'xlsx') => {
+    setExportingAttendees(format);
+    const date = new Date().toISOString().slice(0, 10);
+    try {
+      const data = await exportAttendees(token as string, attendeesSearch);
+      const { headers, rows } = buildExportRows(data);
+
+      if (format === 'csv') {
+        const csvContent = [headers, ...rows]
+          .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+          .join('\n');
+        const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `asistentes_${date}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const XLSX = await import('xlsx');
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        // Ancho de columnas
+        ws['!cols'] = [28, 32, 16, 12, 16, 14, 14, 14, 10, 16].map(w => ({ wch: w }));
+        // Estilo de cabecera (negrita via s property — disponible en SheetJS pro, aquí solo definimos el rango)
+        ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }) };
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Asistentes');
+        XLSX.writeFile(wb, `asistentes_${date}.xlsx`);
+      }
+
+      showToast(`${data.length} asistente${data.length !== 1 ? 's' : ''} exportado${data.length !== 1 ? 's' : ''} en formato ${format.toUpperCase()}.`);
+    } catch (err: any) {
+      showToast(err.message || 'Error al exportar.', 'error');
+    } finally {
+      setExportingAttendees(null);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    try {
+      await changeAttendeePassword(showPasswordModal as string, newPassword, token as string);
+      setShowPasswordModal(null);
+      setNewPassword('');
+      showToast('Contraseña actualizada correctamente.');
+    } catch (err: any) {
+      setPasswordError(err.message || 'Error al cambiar la contraseña.');
     }
   };
 
@@ -1134,12 +1297,23 @@ function AdminDashboard() {
                   </thead>
                   <tbody>
                     {plans.map((plan) => (
-                      <tr key={plan.id}>
+                      <tr key={plan.id} style={plan.isHidden ? { background: 'rgba(251,146,60,0.04)', borderLeft: '3px solid rgba(251,146,60,0.5)' } : {}}>
                         <td>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{plan.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, color: plan.isHidden ? '#fb923c' : 'var(--text-primary)', opacity: plan.isHidden ? 0.9 : 1 }}>{plan.name}</span>
+                            {plan.isHidden ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 700, background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.4)', color: '#fb923c', letterSpacing: '0.01em' }}>
+                                🔒 Solo Admin
+                              </span>
+                            ) : (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: 700, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', color: '#6ee7b7' }}>
+                                ✓ Público
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td>{plan.maxEvents === 0 ? '♾️ Ilimitados' : `${plan.maxEvents} eventos`}</td>
-                        <td>${plan.price}</td>
+                        <td style={{ color: plan.isHidden ? 'rgba(251,146,60,0.8)' : 'inherit' }}>{plan.maxEvents === 0 ? '♾️ Ilimitados' : `${plan.maxEvents} eventos`}</td>
+                        <td style={{ color: plan.isHidden ? 'rgba(251,146,60,0.8)' : 'inherit' }}>${plan.price}</td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button
@@ -1259,7 +1433,267 @@ function AdminDashboard() {
         )}
 
         {view === 'banners' && <BannersView token={token || ''} />}
+
+        {/* ─── ASISTENTES VIEW ─── */}
+        {view === 'asistentes' && (
+          <>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>Asistentes</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                  Gestiona los usuarios registrados en el Portal de Clientes. Total: <strong style={{ color: 'var(--text-primary)' }}>{attendeesTotal}</strong>
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                {(['csv', 'xlsx'] as const).map(fmt => {
+                  const isLoading = exportingAttendees === fmt;
+                  const disabled = !!exportingAttendees || attendeesTotal === 0;
+                  const colors = fmt === 'csv'
+                    ? { border: 'rgba(16,185,129,0.4)', bg: 'rgba(16,185,129,0.1)', text: '#6ee7b7' }
+                    : { border: 'rgba(99,102,241,0.4)', bg: 'rgba(99,102,241,0.1)', text: '#a5b4fc' };
+                  return (
+                    <button
+                      key={fmt}
+                      onClick={() => handleExportAttendees(fmt)}
+                      disabled={disabled}
+                      title={attendeesSearch ? `Exportar búsqueda como ${fmt.toUpperCase()}` : `Exportar todos como ${fmt.toUpperCase()}`}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.5rem',
+                        padding: '0.6rem 1.1rem', borderRadius: '9px',
+                        border: `1px solid ${disabled ? 'rgba(255,255,255,0.1)' : colors.border}`,
+                        background: disabled ? 'rgba(255,255,255,0.03)' : colors.bg,
+                        color: disabled ? 'rgba(255,255,255,0.2)' : colors.text,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      {isLoading ? 'Exportando...' : `Exportar ${fmt.toUpperCase()}`}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Search bar */}
+            <form onSubmit={handleAttendeeSearch} style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', maxWidth: '480px' }}>
+              <input
+                type="text"
+                placeholder="Buscar por nombre o correo..."
+                value={attendeesSearch}
+                onChange={e => setAttendeesSearch(e.target.value)}
+                style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }}
+              />
+              <button type="submit" style={{ padding: '0.6rem 1.2rem', borderRadius: '9px', border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>
+                Buscar
+              </button>
+              {attendeesSearch && (
+                <button type="button" onClick={() => { setAttendeesSearch(''); loadAttendees(1, ''); }}
+                  style={{ padding: '0.6rem 1rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.875rem', cursor: 'pointer' }}>
+                  Limpiar
+                </button>
+              )}
+            </form>
+
+            {loadingAttendees ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Cargando asistentes...</div>
+            ) : attendees.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎟️</div>
+                <p>No se encontraron asistentes{attendeesSearch ? ` para "${attendeesSearch}"` : ''}.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      {['Nombre', 'Correo', 'Teléfono', 'Estado', 'Tickets', 'Usados', 'Órdenes', 'Registro', 'Acciones'].map(h => (
+                        <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendees.map(a => (
+                      <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-card-hover)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: a.isBlocked ? 'rgba(239,68,68,0.2)' : 'rgba(124,58,237,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, color: a.isBlocked ? '#f87171' : '#a78bfa', flexShrink: 0 }}>
+                              {a.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', maxWidth: 200 }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{a.email}</span>
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                          {a.phone || <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>}
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.65rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600,
+                            background: a.isBlocked ? 'rgba(239,68,68,0.1)' : a.emailVerified ? 'rgba(16,185,129,0.1)' : 'rgba(251,146,60,0.1)',
+                            color: a.isBlocked ? '#f87171' : a.emailVerified ? '#6ee7b7' : '#fb923c',
+                            border: `1px solid ${a.isBlocked ? 'rgba(239,68,68,0.3)' : a.emailVerified ? 'rgba(16,185,129,0.3)' : 'rgba(251,146,60,0.3)'}` }}>
+                            {a.isBlocked ? '🚫 Bloqueado' : a.emailVerified ? '✓ Activo' : '⏳ Sin verificar'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{a.totalTickets}</span>
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>
+                          <span style={{ fontWeight: 600, color: a.usedTickets > 0 ? '#6ee7b7' : 'var(--text-muted)' }}>{a.usedTickets}</span>
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{a.totalOrders}</td>
+                        <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {new Date(a.createdAt).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem' }}>
+                          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                            <button
+                              title="Editar"
+                              onClick={() => { setEditingAttendee(a); setAttendeeEditForm({ name: a.name, email: a.email, phone: a.phone || '' }); setAttendeeEditError(''); }}
+                              style={{ padding: '0.35rem 0.6rem', borderRadius: '7px', border: '1px solid rgba(124,58,237,0.4)', background: 'rgba(124,58,237,0.1)', color: '#a78bfa', cursor: 'pointer', fontSize: '0.8rem' }}>
+                              ✏️
+                            </button>
+                            <button
+                              title={a.isBlocked ? 'Desbloquear' : 'Bloquear'}
+                              onClick={() => handleBlockAttendee(a)}
+                              style={{ padding: '0.35rem 0.6rem', borderRadius: '7px', border: `1px solid ${a.isBlocked ? 'rgba(16,185,129,0.4)' : 'rgba(251,146,60,0.4)'}`, background: a.isBlocked ? 'rgba(16,185,129,0.1)' : 'rgba(251,146,60,0.1)', color: a.isBlocked ? '#6ee7b7' : '#fb923c', cursor: 'pointer', fontSize: '0.8rem' }}>
+                              {a.isBlocked ? '🔓' : '🔒'}
+                            </button>
+                            <button
+                              title="Cambiar contraseña"
+                              onClick={() => { setShowPasswordModal(a.id); setNewPassword(''); setPasswordError(''); }}
+                              style={{ padding: '0.35rem 0.6rem', borderRadius: '7px', border: '1px solid rgba(99,102,241,0.4)', background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', cursor: 'pointer', fontSize: '0.8rem' }}>
+                              🔑
+                            </button>
+                            <button
+                              title="Eliminar"
+                              onClick={() => handleDeleteAttendee(a)}
+                              style={{ padding: '0.35rem 0.6rem', borderRadius: '7px', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#f87171', cursor: 'pointer', fontSize: '0.8rem' }}>
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {attendeesTotalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+                <button disabled={attendeesPage <= 1} onClick={() => loadAttendees(attendeesPage - 1)}
+                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: attendeesPage <= 1 ? 'transparent' : 'var(--bg-card)', color: attendeesPage <= 1 ? 'var(--text-muted)' : 'var(--text-primary)', cursor: attendeesPage <= 1 ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                  ← Anterior
+                </button>
+                {Array.from({ length: Math.min(5, attendeesTotalPages) }, (_, i) => {
+                  const p = Math.max(1, Math.min(attendeesPage - 2, attendeesTotalPages - 4)) + i;
+                  return p <= attendeesTotalPages ? (
+                    <button key={p} onClick={() => loadAttendees(p)}
+                      style={{ padding: '0.5rem 0.85rem', borderRadius: '8px', border: `1px solid ${p === attendeesPage ? '#7c3aed' : 'var(--border-color)'}`, background: p === attendeesPage ? '#7c3aed' : 'var(--bg-card)', color: p === attendeesPage ? '#fff' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                      {p}
+                    </button>
+                  ) : null;
+                })}
+                <button disabled={attendeesPage >= attendeesTotalPages} onClick={() => loadAttendees(attendeesPage + 1)}
+                  style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: attendeesPage >= attendeesTotalPages ? 'transparent' : 'var(--bg-card)', color: attendeesPage >= attendeesTotalPages ? 'var(--text-muted)' : 'var(--text-primary)', cursor: attendeesPage >= attendeesTotalPages ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                  Siguiente →
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Edit Attendee Modal */}
+      {editingAttendee && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setEditingAttendee(null)}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2rem', maxWidth: '440px', width: '90%', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+            onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>✏️ Editar Asistente</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>{editingAttendee.email}</p>
+            <form onSubmit={handleSaveAttendee}>
+              <div className="form-group">
+                <label>Nombre completo</label>
+                <input type="text" value={attendeeEditForm.name || ''} onChange={e => setAttendeeEditForm((p: any) => ({ ...p, name: e.target.value }))} required />
+              </div>
+              <div className="form-group">
+                <label>Correo electrónico</label>
+                <input type="email" value={attendeeEditForm.email || ''} onChange={e => setAttendeeEditForm((p: any) => ({ ...p, email: e.target.value }))} required />
+              </div>
+              <div className="form-group">
+                <label>Teléfono</label>
+                <input type="text" value={attendeeEditForm.phone || ''} onChange={e => setAttendeeEditForm((p: any) => ({ ...p, phone: e.target.value }))} />
+              </div>
+              {attendeeEditError && (
+                <div style={{ padding: '0.65rem 1rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                  ⚠ {attendeeEditError}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button type="button" onClick={() => setEditingAttendee(null)}
+                  style={{ padding: '0.6rem 1.25rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                  Cancelar
+                </button>
+                <button type="submit"
+                  style={{ padding: '0.6rem 1.5rem', borderRadius: '9px', border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowPasswordModal(null)}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2rem', maxWidth: '400px', width: '90%', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '0.75rem' }}>🔑</div>
+            <h3 style={{ color: 'var(--text-primary)', textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.05rem' }}>Cambiar Contraseña</h3>
+            <div className="form-group">
+              <label>Nueva contraseña</label>
+              <input
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                autoFocus
+                onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
+              />
+            </div>
+            {passwordError && (
+              <div style={{ padding: '0.65rem 1rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                ⚠ {passwordError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '0.5rem' }}>
+              <button onClick={() => setShowPasswordModal(null)}
+                style={{ padding: '0.6rem 1.25rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem' }}>
+                Cancelar
+              </button>
+              <button onClick={handleChangePassword} disabled={!newPassword}
+                style={{ padding: '0.6rem 1.5rem', borderRadius: '9px', border: 'none', background: newPassword ? '#7c3aed' : 'rgba(124,58,237,0.4)', color: '#fff', cursor: newPassword ? 'pointer' : 'not-allowed', fontWeight: 600, fontSize: '0.875rem' }}>
+                Actualizar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Edit Modal Overlay */}
       {editingOrgData && (
@@ -1337,7 +1771,7 @@ function AdminDashboard() {
                   <label>Plan / Suscripción</label>
                   <select value={editFormData.plan || ''} onChange={e => setEditFormData({...editFormData, plan: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
                     {plans.map(p => (
-                      <option key={p.id} value={p.name}>{p.name}</option>
+                      <option key={p.id} value={p.name}>{p.name}{p.isHidden ? ' 🔒 (Solo Admin)' : ''} — {p.maxEvents === 0 ? 'Ilimitado' : `${p.maxEvents} eventos`} / ${p.price}</option>
                     ))}
                     {!plans.some(p => p.name === editFormData.plan) && editFormData.plan && (
                       <option value={editFormData.plan}>{editFormData.plan} (Heredado)</option>
@@ -1453,7 +1887,7 @@ function AdminDashboard() {
                   <label>Plan Inicial</label>
                   <select value={createFormData.plan || (plans.length > 0 ? plans[0].name : '')} onChange={e => setCreateFormData({...createFormData, plan: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'white' }}>
                     {plans.map(p => (
-                      <option key={p.id} value={p.name}>{p.name}</option>
+                      <option key={p.id} value={p.name}>{p.name}{p.isHidden ? ' 🔒 (Solo Admin)' : ''} — {p.maxEvents === 0 ? 'Ilimitado' : `${p.maxEvents} eventos`} / ${p.price}</option>
                     ))}
                   </select>
                 </div>
@@ -1498,7 +1932,24 @@ function AdminDashboard() {
                 <label>Valor ($)</label>
                 <input type="number" step="0.01" min="0" value={planFormData.price || ''} onChange={e => setPlanFormData({...planFormData, price: e.target.value})} required placeholder="Ej: 29.99" />
               </div>
-              
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', borderRadius: '10px', border: `1px solid ${planFormData.isHidden ? 'rgba(251,146,60,0.35)' : 'var(--border-color)'}`, background: planFormData.isHidden ? 'rgba(251,146,60,0.06)' : 'var(--bg-glass)', cursor: 'pointer', marginBottom: '0.5rem' }}>
+                <input
+                  type="checkbox"
+                  checked={!!planFormData.isHidden}
+                  onChange={e => setPlanFormData({ ...planFormData, isHidden: e.target.checked })}
+                  style={{ width: '1rem', height: '1rem', marginTop: '0.15rem', accentColor: '#fb923c', flexShrink: 0 }}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: planFormData.isHidden ? '#fb923c' : 'var(--text-primary)' }}>
+                    🔒 Plan oculto (solo Admin)
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                    Los organizadores no verán este plan al registrarse. Solo el Administrador Global puede asignarlo manualmente.
+                  </div>
+                </div>
+              </label>
+
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                 <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
                   {loading ? 'Guardando...' : 'Guardar Plan'}

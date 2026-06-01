@@ -44,6 +44,10 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Runtime uploads and logs (managed on server)
+uploads/
+logs/
+
 .nx/cache
 .nx/workspace-data
 

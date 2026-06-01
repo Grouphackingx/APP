@@ -964,6 +964,20 @@ textarea {
   box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
+.alert {
+  padding: 0.85rem 1.2rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.alert-error {
+  background: rgba(251, 146, 60, 0.08);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  color: #fb923c;
+}
+
 /* ... Event Detail ... */
 .event-detail {
   max-width: 900px;

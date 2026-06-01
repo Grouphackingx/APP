@@ -113,9 +113,9 @@ export class EventsService implements OnModuleInit {
         } else {
             // Fallback for missing plan configurations
             if (profile.plan === 'FREE' && currentEventsCount >= 3) {
-                throw new BadRequestException('Has alcanzado el lÃ­mite de 3 eventos anuales para el plan FREE.');
-            } else if (profile.plan === 'PLUS' && currentEventsCount >= 12) {
-                throw new BadRequestException('Has alcanzado el lÃ­mite de 12 eventos anuales para el plan PLUS. Usa ELITE para eventos ilimitados.');
+                throw new BadRequestException('Has alcanzado el límite de 3 eventos anuales para el plan FREE.');
+            } else if (profile.plan === 'BASIC' && currentEventsCount >= 6) {
+                throw new BadRequestException('Has alcanzado el límite de 6 eventos anuales para el plan BASIC. Actualiza tu plan para publicar más.');
             }
         }
 
