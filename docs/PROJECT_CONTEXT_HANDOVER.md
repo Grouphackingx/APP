@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 31 de Mayo de 2026 (Sesión 12)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad
+**Última Actualización:** 31 de Mayo de 2026 (Sesión 13)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Página Asistentes en Admin + Planes ocultos + Previsualización de eventos + Flujo Borrador→Publicar + Exportación XLSX en organizadores + Redes sociales reales en footer + Fix portraitImageUrl en DTO
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -166,6 +166,7 @@ enum MemberRole { ADMIN, STAFF }
 model User {
   id, email (unique), password (bcrypt), name, phone?
   role (default USER)
+  isBlocked Boolean @default(false)  // true = login bloqueado con mensaje de suspensión
   // Auth
   emailVerified        Boolean   @default(true)  // false para nuevos registros web-client
   resetPasswordToken   String?   @unique
@@ -201,6 +202,7 @@ model OrganizerMember {
 
 model Plan {
   id, name, maxEvents (0 = ilimitado), price (Decimal)
+  isHidden Boolean @default(false)  // true = no visible en registro de organizadores; solo Admin puede asignarlo
   → organizers OrganizerProfile[]
 }
 
@@ -480,18 +482,21 @@ start-all.bat
 - [x] ~~Deploy frontends en Coolify~~ ✅ (30 May 2026) → `https://afroeventos.com`, `https://host.afroeventos.com`, `https://admin.afroeventos.com`
 - [x] ~~Schema de BD aplicado en producción~~ ✅ (30 May 2026) → `prisma db push` en CMD del API Dockerfile
 - [x] ~~Primer usuario ADMIN creado en producción~~ ✅ (30 May 2026) → usuario "Blade" (`dmxwilly@gmail.com`)
+- [x] ~~Gestión de Asistentes en Admin~~ ✅ (31 May 2026) → página completa con edición, bloqueo, exportación
+- [x] ~~Previsualización de eventos antes de publicar~~ ✅ (31 May 2026) → EventPreviewModal en web-host
 
 ### Prioridad Media
 
 - [ ] Sistema de categorías de eventos
 - [ ] Optimizar queries de findAll (sin traer todos los seats)
 - [ ] CDN para imágenes
+- [ ] Reportes financieros básicos para organizadores (ingresos por evento)
 
 ### Prioridad Baja
 
 - [ ] Websockets para mapa de asientos en tiempo real
 - [ ] Rate limiting en API
-- [ ] CI/CD pipeline
+- [ ] CI/CD pipeline con tests
 - [ ] Tests unitarios e integración
 
 ---
@@ -512,7 +517,206 @@ start-all.bat
 
 ---
 
-## 12. Registro de Cambios
+## 12. Infraestructura de Producción — Coolify
+
+### Plataforma
+
+- **Coolify v4.1.1** — self-hosted sobre servidor propio (proyecto "AfroEventos", entorno "production")
+- **Servidor**: localhost (el mismo servidor donde corre Coolify)
+- **Repositorio**: `https://github.com/Grouphackingx/APP.git` (rama `main`)
+- **Auto-deploy**: activado — cada `git push origin main` dispara el redeploy automático de todos los servicios
+
+### Servicios en Coolify
+
+| Servicio | URL producción | Dockerfile | Puerto interno |
+| :--- | :--- | :--- | :--- |
+| `afroeventos-api` | `https://api.afroeventos.com` | `/apps/api/Dockerfile` | 3000 |
+| `afroeventos-web-client` | `https://afroeventos.com` | `/apps/web-client/Dockerfile` | 3000 |
+| `afroeventos-web-host` | `https://host.afroeventos.com` | `/apps/web-host/Dockerfile` | 3000 |
+| `afroeventos-web-admin` | `https://admin.afroeventos.com` | `/apps/web-admin/Dockerfile` | 3000 |
+| `afroeventos-postgres` | interno | — (imagen oficial) | 5432 |
+| `afroeventos-redis` | interno | — (imagen oficial) | 6379 |
+
+### Proceso de Deploy
+
+1. Hacer cambios en local → commit → `git push origin main`
+2. Coolify detecta el push y lanza redeploy automático de los 4 servicios
+3. Si hay cambios de schema Prisma: ir a Coolify → `afroeventos-api` → pestaña **Terminal** → conectar al contenedor → ejecutar `npx prisma db push`
+4. Verificar que todos los servicios estén en verde (🟢 Running) en el panel
+
+### Acceder al Terminal del Contenedor API
+
+Coolify → Projects → AfroEventos → production → `afroeventos-api` → pestaña **Terminal** → seleccionar el contenedor en el dropdown → **Connect**
+
+Desde ahí se pueden ejecutar comandos dentro del contenedor en ejecución:
+```bash
+npx prisma db push              # aplicar cambios de schema
+npx prisma studio               # GUI de base de datos (no recomendado en prod)
+node -e "..."                   # scripts Node.js puntuales (ej: crear admin)
+```
+
+### Variables de Entorno por Servicio
+
+**`afroeventos-api`** (Environment Variables — runtime):
+```
+DATABASE_URL=postgresql://...@afroeventos-postgres:5432/openticket_db
+REDIS_URL=redis://afroeventos-redis:6379
+JWT_SECRET=<64 chars aleatorios>
+PORT=3000
+MAIL_HOST=smtp.resend.com
+MAIL_PORT=587
+MAIL_SECURE=false
+MAIL_USER=resend
+MAIL_PASS=<resend_api_key>
+MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
+STORAGE_PROVIDER=local
+NEXT_PUBLIC_MAX_UPLOAD_MB=2.5
+NEXT_PUBLIC_ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
+UPLOAD_IMAGE_QUALITY=80
+```
+
+**Frontends** (Build Variables — baked en tiempo de build, NO en Environment Variables):
+```
+NEXT_PUBLIC_API_URL=https://api.afroeventos.com/api
+NEXT_PUBLIC_SITE_URL=https://afroeventos.com
+NEXT_PUBLIC_HOST_URL=https://host.afroeventos.com
+NEXT_PUBLIC_ADMIN_URL=https://admin.afroeventos.com
+NEXT_PUBLIC_MAX_UPLOAD_MB=2.5
+NEXT_PUBLIC_ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
+```
+
+> ⚠️ **Crítico**: Los `NEXT_PUBLIC_*` deben ir en **Build Variables** (no Environment Variables). Next.js los bakea en el JS del cliente durante `docker build`. Si se ponen como Env Vars (runtime), quedan vacíos en el navegador.
+
+### Volúmenes Persistentes
+
+- `afroeventos-uploads` → montado en `/app/uploads` del contenedor API — persiste las imágenes subidas entre deployments
+
+### Advertencia: `nx serve` en Producción
+
+`npx nx serve api` **NO** funciona correctamente en producción. En modo desarrollo, NX lanza un servidor HMR/WebSocket en el mismo puerto 3000 que intercepta las peticiones HTTP antes de que lleguen a NestJS, devolviendo `"WebSockets request was expected"` a todos los clientes.
+
+**Siempre correr el API con**:
+```bash
+npx nx build api && node dist/apps/api/main.js
+```
+O en los contenedores Coolify, el CMD del Dockerfile ya usa `node dist/apps/api/main.js` directamente.
+
+---
+
+## 13. Registro de Cambios
+
+### Sesión del 31 de Mayo de 2026 (Sesión 13) — Asistentes Admin, Previsualización, Planes Ocultos, Fix DTO
+
+#### Cambios realizados
+
+**Schema Prisma** (`libs/shared/prisma/schema.prisma`):
+- `isBlocked Boolean @default(false)` añadido a `User` — bloquea el login mostrando mensaje de suspensión
+- `isHidden Boolean @default(false)` añadido a `Plan` — planes invisibles para organizadores, solo asignables por Admin
+
+**DTO compartido** (`libs/shared/src/lib/dto/events.dto.ts`):
+- `portraitImageUrl?: string` añadido a `CreateEventDto` — **fix crítico**: sin este campo el API descartaba silenciosamente la URL de la imagen retrato 3:4 al crear eventos (campo no llegaba a Prisma por `whitelist: true` en ValidationPipe)
+- `UpdateEventDto` hereda el campo automáticamente via `PartialType`
+
+**`apps/api/src/app/auth/auth.service.ts`**:
+- Check `isBlocked` en `login()`: si `user.isBlocked` → `UnauthorizedException('Tu cuenta ha sido suspendida...')`
+- Mensajes de correo duplicado en español en `register()` y `registerHost()` (antes: `'Email already exists'` en inglés)
+
+**`apps/api/src/app/app.service.ts`**:
+- `getPlans()` filtra `isHidden: false` — planes ocultos no aparecen en el registro de organizadores
+
+**`apps/api/src/app/admin/admin.service.ts`**:
+- `getAttendees(page, limit, search)` — lista paginada de usuarios rol USER con stats: totalTickets, usedTickets, validTickets, totalOrders (calculados via relaciones Prisma sin campo extra en schema)
+- `exportAttendees(search)` — igual pero sin paginación, para exportación completa
+- `updateAttendee(id, data)` — actualiza name/email/phone con check de email duplicado
+- `deleteAttendee(id)` — bloquea eliminación si tiene órdenes (`ForbiddenException`), protege registros financieros
+- `blockAttendee(id, isBlocked)` — toggle de suspensión
+- `changeAttendeePassword(id, newPassword)` — bcrypt hash + update
+
+**`apps/api/src/app/admin/admin.controller.ts`** — 6 nuevos endpoints:
+```
+GET  /admin/attendees              ADMIN + EDITOR  lista paginada
+GET  /admin/attendees/export       ADMIN + EDITOR  exportar todos (sin paginación)
+PATCH /admin/attendees/:id         ADMIN + EDITOR  editar datos
+DELETE /admin/attendees/:id        ADMIN           eliminar (bloqueado si tiene órdenes)
+PATCH /admin/attendees/:id/block   ADMIN + EDITOR  bloquear/desbloquear
+PATCH /admin/attendees/:id/password ADMIN          cambiar contraseña
+```
+> Nota: `/attendees/export` debe declararse ANTES de `/:id` en el controlador para evitar que NestJS lo interprete como ID.
+
+**`apps/web-admin/components/Sidebar.tsx`**:
+- Nuevo ítem "🎟️ Asistentes" visible para ADMIN y EDITOR
+- Orden: Inicio → Analíticas → Eventos → Organizadores → Asistentes → Planes (ADMIN only) → Banners → Usuarios (ADMIN only)
+
+**`apps/web-admin/lib/api.ts`** — funciones nuevas: `getAttendees`, `exportAttendees`, `updateAttendee`, `deleteAttendee`, `blockAttendee`, `changeAttendeePassword`
+
+**`apps/web-admin/app/dashboard/page.tsx`** — Vista Asistentes:
+- Tabla con columnas: Nombre, Correo, Teléfono, Estado (badge verde/rojo isBlocked), Tickets, Usados, Órdenes, Registro, Acciones
+- Búsqueda con debounce, paginación
+- Exportación CSV (UTF-8 BOM para Excel) y XLSX (SheetJS lazy import)
+- Modal de edición (nombre, email, teléfono) con validación de duplicados
+- Modal de cambio de contraseña
+- Botón bloquear/desbloquear con confirmación
+- Eliminar bloqueado si tiene órdenes: muestra modal informativo en lugar de confirmación de borrado
+- Vista Planes: badge "🔒 Solo Admin" naranja para planes `isHidden: true`, badge "✓ Público" verde para visibles; filas con `isHidden` tienen borde naranja y fondo levemente tintado
+- Formulario de plan: checkbox `isHidden` con estilo naranja
+- Dropdowns de planes en edición/creación de organizadores: muestran todos los planes con sufijo `🔒 (Solo Admin)`
+
+**`apps/web-host/src/components/EventPreviewModal.tsx`** *(nuevo)*:
+- Modal full-screen con `createPortal` sobre `document.body`
+- Barra naranja fija "👁️ MODO PREVISUALIZACIÓN" con botón cerrar
+- Replica el layout completo del Portal de Clientes: hero banner, grid de info, descripción, mapa, video, galería, sidebar de localidades
+- Botón de compra desactivado con nota "solo en el Portal de Clientes"
+- Badge de estado si el evento es DRAFT o INACTIVE
+- Cierra con Esc o clic en "✕ Cerrar"
+- Bloquea scroll del body mientras está abierto
+
+**`apps/web-host/src/app/dashboard/page.tsx`**:
+- Estado `previewingEvent: any | null`
+- Botón "👁️" en cada fila de la tabla de eventos (tono ámbar), visible en cualquier estado del evento
+- `<EventPreviewModal>` renderizado condicionalmente al final del componente
+- `CreateEventForm` recibe prop `onPreview={(event) => { setPreviewingEvent(event); fetchEvents(); }}`
+
+**`apps/web-host/src/components/CreateEventForm.tsx`**:
+- Nueva prop `onPreview?: (event: any) => void`
+- Import `updateEvent` añadido
+- Estados: `createdEvent`, `publishing`, `published`
+- Selector "Estado del Evento" **eliminado** — siempre crea como `DRAFT`
+- Pantalla de éxito post-creación con 3 CTAs:
+  1. "👁️ Previsualizar evento" (ámbar)
+  2. "🚀 Publicar en AfroEventos" (verde — llama `updateEvent(id, { status: 'PUBLISHED' })`)
+  3. "← Ir a Mis Eventos sin publicar" (gris)
+- Tras publicar exitosamente: botón publish desaparece, estado cambia a "🟢 Publicado — Visible en AfroEventos"
+
+**`apps/web-host/src/components/EditEventForm.tsx`**:
+- `portraitImageUrl?: string` añadido a interfaz `EventData`
+- `useState` de preview inicializado con `initialData?.portraitImageUrl || ''` (antes usaba `(initialData as any)?.portraitImageUrl` que no propagaba correctamente)
+- `let portraitImageUrl = initialData?.portraitImageUrl || ''` corregido igual
+
+**`apps/web-host/src/components/AttendeesList.tsx`**:
+- Exportación CSV (UTF-8 BOM) y XLSX (SheetJS) con las mismas columnas del admin
+- Filename inteligente: incluye nombre del evento si hay filtro de evento activo
+- SheetJS cargado con `import('xlsx')` dinámico (lazy, sin impacto en bundle inicial)
+
+**`apps/web-client/src/app/register/page.tsx`**:
+- Alert de correo duplicado incluye enlace "Inicia sesión aquí" cuando el mensaje contiene "ya está registrado"
+
+**`apps/web-host/src/app/register/page.tsx`**:
+- Ídem
+
+**`apps/web-client/src/components/Footer.tsx`**:
+- Facebook: `https://www.facebook.com/afroeventosec`
+- Instagram: `https://www.instagram.com/afroeventosec/`
+- WhatsApp: `https://wa.me/593988996579?text=Quiero%20m%C3%A1s%20informaci%C3%B3n`
+
+#### Commits
+- `efc09f4` — feat: asistentes admin, preview eventos, correos únicos, redes sociales y fixes
+
+#### Notas técnicas
+- **portraitImageUrl bug**: NestJS `ValidationPipe({ whitelist: true })` descarta silenciosamente cualquier campo no declarado en el DTO. El campo `portraitImageUrl` no estaba en `CreateEventDto` → nunca se guardaba en DB. Fix: añadir al DTO compartido en `libs/shared/src/lib/dto/events.dto.ts`
+- **Planes ocultos**: endpoint público `GET /api/app/plans` filtra `isHidden: false`. Admin puede crear planes y marcarlos como ocultos; luego asignarlos manualmente a organizadores desde el panel. Los planes ocultos no aparecen en el registro de organizadores.
+- **Protección de eliminación de asistentes**: si el asistente tiene órdenes de compra (`_count.orders > 0`), el backend lanza `ForbiddenException` y el frontend muestra un modal informativo (no de confirmación), preservando los registros financieros.
+
+---
 
 ### Sesión del 31 de Mayo de 2026 (Sesión 12) — Emails en Producción: Resend SMTP + 12 Plantillas Mejoradas
 
