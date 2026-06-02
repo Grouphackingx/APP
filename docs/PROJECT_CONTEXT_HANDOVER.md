@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 31 de Mayo de 2026 (Sesión 13)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Página Asistentes en Admin + Planes ocultos + Previsualización de eventos + Flujo Borrador→Publicar + Exportación XLSX en organizadores + Redes sociales reales en footer + Fix portraitImageUrl en DTO
+**Última Actualización:** 2 de Junio de 2026 (Sesión 14)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Página Asistentes en Admin + Planes ocultos + Previsualización de eventos + Flujo Borrador→Publicar + Exportación XLSX en organizadores + Redes sociales reales en footer + Fix portraitImageUrl en DTO + **Sesión 14**: Sistema de Categorías de Eventos (full-stack) + Fix buscador (SearchBar reescrito con useTransition + loading.tsx) + Fix filtro categorías (key prop EventsGrid + destacados independientes) + Banner slider sin zoom + etiqueta Publicidad + Fix login email inexistente
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -212,12 +212,19 @@ model Banner {
   createdAt, updatedAt
 }
 
+model EventCategory {
+  id, name (unique), icon?, order (default 0)
+  isActive (default true)
+  createdAt, updatedAt
+}
+// Poblar con: POST /api/categories/seed (requiere JWT ADMIN)
+
 model Event {
   id, slug? (unique), title, description?, date, location, city?, province?
   imageUrl?, bannerImageUrl?, squareImageUrl?, portraitImageUrl?
   status (default DRAFT)
   isFeatured (default false), featuredUntil?
-  category?
+  category String  // almacena EventCategory.name — validado en formularios del host
   → organizer User, zones Zone[]
 }
 
@@ -487,7 +494,7 @@ start-all.bat
 
 ### Prioridad Media
 
-- [ ] Sistema de categorías de eventos
+- [x] ~~Sistema de categorías de eventos~~ ✅ (2 Jun 2026)
 - [ ] Optimizar queries de findAll (sin traer todos los seats)
 - [ ] CDN para imágenes
 - [ ] Reportes financieros básicos para organizadores (ingresos por evento)
@@ -603,7 +610,139 @@ O en los contenedores Coolify, el CMD del Dockerfile ya usa `node dist/apps/api/
 
 ---
 
-## 13. Registro de Cambios
+## 13. Sistema de Categorías de Eventos
+
+### Arquitectura
+
+Las categorías son entidades gestionables en la BD (`EventCategory`). El campo `Event.category` almacena el `name` de la categoría como `String` (compatibilidad con datos existentes). Las categorías se gestionan desde web-admin y se exponen públicamente para filtrado en web-client y selección en formularios de web-host.
+
+### Backend (`apps/api/src/app/categories/`)
+
+| Archivo | Descripción |
+| :--- | :--- |
+| `categories.module.ts` | `CategoriesModule` — registrado en `AppModule`, exporta `CategoriesService` |
+| `categories.service.ts` | CRUD + seed con 13 categorías predeterminadas |
+| `categories.controller.ts` | Endpoints del controlador |
+
+**Endpoints:**
+
+| Método | Ruta | Auth | Descripción |
+| :----- | :--- | :--- | :---------- |
+| GET | `/api/categories` | No | Categorías activas (opcional: `?withEvents=true` — solo con eventos generales publicados) |
+| GET | `/api/categories/admin` | JWT (ADMIN/EDITOR) | Todas las categorías con conteo de eventos |
+| POST | `/api/categories/seed` | JWT (ADMIN) | Carga 13 categorías predeterminadas (idempotente) |
+| POST | `/api/categories` | JWT (ADMIN/EDITOR) | Crear categoría |
+| PATCH | `/api/categories/:id` | JWT (ADMIN/EDITOR) | Editar (si cambia nombre, actualiza todos los eventos que la usan) |
+| DELETE | `/api/categories/:id` | JWT (ADMIN/EDITOR) | Eliminar (bloqueado si tiene eventos asociados) |
+
+**Filtro `?withEvents=true`**: cuenta solo eventos con `status=PUBLISHED` que **no** sean actualmente destacados (`isFeatured=false` o con `featuredUntil` expirado). Esto asegura que las pills del portal solo aparezcan para categorías con eventos visibles en la grilla general.
+
+**Categorías predeterminadas (seed)**: Música 🎵, Baile 💃, Cultura 🎭, Fiestas 🎉, Festival 🌟, Conciertos 🎤, Deportes ⚽, Gastronomía 🍽️, Arte 🎨, Teatro 🎬, Conferencia 🎙️, Fiestas y Bailes 🕺, Otro 📌
+
+### Admin UI (`CategoriesView` en `apps/web-admin/app/dashboard/page.tsx`)
+
+- Ítem **"🏷️ Categorías"** en el Sidebar (entre Banners y Usuarios)
+- Tabla con: ícono, nombre, orden, conteo de eventos, estado (Activa/Inactiva)
+- Acciones: Editar, Activar/Desactivar, Eliminar (con modal de confirmación)
+- Formulario inline: nombre (requerido), ícono emoji, número de orden
+- Botón **"Cargar predeterminadas"** — llama a `POST /categories/seed` (idempotente, solo crea las que faltan)
+- Estado vacío con instrucciones para hacer seed inicial
+
+### Web-Host (formularios de evento)
+
+`CreateEventForm.tsx` y `EditEventForm.tsx` cargan categorías dinámicamente desde `GET /categories` al montar el componente. El selector muestra `nombre` (sin ícono para consistencia visual). Si las categorías aún no se han cargado, muestra la categoría existente del evento o "Cargando…".
+
+### Web-Client (pills de filtro)
+
+- `getEventCategories()` llama a `GET /categories?withEvents=true`
+- Las pills se muestran centradas con `justify-content: center` solo si hay **≥ 2 categorías** con eventos generales
+- `scroll={false}` en los Links de pills — evita saltar al top de la página al filtrar
+- `key={category ?? 'all'}-${query ?? ''}` en `EventsGrid` — fuerza reset del estado React al cambiar categoría
+- Los eventos **destacados** son independientes del filtro de categoría (se muestran siempre)
+- Al buscar con query, todos los resultados van al grid (incluyendo destacados) — evita el bug donde un evento destacado que coincide con la búsqueda no aparecía
+
+### Notas técnicas
+
+- **Primera vez en producción**: ejecutar `npx prisma db push` en Terminal del contenedor API, luego hacer seed desde Admin → Categorías → "Cargar predeterminadas"
+- **Renombrar categoría**: el service actualiza automáticamente todos los eventos que la usan (`updateMany`) antes de actualizar el nombre en `EventCategory`
+- **Pills visibles**: requieren ≥ 2 categorías con eventos generales (no destacados). Con 1 sola categoría, el filtro no tiene utilidad y no se muestra
+
+---
+
+## 14. Registro de Cambios
+
+### Sesión del 2 de Junio de 2026 (Sesión 14) — Sistema de Categorías + Fix Buscador + UI Fixes
+
+#### Cambios realizados
+
+**Schema Prisma** (`libs/shared/prisma/schema.prisma`):
+- Nuevo modelo `EventCategory` (id, name unique, icon?, order, isActive, createdAt, updatedAt)
+- `npx prisma db push` ejecutado localmente + en producción
+
+**`apps/api/src/app/categories/`** *(nuevo módulo)*:
+- `categories.service.ts` — CRUD, seed de 13 categorías por defecto, filtro `withEvents` que excluye destacados activos
+- `categories.controller.ts` — GET público con `?withEvents`, GET admin con conteo, POST seed, POST/PATCH/DELETE protegidos
+- `categories.module.ts` — registrado en AppModule
+
+**`apps/api/src/app/app.module.ts`** — `CategoriesModule` importado
+
+**`apps/api/src/app/events/events.service.ts`** — `getAvailableCategories()` ahora consulta `EventCategory` (con fallback a groupBy si tabla vacía)
+
+**`apps/api/src/app/auth/auth.service.ts`** — Fix: `login()` distingue "correo no existe" (404) de "contraseña incorrecta" (401 con conteo de intentos)
+
+**`apps/api/src/app/mail/mail.service.ts`** — `encoding: 'utf-8'` explícito en `sendMail`
+
+**`apps/api/src/app/mail/templates/base.layout.ts`** — Fix: entidad HTML `cont&aacute;ctanos` → `contáctanos`
+
+**`apps/web-admin/lib/api.ts`** — Funciones nuevas: `getCategoriesAdmin`, `createCategory`, `updateCategory`, `deleteCategory`, `seedCategories`. Tipo exportado: `EventCategory`
+
+**`apps/web-admin/components/Sidebar.tsx`** — Nuevo ítem "🏷️ Categorías" entre Banners y Usuarios
+
+**`apps/web-admin/app/dashboard/page.tsx`** — `ViewType` y `VALID_VIEWS` ampliados con `'categorias'`. Import de funciones de categorías. Componente `CategoriesView` añadido al final del archivo
+
+**`apps/web-host/src/lib/api.ts`** — Interface `EventCategory` + función `getCategories()` desde `GET /categories`
+
+**`apps/web-host/src/components/CreateEventForm.tsx`** — Reemplaza `EVENT_CATEGORIES` hardcodeado por fetch dinámico a `getCategories()` en `useEffect`
+
+**`apps/web-host/src/components/EditEventForm.tsx`** — Ídem
+
+**`apps/web-client/src/lib/api.ts`** — Interface `EventCategoryItem` (con icon). `getEventCategories()` ahora llama a `GET /categories?withEvents=true`
+
+**`apps/web-client/src/app/page.tsx`**:
+- Import `EventCategoryItem`
+- `availableCategories` tipado como `EventCategoryItem[]`
+- Todos los fetches en paralelo (banners + categorías + eventos en un solo `Promise.all`)
+- Pills de categorías con `scroll={false}` (evita salto al top)
+- `key={category ?? 'all'}-${query ?? ''}` en `EventsGrid` (reset al cambiar categoría)
+- Destacados independientes del filtro: `featuredEvents` viene de `unfilteredData` (sin filtro de categoría)
+- Durante búsqueda: `generalEvents = result.data` completo (sin excluir destacados — evita resultados ocultos)
+
+**`apps/web-client/src/components/SearchBar.tsx`** — Reescrito completo:
+- `searchParams` eliminado del array de dependencias del `useEffect`
+- `useRef(lastPushedRef)` para evitar pushes duplicados
+- `useTransition` — ícono de búsqueda se convierte en spinner durante la navegación
+- `onKeyDown Escape` limpia y cierra el input
+- `router.push` solo cuando el query realmente cambia
+
+**`apps/web-client/src/app/loading.tsx`** *(nuevo)* — Spinner verde con mensaje "Buscando eventos…", mostrado automáticamente por Next.js durante Server Component re-renders
+
+**`apps/web-client/src/app/global.css`**:
+- Zoom hover eliminado del banner slider
+- `.banner-slider-inner { position: relative }` como anchor para la etiqueta Publicidad
+- Pills de categorías rediseñadas: base semi-transparente + hover blanco + active verde + active:hover separado (fix texto negro sobre fondo verde)
+- `justify-content: center` en `.category-pills`
+
+**`apps/web-client/src/components/BannerSlider.tsx`** — Etiqueta "Publicidad" con inline styles en esquina inferior derecha, fuera del `overflow: hidden`
+
+#### Commit
+- `84b8f1a` — feat: sistema de categorías, fixes de búsqueda y mejoras UI
+
+#### Notas técnicas
+- **Filtro `?withEvents=true`**: el `groupBy` que determina qué categorías tienen eventos ahora excluye eventos con `isFeatured=true AND (featuredUntil=null OR featuredUntil>now)`. Esto evita que una pill aparezca vacía cuando el único evento de esa categoría es un destacado.
+- **SearchBar `searchParams` en deps**: tener `searchParams` en el array de dependencias del `useEffect` de debounce causaba re-ejecuciones en cascada y múltiples `router.push` al historial. Fix: usar `window.location.search` dentro del timer y `useRef` para comparar el último query enviado.
+- **EventsGrid `key` prop**: en Next.js App Router, los Client Components preservan su estado entre navegaciones del mismo árbol. Sin `key`, el grid mantenía los eventos de la categoría anterior aunque `initialEvents` hubiera cambiado. Agregar `key={category}` fuerza una nueva instancia por categoría.
+
+---
 
 ### Sesión del 31 de Mayo de 2026 (Sesión 13) — Asistentes Admin, Previsualización, Planes Ocultos, Fix DTO
 

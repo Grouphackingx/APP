@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 31 de Mayo de 2026 (Sesión 12)
-**Estado del Proyecto:** COMPLETO Y EN PRODUCCIÓN — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **UI Polish**: precios ocultos en EventCard, hover shadows navbar eliminados, logos sidebars y footer clicables + **TODOS LOS SERVICIOS EN PRODUCCIÓN**: API + 3 frontends (Coolify) + DB schema aplicado + admin "Blade" creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP (puerto 587) + 12 plantillas con logo oficial AfroEventos + best practices Gmail/Outlook
+**Fecha de Última Actualización:** 2 de Junio de 2026 (Sesión 14)
+**Estado del Proyecto:** COMPLETO Y EN PRODUCCIÓN — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **UI Polish**: precios ocultos en EventCard, hover shadows navbar eliminados, logos sidebars y footer clicables + **TODOS LOS SERVICIOS EN PRODUCCIÓN**: API + 3 frontends (Coolify) + DB schema aplicado + admin "Blade" creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP (puerto 587) + 12 plantillas con logo oficial AfroEventos + best practices Gmail/Outlook + **Sesión 14**: Sistema de Categorías de Eventos full-stack (EventCategory model + CategoriesModule + Admin UI + formularios host dinámicos + pills con filtro inteligente) + Buscador corregido (SearchBar con useTransition + loading.tsx + fetches paralelos) + múltiples fixes de filtrado y UX
 
 ---
 
@@ -219,6 +219,7 @@ _(Usa la App "Expo Go" en tu celular para escanear el QR de la terminal)_
 | Editar Evento         | OK     | Formulario completo con todas las validaciones de ventas           |
 | Eliminar Evento       | OK     | Solo visible si el evento no tiene tickets vendidos                |
 | **Banners Publicitarios** | OK | CRUD de banners (1-3) con upload, preview 16:3, activar/desactivar, toast feedback |
+| **Categorías de Eventos** | OK | CRUD completo: crear/editar/activar/desactivar/eliminar + botón seed de 13 categorías predeterminadas. Sidebar ítem "🏷️ Categorías". Muestra conteo de eventos por categoría |
 | **Pasarela de Pagos** | OK     | Card global (solo ADMIN) con badge HABILITADA/DESHABILITADA + botón toggle con confirmación; columna "Pagos" en tabla de orgs (botón cíclico: Global/Habilitado/Deshabilitado) |
 | Gestión de Planes     | OK     | CRUD completo (nombre, precio, límite de eventos — conteo anual por aniversario de contratación) |
 | Gestión de Usuarios   | OK     | CRUD Admin/Editor; envía credenciales por email al crear           |
@@ -502,7 +503,7 @@ Cuando `sellOnSite: true` en una zona:
 
 ### Prioridad Media
 
-- [ ] Sistema de categorías de eventos
+- [x] ~~Sistema de categorías de eventos~~ ✅ (2 Jun 2026)
 - [ ] Optimizar queries de findAll (no traer todos los seats si no es necesario)
 - [ ] Galería de imágenes en edición: evitar acumulación de imágenes al reeditar
 - [ ] Paginación en endpoints restantes: `GET /orders` y `GET /orders/attendees/me`
@@ -548,6 +549,12 @@ Cuando `sellOnSite: true` en una zona:
 - **URL frontend `/eventos/` en español (migración de `/events/`)** ✅ (24 May 2026)
 - **Favicons AfroEventos en las 3 apps (SVG oficial)** ✅ (24 May 2026)
 - **Sistema de Banners Publicitarios full-stack (backend + admin CRUD + web-client slider)** ✅ (24 May 2026)
+- **Sistema de Categorías de Eventos full-stack (EventCategory model + CategoriesModule + Admin UI + host forms dinámicos + pills inteligentes)** ✅ (2 Jun 2026)
+- **SearchBar reescrito: useTransition + loading.tsx + fetches paralelos + fix bug cascada de pushes** ✅ (2 Jun 2026)
+- **Fix filtro por categoría: key prop EventsGrid + destacados independientes del filtro** ✅ (2 Jun 2026)
+- **Fix buscador: eventos destacados que coinciden con búsqueda ya no se ocultan** ✅ (2 Jun 2026)
+- **Fix login: distingue "correo no existe" de "contraseña incorrecta"** ✅ (2 Jun 2026)
+- **Banner slider: zoom hover eliminado + etiqueta "Publicidad" en esquina inferior derecha** ✅ (2 Jun 2026)
 - **FeaturedEventsSection — 3 layouts adaptativos (1 horizontal / 2 side-by-side / 3+ carrusel)** ✅ (25 May 2026)
 - **FeaturedCarousel — carrusel deslizante con scroll infinito, auto-avance y dots dorados** ✅ (25 May 2026)
 - **EventsGrid — grid paginado con botón "Mostrar más", última fila centrada** ✅ (25 May 2026)
