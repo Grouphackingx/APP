@@ -231,6 +231,13 @@ export class EventsService implements OnModuleInit {
     }
 
     async getAvailableCategories(): Promise<string[]> {
+        const cats = await this.prisma.eventCategory.findMany({
+            where: { isActive: true },
+            orderBy: [{ order: 'asc' }, { name: 'asc' }],
+            select: { name: true },
+        });
+        if (cats.length > 0) return cats.map(c => c.name);
+        // Fallback: derive from published events if category table is empty
         const rows = await this.prisma.event.groupBy({
             by: ['category'],
             where: { status: 'PUBLISHED' },

@@ -1,4 +1,4 @@
-import { getEvents, getBanners, getEventCategories, type EventItem, type BannerItem } from '../lib/api';
+import { getEvents, getBanners, getEventCategories, type EventItem, type BannerItem, type EventCategoryItem } from '../lib/api';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { FeaturedEventsSection } from '../components/FeaturedEventsSection';
 import { BannerSlider } from '../components/BannerSlider';
@@ -28,7 +28,7 @@ export default async function HomePage(props: {
   let featuredEvents: EventItem[] = [];
   let generalEvents: EventItem[] = [];
   let banners: BannerItem[] = [];
-  let availableCategories: string[] = [];
+  let availableCategories: EventCategoryItem[] = [];
   let error = '';
 
   let generalTotal = 0;
@@ -37,35 +37,41 @@ export default async function HomePage(props: {
   let heroSourceEvents: EventItem[] = [];
 
   try {
-    [banners, availableCategories] = await Promise.all([
-      getBanners().catch(() => []),
-      getEventCategories().catch(() => []),
-    ]);
-
-    const [result, heroResult] = await Promise.all([
+    // All fetches in parallel — don't wait for banners before fetching events
+    const [bannersRes, categoriesRes, result, unfiltered] = await Promise.all([
+      getBanners().catch(() => [] as BannerItem[]),
+      getEventCategories().catch(() => [] as EventCategoryItem[]),
       getEvents(query, 1, 12, category),
-      // Hero fetch: unfiltered by category, enough to find 3 upcoming
+      // Always fetch unfiltered to get hero events and featured (independent of category)
       category ? getEvents(query, 1, 12) : Promise.resolve(null),
     ]);
+    banners = bannersRes;
+    availableCategories = categoriesRes;
 
-    heroSourceEvents = (heroResult ?? result).data;
+    const unfilteredData = unfiltered ?? result;
+    heroSourceEvents = unfilteredData.data;
 
     const now = new Date();
 
-    featuredEvents = result.data.filter(
-      (e) =>
-        e.isFeatured &&
-        (!e.featuredUntil || new Date(e.featuredUntil) > now)
-    );
-
-    const featuredIds = new Set(featuredEvents.map((e) => e.id));
-    generalEvents = result.data.filter((e) => !featuredIds.has(e.id));
-    // If the API returned fewer items than the limit, we have ALL events already —
-    // use the exact count. Otherwise estimate from total minus known featured count.
-    const LIMIT = 12;
-    generalTotal = result.data.length < LIMIT
-      ? generalEvents.length
-      : Math.max(generalEvents.length, result.total - featuredEvents.length);
+    if (query) {
+      // During search: show ALL matching results in the grid (featured and general together)
+      // The featured section is hidden during search anyway, so excluding them would hide results
+      generalEvents = result.data;
+      generalTotal = result.total;
+    } else {
+      // Normal / category view: separate featured from general
+      featuredEvents = unfilteredData.data.filter(
+        (e) =>
+          e.isFeatured &&
+          (!e.featuredUntil || new Date(e.featuredUntil) > now)
+      );
+      const featuredIds = new Set(featuredEvents.map((e) => e.id));
+      generalEvents = result.data.filter((e) => !featuredIds.has(e.id));
+      const LIMIT = 12;
+      generalTotal = result.data.length < LIMIT
+        ? generalEvents.length
+        : Math.max(generalEvents.length, result.total - featuredEvents.length);
+    }
   } catch (err: unknown) {
     error = err instanceof Error ? err.message : 'No se pudieron cargar los eventos';
   }
@@ -169,17 +175,19 @@ export default async function HomePage(props: {
             <div className="category-pills">
               <Link
                 href="/"
+                scroll={false}
                 className={`category-pill${!category ? ' category-pill--active' : ''}`}
               >
                 Todos
               </Link>
               {availableCategories.map((cat) => (
                 <Link
-                  key={cat}
-                  href={`/?category=${encodeURIComponent(cat)}`}
-                  className={`category-pill${category === cat ? ' category-pill--active' : ''}`}
+                  key={cat.id}
+                  href={`/?category=${encodeURIComponent(cat.name)}`}
+                  scroll={false}
+                  className={`category-pill${category === cat.name ? ' category-pill--active' : ''}`}
                 >
-                  {cat}
+                  {cat.name}
                 </Link>
               ))}
             </div>
@@ -210,6 +218,7 @@ export default async function HomePage(props: {
             </div>
           ) : generalEvents.length === 0 ? null : (
             <EventsGrid
+              key={`${category ?? 'all'}-${query ?? ''}`}
               initialEvents={generalEvents}
               initialTotal={generalTotal}
               query={query}

@@ -41,62 +41,84 @@ export function BannerSlider({ banners }: BannerSliderProps) {
   return (
     <section className="banner-slider-section">
       <div className="banner-slider-inner">
-      <div className="banner-slider-wrapper">
-        <div className="banner-slider-track">
-          {banners.map((banner, i) => (
-            <div
-              key={banner.id}
-              className={`banner-slide${i === current ? ' banner-slide--active' : ''}`}
-              aria-hidden={i !== current}
-            >
-              {banner.linkUrl ? (
-                <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="banner-slide-link" tabIndex={i === current ? 0 : -1}>
+        <div className="banner-slider-wrapper">
+          <div className="banner-slider-track">
+            {banners.map((banner, i) => (
+              <div
+                key={banner.id}
+                className={`banner-slide${i === current ? ' banner-slide--active' : ''}`}
+                aria-hidden={i !== current}
+              >
+                {banner.linkUrl ? (
+                  <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="banner-slide-link" tabIndex={i === current ? 0 : -1}>
+                    <img
+                      src={resolveUrl(banner.imageUrl)}
+                      alt={banner.title || 'Banner publicitario'}
+                      className="banner-slide-img"
+                    />
+                  </a>
+                ) : (
                   <img
                     src={resolveUrl(banner.imageUrl)}
                     alt={banner.title || 'Banner publicitario'}
                     className="banner-slide-img"
                   />
-                </a>
-              ) : (
-                <img
-                  src={resolveUrl(banner.imageUrl)}
-                  alt={banner.title || 'Banner publicitario'}
-                  className="banner-slide-img"
-                />
-              )}
-            </div>
-          ))}
-        </div>
+                )}
+              </div>
+            ))}
+          </div>
 
-        {banners.length > 1 && (
-          <>
-            <button
-              className="banner-nav banner-nav-prev"
-              onClick={() => goTo((current - 1 + banners.length) % banners.length)}
-              aria-label="Banner anterior"
-            >
-              ‹
-            </button>
-            <button
-              className="banner-nav banner-nav-next"
-              onClick={() => goTo((current + 1) % banners.length)}
-              aria-label="Siguiente banner"
-            >
-              ›
-            </button>
-            <div className="banner-dots">
-              {banners.map((_, i) => (
-                <button
-                  key={i}
-                  className={`banner-dot${i === current ? ' active' : ''}`}
-                  onClick={() => goTo(i)}
-                  aria-label={`Ir al banner ${i + 1}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+          {banners.length > 1 && (
+            <>
+              <button
+                className="banner-nav banner-nav-prev"
+                onClick={() => goTo((current - 1 + banners.length) % banners.length)}
+                aria-label="Banner anterior"
+              >
+                ‹
+              </button>
+              <button
+                className="banner-nav banner-nav-next"
+                onClick={() => goTo((current + 1) % banners.length)}
+                aria-label="Siguiente banner"
+              >
+                ›
+              </button>
+              <div className="banner-dots">
+                {banners.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`banner-dot${i === current ? ' active' : ''}`}
+                    onClick={() => goTo(i)}
+                    aria-label={`Ir al banner ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <span
+          aria-label="Contenido publicitario"
+          style={{
+            position: 'absolute',
+            bottom: '0.6rem',
+            right: '0.7rem',
+            zIndex: 10,
+            background: 'rgba(0,0,0,0.55)',
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: '0.68rem',
+            fontWeight: 500,
+            letterSpacing: '0.05em',
+            padding: '0.22rem 0.6rem',
+            borderRadius: '99px',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            border: '1px solid rgba(255,255,255,0.2)',
+            lineHeight: '1.2',
+          }}
+        >
+          Publicidad
+        </span>
       </div>
     </section>
   );

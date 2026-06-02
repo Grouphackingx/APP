@@ -138,8 +138,16 @@ export const EVENT_CATEGORIES = [
 
 export type EventCategory = typeof EVENT_CATEGORIES[number];
 
-export async function getEventCategories(): Promise<string[]> {
-  return fetchAPI<string[]>('/events/categories', { cache: 'no-store' });
+export interface EventCategoryItem {
+  id: string;
+  name: string;
+  icon?: string | null;
+  order: number;
+  isActive: boolean;
+}
+
+export async function getEventCategories(): Promise<EventCategoryItem[]> {
+  return fetchAPI<EventCategoryItem[]>('/categories?withEvents=true', { cache: 'no-store' });
 }
 
 export async function getEvents(query?: string, page = 1, limit = 12, category?: string): Promise<PaginatedEvents> {

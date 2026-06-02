@@ -2464,6 +2464,7 @@ textarea {
 .banner-slider-inner {
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
 }
 
 .banner-slider-wrapper {
@@ -2510,11 +2511,6 @@ textarea {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.banner-slide-link:hover img {
-  transform: scale(1.01);
 }
 
 .banner-nav {
@@ -2573,6 +2569,7 @@ textarea {
 @media (max-width: 640px) {
   .banner-nav { width: 2rem; height: 2rem; font-size: 1.2rem; }
 }
+
 
 /* ===== Organizer CTA Section ===== */
 
@@ -3123,27 +3120,35 @@ textarea {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: center;
   margin-bottom: 1.5rem;
 }
 .category-pill {
-  padding: 0.35rem 1rem;
+  padding: 0.4rem 1.1rem;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 500;
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
-  background: transparent;
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.06);
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
   white-space: nowrap;
+  cursor: pointer;
 }
 .category-pill:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.32);
+  color: #fff;
 }
 .category-pill--active {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: #000;
   font-weight: 600;
+}
+.category-pill--active:hover {
+  background: #7ad460;
+  border-color: #7ad460;
+  color: #000;
 }

@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, getSystemConfig, updateSystemConfig, setOrgPaymentGateway, getAttendees, updateAttendee, deleteAttendee, blockAttendee, changeAttendeePassword, exportAttendees, type Banner } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, getSystemConfig, updateSystemConfig, setOrgPaymentGateway, getAttendees, updateAttendee, deleteAttendee, blockAttendee, changeAttendeePassword, exportAttendees, getCategoriesAdmin, createCategory, updateCategory, deleteCategory, seedCategories, type Banner, type EventCategory } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
 import { EditEventForm } from '../../components/EditEventForm';
 
-type ViewType = 'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event' | 'banners' | 'asistentes';
+type ViewType = 'inicio' | 'dashboard' | 'users' | 'plans' | 'analytics' | 'events' | 'edit-event' | 'banners' | 'asistentes' | 'categorias';
 
 // ─── Shared UI Components ────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ function ToastStack({ toasts }: { toasts: { id: number; msg: string; type: 'succ
     document.body
   );
 }
-const VALID_VIEWS: ViewType[] = ['inicio', 'dashboard', 'users', 'plans', 'analytics', 'events', 'edit-event', 'banners', 'asistentes'];
+const VALID_VIEWS: ViewType[] = ['inicio', 'dashboard', 'users', 'plans', 'analytics', 'events', 'edit-event', 'banners', 'asistentes', 'categorias'];
 
 export default function AdminDashboardWrapper() {
   return <Suspense><AdminDashboard /></Suspense>;
@@ -1433,6 +1433,7 @@ function AdminDashboard() {
         )}
 
         {view === 'banners' && <BannersView token={token || ''} />}
+        {view === 'categorias' && <CategoriesView token={token || ''} />}
 
         {/* ─── ASISTENTES VIEW ─── */}
         {view === 'asistentes' && (
@@ -2533,6 +2534,257 @@ function BannersView({ token }: { token: string }) {
           variant="danger"
           onConfirm={() => confirmBannerDelete(bannerConfirm.id)}
           onCancel={() => setBannerConfirm(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── CATEGORIES VIEW ─────────────────────────────────────────────────────────
+
+function CategoriesView({ token }: { token: string }) {
+  const [categories, setCategories] = useState<EventCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingCat, setEditingCat] = useState<EventCategory | null>(null);
+  const [formData, setFormData] = useState({ name: '', icon: '', order: 0 });
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [seeding, setSeeding] = useState(false);
+
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const load = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const data = await getCategoriesAdmin(token);
+      setCategories(data);
+    } catch {
+      setLoadError('No se pudieron cargar las categorías.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const openCreate = () => {
+    setEditingCat(null);
+    setFormError('');
+    setFormData({ name: '', icon: '', order: categories.length + 1 });
+    setShowForm(true);
+  };
+
+  const openEdit = (cat: EventCategory) => {
+    setEditingCat(cat);
+    setFormError('');
+    setFormData({ name: cat.name, icon: cat.icon || '', order: cat.order });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) { setFormError('El nombre es obligatorio.'); return; }
+    setSaving(true);
+    setFormError('');
+    try {
+      const payload = { name: formData.name.trim(), icon: formData.icon.trim() || undefined, order: formData.order };
+      if (editingCat) {
+        await updateCategory(editingCat.id, payload, token);
+        showToast('Categoría actualizada.');
+      } else {
+        await createCategory(payload, token);
+        showToast('Categoría creada.');
+      }
+      setShowForm(false);
+      load();
+    } catch (err: any) {
+      setFormError(err.message || 'Error al guardar.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleActive = async (cat: EventCategory) => {
+    try {
+      await updateCategory(cat.id, { isActive: !cat.isActive }, token);
+      showToast(cat.isActive ? 'Categoría desactivada.' : 'Categoría activada.');
+      load();
+    } catch (err: any) {
+      showToast(err.message || 'Error al cambiar estado.', 'error');
+    }
+  };
+
+  const confirmDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await deleteCategory(id, token);
+      showToast('Categoría eliminada.');
+      load();
+    } catch (err: any) {
+      showToast(err.message || 'Error al eliminar.', 'error');
+    } finally {
+      setDeletingId(null);
+      setDeleteConfirm(null);
+    }
+  };
+
+  const handleSeed = async () => {
+    setSeeding(true);
+    try {
+      const result = await seedCategories(token);
+      showToast(result.message);
+      load();
+    } catch (err: any) {
+      showToast(err.message || 'Error al cargar categorías por defecto.', 'error');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const cardStyle: React.CSSProperties = {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '12px',
+    padding: '1.5rem',
+    marginBottom: '2rem',
+  };
+  const thStyle: React.CSSProperties = { padding: '0.75rem 1rem', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' };
+  const tdStyle: React.CSSProperties = { padding: '0.85rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'middle', fontSize: '0.9rem', color: 'var(--text-primary)' };
+  const btnBase: React.CSSProperties = { padding: '0.4rem 0.9rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'opacity 0.15s' };
+
+  return (
+    <div>
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999, padding: '0.85rem 1.4rem', borderRadius: '12px', background: toast.type === 'success' ? '#166534' : '#7f1d1d', color: '#fff', fontWeight: 600, fontSize: '0.9rem', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', border: `1px solid ${toast.type === 'success' ? '#15803d' : '#991b1b'}` }}>
+          {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div>
+          <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>🏷️ Categorías de Eventos</h2>
+          <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0', fontSize: '0.9rem' }}>Gestiona las categorías disponibles para los organizadores.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button onClick={handleSeed} disabled={seeding} style={{ ...btnBase, background: 'rgba(124,58,237,0.15)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.3)', opacity: seeding ? 0.6 : 1 }}>
+            {seeding ? 'Cargando...' : '⬇️ Cargar predeterminadas'}
+          </button>
+          <button onClick={openCreate} style={{ ...btnBase, background: '#7c3aed', color: '#fff' }}>
+            + Nueva Categoría
+          </button>
+        </div>
+      </div>
+
+      {loadError && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', padding: '1rem', color: '#fca5a5', marginBottom: '1rem' }}>{loadError}</div>}
+
+      {showForm && (
+        <div style={{ ...cardStyle, borderColor: 'rgba(124,58,237,0.4)', marginBottom: '1.5rem' }}>
+          <h3 style={{ color: 'var(--text-primary)', margin: '0 0 1.25rem', fontSize: '1rem' }}>
+            {editingCat ? '✏️ Editar Categoría' : '➕ Nueva Categoría'}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 80px', gap: '1rem', alignItems: 'end' }}>
+            <div>
+              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>Nombre *</label>
+              <input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                placeholder="ej. Música" autoFocus
+                style={{ width: '100%', padding: '0.7rem 1rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>Ícono (emoji)</label>
+              <input value={formData.icon} onChange={e => setFormData(p => ({ ...p, icon: e.target.value }))}
+                placeholder="🎵"
+                style={{ width: '80px', padding: '0.7rem 1rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '1.1rem', textAlign: 'center', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>Orden</label>
+              <input type="number" min={0} value={formData.order} onChange={e => setFormData(p => ({ ...p, order: Number(e.target.value) }))}
+                style={{ width: '80px', padding: '0.7rem 0.75rem', borderRadius: '9px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+            </div>
+          </div>
+          {formError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0.75rem 0 0' }}>{formError}</p>}
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+            <button onClick={handleSave} disabled={saving} style={{ ...btnBase, background: '#7c3aed', color: '#fff', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Guardando...' : editingCat ? 'Guardar Cambios' : 'Crear Categoría'}
+            </button>
+            <button onClick={() => setShowForm(false)} style={{ ...btnBase, background: 'var(--bg-card-hover)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={cardStyle}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Cargando categorías...</div>
+        ) : categories.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🏷️</div>
+            <p>No hay categorías aún.</p>
+            <p style={{ fontSize: '0.85rem' }}>Usa el botón "Cargar predeterminadas" para poblar las categorías iniciales.</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Ícono</th>
+                  <th style={thStyle}>Nombre</th>
+                  <th style={thStyle}>Orden</th>
+                  <th style={thStyle}>Eventos</th>
+                  <th style={thStyle}>Estado</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map(cat => (
+                  <tr key={cat.id} style={{ opacity: cat.isActive ? 1 : 0.5 }}>
+                    <td style={{ ...tdStyle, fontSize: '1.4rem', width: '3rem' }}>{cat.icon || '—'}</td>
+                    <td style={{ ...tdStyle, fontWeight: 600 }}>{cat.name}</td>
+                    <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>{cat.order}</td>
+                    <td style={{ ...tdStyle }}>
+                      <span style={{ background: cat.eventCount && cat.eventCount > 0 ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.05)', color: cat.eventCount && cat.eventCount > 0 ? '#4ade80' : 'var(--text-muted)', padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.8rem', fontWeight: 600 }}>
+                        {cat.eventCount ?? 0}
+                      </span>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ background: cat.isActive ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)', color: cat.isActive ? '#4ade80' : '#f87171', padding: '0.2rem 0.65rem', borderRadius: '99px', fontSize: '0.78rem', fontWeight: 600 }}>
+                        {cat.isActive ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        <button onClick={() => openEdit(cat)} style={{ ...btnBase, background: 'rgba(96,165,250,0.1)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.2)' }}>Editar</button>
+                        <button onClick={() => handleToggleActive(cat)} style={{ ...btnBase, background: cat.isActive ? 'rgba(251,191,36,0.1)' : 'rgba(74,222,128,0.1)', color: cat.isActive ? '#fbbf24' : '#4ade80', border: `1px solid ${cat.isActive ? 'rgba(251,191,36,0.2)' : 'rgba(74,222,128,0.2)'}` }}>
+                          {cat.isActive ? 'Desactivar' : 'Activar'}
+                        </button>
+                        <button onClick={() => setDeleteConfirm({ id: cat.id, name: cat.name })} disabled={deletingId === cat.id} style={{ ...btnBase, background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', opacity: deletingId === cat.id ? 0.5 : 1 }}>
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {deleteConfirm && (
+        <ConfirmModal
+          title="Eliminar categoría"
+          message={`¿Eliminar la categoría "${deleteConfirm.name}"? Solo es posible si no tiene eventos asociados.`}
+          variant="danger"
+          onConfirm={() => confirmDelete(deleteConfirm.id)}
+          onCancel={() => setDeleteConfirm(null)}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { updateEvent, uploadImage, getPaymentStatus, EVENT_CATEGORIES } from '../lib/api';
+import { updateEvent, uploadImage, getPaymentStatus, getCategories, type EventCategory } from '../lib/api';
 
 interface ZoneInput {
   id?: string;
@@ -87,7 +87,8 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const [mapEmbedCode, setMapEmbedCode] = useState(initialData?.mapUrl || '');
   const [videoEmbedCode, setVideoEmbedCode] = useState(initialData?.videoUrl || '');
   const [status, setStatus] = useState(initialData?.status || 'DRAFT');
-  const [category, setCategory] = useState<string>(initialData?.category || EVENT_CATEGORIES[0]);
+  const [category, setCategory] = useState<string>(initialData?.category || '');
+  const [availableCategories, setAvailableCategories] = useState<EventCategory[]>([]);
   const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>(initialData?.galleryUrls || []);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
@@ -128,6 +129,12 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
     getPaymentStatus(token)
       .then(res => setPaidEventsEnabled(res.paidEventsEnabled))
       .catch(() => setPaidEventsEnabled(false));
+    getCategories()
+      .then(cats => {
+        setAvailableCategories(cats);
+        if (!initialData?.category && cats.length > 0) setCategory(cats[0].name);
+      })
+      .catch(() => {});
   }, [token]);
 
   const addZone = () => {
@@ -487,9 +494,14 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
             required
             style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
           >
-            {EVENT_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
+            {availableCategories.length > 0
+              ? availableCategories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.icon ? `${cat.icon} ` : ''}{cat.name}</option>
+                ))
+              : category
+                ? <option value={category}>{category}</option>
+                : <option value="">Cargando...</option>
+            }
           </select>
         </div>
 

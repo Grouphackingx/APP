@@ -107,64 +107,72 @@ export class AuthService {
         await this.checkIpLock(ip);
         await this.checkLoginLock(email);
 
-        const user = await this.validateUser(email, loginDto.password);
+        // Buscar el email en ambas tablas antes de comparar contraseña
+        const [userRecord, memberRecord] = await Promise.all([
+            this.prisma.user.findUnique({ where: { email }, include: { organizerProfile: true } }),
+            this.prisma.organizerMember.findUnique({ where: { email }, include: { organizerProfile: true } }),
+        ]);
 
-        if (user) {
-            if (!user.emailVerified) {
-                throw new UnauthorizedException('EMAIL_NOT_VERIFIED');
-            }
-            if (user.isBlocked) {
-                throw new UnauthorizedException('Tu cuenta ha sido suspendida. Contacta a soporte para más información.');
-            }
-            if (user.role === 'HOST' && user.organizerProfile?.status === 'PENDING') {
-                throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
-            }
-            if (user.role === 'HOST' && user.organizerProfile?.status === 'REJECTED') {
-                throw new UnauthorizedException('Tu solicitud de cuenta de organizador fue rechazada. Contacta a soporte para más detalles.');
-            }
-            if (user.role === 'HOST' && user.organizerProfile?.status === 'BLOCKED') {
-                throw new UnauthorizedException('Tu cuenta ha sido suspendida. Contacta a soporte para más información.');
-            }
-            await this.clearLoginAttempts(email);
-            const payload = {
-                email: user.email,
-                sub: user.id,
-                role: user.role,
-                organizerProfileId: user.organizerProfile?.id ?? null,
-            };
-            return { access_token: this.jwtService.sign(payload), user };
+        if (!userRecord && !memberRecord) {
+            await this.recordIpFailedAttempt(ip);
+            throw new NotFoundException('No existe una cuenta asociada a este correo electrónico.');
         }
 
-        // Intentar como miembro de organización
-        const member = await this.prisma.organizerMember.findUnique({
-            where: { email },
-            include: { organizerProfile: true },
-        });
-        if (member && (await bcrypt.compare(loginDto.password, member.password))) {
+        // Intentar login como User
+        if (userRecord && (await bcrypt.compare(loginDto.password, userRecord.password))) {
+            if (!userRecord.emailVerified) {
+                throw new UnauthorizedException('EMAIL_NOT_VERIFIED');
+            }
+            if (userRecord.isBlocked) {
+                throw new UnauthorizedException('Tu cuenta ha sido suspendida. Contacta a soporte para más información.');
+            }
+            if (userRecord.role === 'HOST' && userRecord.organizerProfile?.status === 'PENDING') {
+                throw new UnauthorizedException('Tu cuenta de organizador aún está en revisión. Te notificaremos cuando sea aprobada.');
+            }
+            if (userRecord.role === 'HOST' && userRecord.organizerProfile?.status === 'REJECTED') {
+                throw new UnauthorizedException('Tu solicitud de cuenta de organizador fue rechazada. Contacta a soporte para más detalles.');
+            }
+            if (userRecord.role === 'HOST' && userRecord.organizerProfile?.status === 'BLOCKED') {
+                throw new UnauthorizedException('Tu cuenta ha sido suspendida. Contacta a soporte para más información.');
+            }
+            await this.clearLoginAttempts(email);
+            const { password, ...result } = userRecord;
+            const payload = {
+                email: result.email,
+                sub: result.id,
+                role: result.role,
+                organizerProfileId: result.organizerProfile?.id ?? null,
+            };
+            return { access_token: this.jwtService.sign(payload), user: result };
+        }
+
+        // Intentar login como OrganizerMember
+        if (memberRecord && (await bcrypt.compare(loginDto.password, memberRecord.password))) {
             await this.clearLoginAttempts(email);
             const payload = {
-                sub: member.id,
-                email: member.email,
+                sub: memberRecord.id,
+                email: memberRecord.email,
                 role: 'HOST',
                 isMember: true,
-                memberRole: member.memberRole,
-                organizerProfileId: member.organizerProfileId,
+                memberRole: memberRecord.memberRole,
+                organizerProfileId: memberRecord.organizerProfileId,
             };
             return {
                 access_token: this.jwtService.sign(payload),
                 user: {
-                    id: member.id,
-                    email: member.email,
-                    name: member.name,
+                    id: memberRecord.id,
+                    email: memberRecord.email,
+                    name: memberRecord.name,
                     role: 'HOST',
                     isMember: true,
-                    memberRole: member.memberRole,
-                    organizerProfileId: member.organizerProfileId,
-                    organizerProfile: member.organizerProfile,
+                    memberRole: memberRecord.memberRole,
+                    organizerProfileId: memberRecord.organizerProfileId,
+                    organizerProfile: memberRecord.organizerProfile,
                 },
             };
         }
 
+        // El email existe pero la contraseña es incorrecta
         await this.recordIpFailedAttempt(ip);
         await this.recordFailedAttempt(email);
     }

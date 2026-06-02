@@ -351,3 +351,36 @@ export async function forgotPassword(email: string): Promise<{ message: string }
 export async function resetPassword(token: string, password: string): Promise<{ message: string }> {
   return fetchAPI('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
 }
+
+// Categories
+
+export interface EventCategory {
+  id: string;
+  name: string;
+  icon?: string | null;
+  order: number;
+  isActive: boolean;
+  eventCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getCategoriesAdmin(token: string) {
+  return fetchAPI<EventCategory[]>('/categories/admin', { token, cache: 'no-store' });
+}
+
+export async function createCategory(data: { name: string; icon?: string; order?: number }, token: string) {
+  return fetchAPI<EventCategory>('/categories', { method: 'POST', body: JSON.stringify(data), token });
+}
+
+export async function updateCategory(id: string, data: { name?: string; icon?: string; order?: number; isActive?: boolean }, token: string) {
+  return fetchAPI<EventCategory>(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data), token });
+}
+
+export async function deleteCategory(id: string, token: string) {
+  return fetchAPI<any>(`/categories/${id}`, { method: 'DELETE', token });
+}
+
+export async function seedCategories(token: string) {
+  return fetchAPI<{ created: number; message: string }>('/categories/seed', { method: 'POST', token });
+}

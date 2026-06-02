@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createEvent, updateEvent, uploadImage, getPaymentStatus, EVENT_CATEGORIES } from '../lib/api';
+import { createEvent, updateEvent, uploadImage, getPaymentStatus, getCategories, type EventCategory } from '../lib/api';
 
 interface ZoneInput {
   name: string;
@@ -54,7 +54,8 @@ export function CreateEventForm({ token, onSuccess, onPreview }: CreateEventForm
   const [mapEmbedCode, setMapEmbedCode] = useState('');
   const [videoEmbedCode, setVideoEmbedCode] = useState('');
   const [status, setStatus] = useState('DRAFT');
-  const [category, setCategory] = useState<string>(EVENT_CATEGORIES[0]);
+  const [category, setCategory] = useState<string>('');
+  const [availableCategories, setAvailableCategories] = useState<EventCategory[]>([]);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [zones, setZones] = useState<ZoneInput[]>([
@@ -92,6 +93,12 @@ export function CreateEventForm({ token, onSuccess, onPreview }: CreateEventForm
         }
       })
       .catch(() => setPaidEventsEnabled(false));
+    getCategories()
+      .then(cats => {
+        setAvailableCategories(cats);
+        if (cats.length > 0) setCategory(cats[0].name);
+      })
+      .catch(() => {});
   }, [token]);
 
   const addZone = () => {
@@ -547,9 +554,12 @@ export function CreateEventForm({ token, onSuccess, onPreview }: CreateEventForm
             required
             style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
           >
-            {EVENT_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
+            {availableCategories.length > 0
+              ? availableCategories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.icon ? `${cat.icon} ` : ''}{cat.name}</option>
+                ))
+              : <option value={category}>{category || 'Cargando...'}</option>
+            }
           </select>
         </div>
 

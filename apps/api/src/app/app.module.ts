@@ -21,6 +21,7 @@ import { OrganizerMembersModule } from './organizer-members/organizer-members.mo
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { MailModule } from './mail/mail.module';
 import { BannersModule } from './banners/banners.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { BannersModule } from './banners/banners.module';
     SchedulerModule,
     MailModule,
     BannersModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [

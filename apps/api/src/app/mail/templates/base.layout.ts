@@ -85,7 +85,7 @@ export function baseLayout(content: string, previewText = ''): string {
                   <td align="center">
                     <span style="color:#374151;font-family:Arial,sans-serif;font-size:11px;line-height:1.5;">
                       Recibiste este correo porque tienes una cuenta en AfroEventos.<br/>
-                      Si no reconoces esta actividad, por favor cont&aacute;ctanos en
+                      Si no reconoces esta actividad, por favor contáctanos en
                       <a href="mailto:soporte@afroeventos.com" style="color:#374151;text-decoration:underline;">soporte@afroeventos.com</a>
                     </span>
                   </td>

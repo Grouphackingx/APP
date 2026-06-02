@@ -117,6 +117,18 @@ export function Sidebar({
           <span className="nav-icon">📢</span>
           Banners Publicitarios
         </a>
+        <a
+          href="#"
+          className={activeView === 'categorias' ? 'active' : ''}
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigate('categorias');
+          }}
+          style={activeView === 'categorias' ? { borderLeftColor: '#8b5cf6', color: '#8b5cf6' } : {}}
+        >
+          <span className="nav-icon">🏷️</span>
+          Categorías
+        </a>
         {user?.role === 'ADMIN' && (
           <a
             href="#"
