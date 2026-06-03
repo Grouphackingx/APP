@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 2 de Junio de 2026 (Sesión 14)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Página Asistentes en Admin + Planes ocultos + Previsualización de eventos + Flujo Borrador→Publicar + Exportación XLSX en organizadores + Redes sociales reales en footer + Fix portraitImageUrl en DTO + **Sesión 14**: Sistema de Categorías de Eventos (full-stack) + Fix buscador (SearchBar reescrito con useTransition + loading.tsx) + Fix filtro categorías (key prop EventsGrid + destacados independientes) + Banner slider sin zoom + etiqueta Publicidad + Fix login email inexistente
+**Última Actualización:** 3 de Junio de 2026 (Sesión 15)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Página Asistentes en Admin + Planes ocultos + Previsualización de eventos + Flujo Borrador→Publicar + Exportación XLSX en organizadores + Redes sociales reales en footer + Fix portraitImageUrl en DTO + **Sesión 14**: Sistema de Categorías de Eventos (full-stack) + Fix buscador (SearchBar reescrito con useTransition + loading.tsx) + Fix filtro categorías (key prop EventsGrid + destacados independientes) + Banner slider sin zoom + etiqueta Publicidad + Fix login email inexistente + **Sesión 15**: Modo Prueba de Organizadores (`isTestMode` sandbox: excluido de analíticas + borrado forzado + reset de ventas, solo admin) + Kill-switch de pagos en tiempo real (createOrder rechaza compras de pago si la pasarela está deshabilitada) + UX de errores de compra (mensajes en español sin UUIDs, reubicados junto al botón Comprar)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -670,6 +670,51 @@ Las categorías son entidades gestionables en la BD (`EventCategory`). El campo 
 ---
 
 ## 14. Registro de Cambios
+
+### Sesión del 3 de Junio de 2026 (Sesión 15) — Modo Prueba de Organizadores + Kill-Switch de Pagos + UX de Compra
+
+#### Contexto / objetivo
+Habilitar un "modo prueba" por organizador (sandbox) para probar el flujo completo de compra de entradas de pago sin contaminar datos reales ni quedar bloqueado por la regla de "no eliminar eventos con tickets vendidos". Además se cerró un hueco del control de pasarela: deshabilitar pagos ahora corta la venta en tiempo real, no solo al crear eventos.
+
+#### Cambios realizados
+
+**Schema Prisma** (`libs/shared/prisma/schema.prisma`):
+- Nuevo campo `isTestMode Boolean @default(false)` en `OrganizerProfile` (organizador sandbox)
+- `npx prisma db push` ejecutado localmente + en producción (BD ya en sync, columna creada sin afectar datos existentes)
+
+**`apps/api/src/app/admin/admin.service.ts`**:
+- `setOrgTestMode(userId, isTestMode)` — marca/desmarca organizador de prueba
+- `forceDeleteEvent(eventId)` — borrado en cascada (tickets → órdenes → asientos → zonas → evento). Solo si el dueño es `isTestMode` (si no, `ForbiddenException`). Como tickets/órdenes NO tienen FK al evento, se localizan decodificando el JWT del `qrCodeToken` (campos `eventId`/`seatId`)
+- `resetEventSales(eventId)` — libera asientos (`isSold=false`) y borra tickets/órdenes pero conserva evento/zonas/precios. Para repetir pruebas de compra. Solo `isTestMode`
+- `getOrganizersAnalytics()` — ahora excluye organizadores en modo prueba (`.filter(org => !org.organizerProfile?.isTestMode)`) para no contaminar ingresos/conteos reales
+
+**`apps/api/src/app/admin/admin.controller.ts`** — Rutas nuevas (solo `Role.ADMIN`): `PATCH /admin/organizers/:id/test-mode`, `DELETE /admin/events/:id/force`, `POST /admin/events/:id/reset-sales`
+
+**`apps/api/src/app/orders/orders.service.ts`** — Kill-switch de pagos en tiempo real: `createOrder` resuelve `paidEventsEnabled` del organizador del evento (helper privado `resolvePaymentEnabled`, override por org → fallback global) y rechaza la compra si el total > $0 y la pasarela está deshabilitada (mensaje en español)
+
+**`apps/web-admin/lib/api.ts`** — Funciones nuevas: `setOrgTestMode`, `forceDeleteEvent`, `resetEventSales`
+
+**`apps/web-admin/app/dashboard/page.tsx`**:
+- Handlers `handleToggleOrgTestMode`, `handleForceDeleteEvent`, `handleResetEventSales` (con `showConfirm`)
+- Botón 🧪 en cada fila del directorio de organizadores (toggle modo prueba, ADMIN-only)
+- Badge "🧪 PRUEBA" junto al estado del organizador y en la fila de cada evento suyo
+- En eventos de organizadores de prueba con ventas: botón ♻️ (reset de ventas) y botón 🧪🗑️ (borrado forzado)
+
+**`apps/web-client/src/app/eventos/[id]/EventDetailClient.tsx`** — UX de errores de compra:
+- Mapeador `friendlyPurchaseError()` traduce mensajes técnicos del backend (inglés, con UUIDs) a textos claros en español sin exponer IDs
+- La notificación de error se reubicó de la columna izquierda (pegada bajo la imagen) a junto al botón Comprar, con estilo de notificación accesible (`role="alert"`, ícono ⚠️, botón ✕ para cerrar)
+
+#### Commit
+- `6a13f8a` — feat(admin): modo prueba de organizadores, kill-switch de pagos y UX de compra
+
+#### Notas técnicas
+- **🧪 PRUEBA y PAGOS son flags INDEPENDIENTES**: `isTestMode` (badge 🧪) solo excluye de analíticas y habilita reset/borrado forzado; la columna PAGOS (`paidEventsEnabled`: Global/Habilitado/Deshabilitado) decide si se permiten ventas de pago. Para probar una compra completa hay que marcar 🧪 **y** poner PAGOS en Habilitado.
+- **Pagos = gate en creación + ahora también en compra**: antes `paidEventsEnabled` solo forzaba precios a $0 al crear/editar eventos; los eventos ya creados con precio seguían siendo comprables aunque se deshabilitara la pasarela. La Sesión 15 agrega la validación en `createOrder` para cortar la venta en tiempo real.
+- **Tickets/órdenes sin FK al evento**: la relación vive en el JWT del QR. Por eso `forceDeleteEvent`/`resetEventSales` recorren todos los tickets y decodifican su `qrCodeToken` para atribuirlos al evento (match por `eventId` o `seatId`).
+- **Race de puerto en `nx serve api` (Windows)**: al recompilar en watch, el proceso viejo a veces retiene el 3000 y el nuevo falla con `EADDRINUSE`. Solución en dev: matar el proceso del puerto 3000 y relanzar `nx serve api` limpio. No ocurre en producción (cada deploy levanta el proceso desde cero).
+- **Migración en producción (Coolify)**: el schema en el contenedor está en la ubicación por defecto `/app/prisma/schema.prisma` (no `libs/shared/prisma/`). Comando: `npx prisma db push --schema=/app/prisma/schema.prisma` (o el corto `npx prisma db push` desde `/app`). Ignorar el aviso "Update available 5.22.0 → 7.8.0" (Prisma está fijado a 5.22.0 a propósito).
+
+---
 
 ### Sesión del 2 de Junio de 2026 (Sesión 14) — Sistema de Categorías + Fix Buscador + UI Fixes
 
