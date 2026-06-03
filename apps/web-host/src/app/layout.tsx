@@ -1,8 +1,25 @@
-'use client';
-
 import './global.css';
-import { AuthProvider } from '../lib/AuthContext';
-import { ImpersonationBanner } from '../components/ImpersonationBanner';
+import type { Metadata } from 'next';
+import { Providers } from '../components/Providers';
+
+const hostUrl = process.env.NEXT_PUBLIC_HOST_URL || 'http://localhost:4201';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(hostUrl),
+  title: 'Panel de Organizadores — AfroEventos',
+  description:
+    'Publica tus eventos, vende entradas y gestiona a tus asistentes desde el panel de organizadores de AfroEventos.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
+  // El panel es una aplicación privada: por defecto no se indexa.
+  // Las páginas públicas de captación (/register, /login) lo sobrescriben.
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function RootLayout({
   children,
@@ -11,15 +28,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="shortcut icon" href="/favicon.svg" />
-      </head>
       <body suppressHydrationWarning>
-        <AuthProvider>
-          <ImpersonationBanner />
-          {children}
-        </AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

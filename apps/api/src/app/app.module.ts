@@ -22,6 +22,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { MailModule } from './mail/mail.module';
 import { BannersModule } from './banners/banners.module';
 import { CategoriesModule } from './categories/categories.module';
+import { OgImageModule } from './og-image/og-image.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CategoriesModule } from './categories/categories.module';
     MailModule,
     BannersModule,
     CategoriesModule,
+    OgImageModule,
   ],
   controllers: [AppController],
   providers: [
