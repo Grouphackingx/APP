@@ -22,6 +22,26 @@ export class OrdersService {
     ) { }
 
     /**
+     * Resuelve si la pasarela de pagos está habilitada para un organizador:
+     * override por organizador si existe, si no la configuración global.
+     */
+    private async resolvePaymentEnabled(organizerId: string): Promise<boolean> {
+        const profile = await this.prisma.organizerProfile.findUnique({
+            where: { userId: organizerId },
+            select: { paidEventsEnabled: true },
+        });
+        if (profile?.paidEventsEnabled !== null && profile?.paidEventsEnabled !== undefined) {
+            return profile.paidEventsEnabled;
+        }
+        const config = await this.prisma.systemConfig.upsert({
+            where: { id: 'global' },
+            create: { id: 'global', paidEventsEnabled: false },
+            update: {},
+        });
+        return config.paidEventsEnabled;
+    }
+
+    /**
      * Step 1: Lock seats for a user using Redis.
      * Prevents other users from selecting them for 10 minutes.
      */
@@ -124,6 +144,20 @@ export class OrdersService {
 
         // Calculate total
         const totalAmount = seats.reduce((sum, seat) => sum + Number(seat.zone.price), 0);
+
+        // Kill-switch de pagos: si la compra tiene costo (> $0), verificamos que la
+        // pasarela esté habilitada para el organizador del evento (override por
+        // organizador, o config global como fallback). Si está deshabilitada, se
+        // bloquea la venta en tiempo real, aunque el evento ya tuviera precios.
+        if (totalAmount > 0) {
+            const organizerId = seats[0].zone.event.organizerId;
+            const paidEnabled = await this.resolvePaymentEnabled(organizerId);
+            if (!paidEnabled) {
+                throw new BadRequestException(
+                    'La venta de entradas con pago está deshabilitada para este organizador en este momento.',
+                );
+            }
+        }
 
         // Process Payment via Stripe (Simulated)
         const paymentSuccess = await this.payments.processPayment('tok_visa', totalAmount);

@@ -310,6 +310,28 @@ export async function setOrgPaymentGateway(userId: string, paidEventsEnabled: bo
   });
 }
 
+export async function setOrgTestMode(userId: string, isTestMode: boolean, token: string) {
+  return fetchAPI<any>(`/admin/organizers/${userId}/test-mode`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isTestMode }),
+    token,
+  });
+}
+
+export async function forceDeleteEvent(id: string, token: string) {
+  return fetchAPI<{ deleted: boolean; eventId: string; ticketsDeleted: number; ordersDeleted: number }>(
+    `/admin/events/${id}/force`,
+    { method: 'DELETE', token },
+  );
+}
+
+export async function resetEventSales(id: string, token: string) {
+  return fetchAPI<{ reset: boolean; eventId: string; seatsReleased: number; ticketsDeleted: number; ordersDeleted: number }>(
+    `/admin/events/${id}/reset-sales`,
+    { method: 'POST', token },
+  );
+}
+
 // Attendees (Web Client users)
 
 export async function getAttendees(token: string, page = 1, limit = 20, search = '') {

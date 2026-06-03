@@ -134,6 +134,38 @@ export function EventDetailClient({ event }: { event: EventItem }) {
   const totalPrice = selectedSeats.reduce((sum, s) => sum + s.price, 0);
   const allZonesFree = event.zones.length > 0 && event.zones.every(z => Number(z.price) === 0 || z.sellOnSite);
 
+  // Traduce los mensajes técnicos del backend (en inglés, con IDs) a textos
+  // claros y accionables para el comprador. Evita exponer UUIDs de asientos.
+  const friendlyPurchaseError = (raw?: string): string => {
+    const msg = (raw || '').toLowerCase();
+    if (msg.includes('held by another') || msg.includes('being held')) {
+      return 'Alguien más está reservando esas entradas ahora mismo. Espera un par de minutos o elige otras.';
+    }
+    if (msg.includes('already sold')) {
+      return 'Una o más entradas que elegiste acaban de venderse. Por favor selecciona otras.';
+    }
+    if (msg.includes('do not hold the lock') || msg.includes('select seats again')) {
+      return 'Tu reserva expiró. Vuelve a seleccionar tus entradas e inténtalo de nuevo.';
+    }
+    if (msg.includes('not found')) {
+      return 'Algunas entradas ya no están disponibles. Actualiza la página e inténtalo de nuevo.';
+    }
+    if (msg.includes('do not belong')) {
+      return 'Hubo un problema con las entradas seleccionadas. Vuelve a elegirlas, por favor.';
+    }
+    if (msg.includes('payment') && msg.includes('fail')) {
+      return 'No se pudo procesar el pago. Inténtalo nuevamente en unos momentos.';
+    }
+    if (msg.includes('deshabilitada')) {
+      // Mensaje ya viene en español y amigable desde el backend (kill-switch de pagos).
+      return raw as string;
+    }
+    if (msg.includes('no seats')) {
+      return 'Selecciona al menos una entrada para continuar.';
+    }
+    return 'No pudimos completar tu compra. Inténtalo de nuevo en unos momentos.';
+  };
+
   const handlePurchase = async () => {
     if (!token || selectedSeats.length === 0) return;
     setPurchasing(true);
@@ -146,7 +178,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
       setSoldSeatIds((prev) => [...prev, ...seatIds]);
       setSelectedSeats([]);
     } catch (err: any) {
-      setError(err.message || 'Error al procesar la compra');
+      setError(friendlyPurchaseError(err?.message));
     } finally {
       setPurchasing(false);
     }
@@ -258,8 +290,6 @@ export function EventDetailClient({ event }: { event: EventItem }) {
               {event.galleryUrls && event.galleryUrls.length > 0 && (
                 <EventGallery urls={event.galleryUrls} />
               )}
-
-              {error && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>⚠️ {error}</div>}
 
               {purchaseResult && (
                 <div className="alert alert-success" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
@@ -391,6 +421,14 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                   <div style={{ marginBottom: '0', textAlign: 'center' }}>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Inicia sesión para comprar/seleccionar asientos.</p>
                     <Link href={`/login?redirect=${encodeURIComponent(`/eventos/${event.slug || event.id}`)}`} className="btn btn-primary btn-sm btn-full">Iniciar Sesión</Link>
+                  </div>
+                )}
+
+                {error && (
+                  <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', marginBottom: '1rem', animation: 'fadeIn 0.2s ease' }}>
+                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>⚠️</span>
+                    <p style={{ flex: 1, fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', margin: 0, lineHeight: 1.45 }}>{error}</p>
+                    <button onClick={() => setError('')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0 }} aria-label="Cerrar">✕</button>
                   </div>
                 )}
 

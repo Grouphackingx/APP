@@ -48,7 +48,11 @@ export class AdminService {
       orderBy: { createdAt: 'desc' }
     });
 
-    return organizers.map(org => {
+    return organizers
+      // Excluimos organizadores en Modo Prueba: sus ventas simuladas no deben
+      // contaminar las analíticas/ingresos reales del panel.
+      .filter(org => !org.organizerProfile?.isTestMode)
+      .map(org => {
       let totalZones = 0;
       let totalTicketsSold = 0;
       let totalRevenue = 0;
@@ -355,6 +359,137 @@ export class AdminService {
       where: { userId },
       data: { paidEventsEnabled },
     });
+  }
+
+  // --- TEST MODE (organizador sandbox) ---
+
+  async setOrgTestMode(userId: string, isTestMode: boolean) {
+    const profile = await this.prisma.organizerProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundException('Organizador no encontrado');
+    return this.prisma.organizerProfile.update({
+      where: { userId },
+      data: { isTestMode },
+    });
+  }
+
+  /**
+   * Borrado forzado de un evento (admin), incluyendo sus tickets/órdenes vendidos.
+   * SOLO permitido si el dueño está marcado como organizador de prueba (isTestMode),
+   * para que nunca se borren ventas reales por accidente.
+   *
+   * Órdenes y tickets no tienen FK al evento: la relación vive dentro del JWT del
+   * qrCodeToken (eventId/seatId), así que los identificamos decodificando.
+   */
+  async forceDeleteEvent(eventId: string) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        organizer: { include: { organizerProfile: true } },
+        zones: { include: { seats: { select: { id: true } } } },
+      },
+    });
+    if (!event) throw new NotFoundException('Evento no encontrado');
+
+    if (!event.organizer?.organizerProfile?.isTestMode) {
+      throw new ForbiddenException(
+        'El borrado forzado solo está permitido para organizadores en Modo Prueba.',
+      );
+    }
+
+    // IDs de asientos de este evento → para emparejar tickets por su JWT.
+    const seatIds = new Set(event.zones.flatMap((z) => z.seats.map((s) => s.id)));
+
+    // Buscar tickets cuyo QR (JWT) pertenezca a este evento; juntar sus órdenes.
+    const allTickets = await this.prisma.ticket.findMany({
+      select: { id: true, orderId: true, qrCodeToken: true },
+    });
+    const ticketIds: string[] = [];
+    const orderIds = new Set<string>();
+    for (const t of allTickets) {
+      try {
+        const decoded: any = this.jwtService.verify(t.qrCodeToken);
+        if (decoded.eventId === eventId || (decoded.seatId && seatIds.has(decoded.seatId))) {
+          ticketIds.push(t.id);
+          orderIds.add(t.orderId);
+        }
+      } catch {
+        // token inválido/expirado → no podemos atribuirlo a este evento, lo ignoramos
+      }
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.ticket.deleteMany({ where: { id: { in: ticketIds } } }),
+      // Una orden = un checkout de un solo evento, por lo que es seguro borrarlas.
+      this.prisma.order.deleteMany({ where: { id: { in: Array.from(orderIds) } } }),
+      this.prisma.seat.deleteMany({ where: { zone: { eventId } } }),
+      this.prisma.zone.deleteMany({ where: { eventId } }),
+      this.prisma.event.delete({ where: { id: eventId } }),
+    ]);
+
+    return {
+      deleted: true,
+      eventId,
+      ticketsDeleted: ticketIds.length,
+      ordersDeleted: orderIds.size,
+    };
+  }
+
+  /**
+   * Reset de ventas (admin): deja el evento como recién publicado. Libera los
+   * asientos vendidos (isSold=false) y borra sus tickets/órdenes, pero CONSERVA
+   * el evento, sus zonas, precios y capacidad. Para repetir pruebas de compra
+   * sobre el mismo evento. Solo permitido en organizadores de prueba.
+   */
+  async resetEventSales(eventId: string) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        organizer: { include: { organizerProfile: true } },
+        zones: { include: { seats: { select: { id: true } } } },
+      },
+    });
+    if (!event) throw new NotFoundException('Evento no encontrado');
+
+    if (!event.organizer?.organizerProfile?.isTestMode) {
+      throw new ForbiddenException(
+        'El reset de ventas solo está permitido para organizadores en Modo Prueba.',
+      );
+    }
+
+    const seatIds = new Set(event.zones.flatMap((z) => z.seats.map((s) => s.id)));
+
+    // Localizar tickets de este evento por su JWT (no hay FK directa al evento).
+    const allTickets = await this.prisma.ticket.findMany({
+      select: { id: true, orderId: true, qrCodeToken: true },
+    });
+    const ticketIds: string[] = [];
+    const orderIds = new Set<string>();
+    for (const t of allTickets) {
+      try {
+        const decoded: any = this.jwtService.verify(t.qrCodeToken);
+        if (decoded.eventId === eventId || (decoded.seatId && seatIds.has(decoded.seatId))) {
+          ticketIds.push(t.id);
+          orderIds.add(t.orderId);
+        }
+      } catch {
+        // token inválido/expirado → no atribuible a este evento, lo ignoramos
+      }
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.ticket.deleteMany({ where: { id: { in: ticketIds } } }),
+      this.prisma.order.deleteMany({ where: { id: { in: Array.from(orderIds) } } }),
+      // Liberar asientos: vuelven a estar disponibles para la venta.
+      this.prisma.seat.updateMany({ where: { zone: { eventId } }, data: { isSold: false } }),
+    ]);
+
+    return {
+      reset: true,
+      eventId,
+      seatsReleased: seatIds.size,
+      ticketsDeleted: ticketIds.length,
+      ordersDeleted: orderIds.size,
+    };
   }
 
   // --- ATTENDEES (USER role) ---

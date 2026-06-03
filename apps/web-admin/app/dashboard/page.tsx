@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, getSystemConfig, updateSystemConfig, setOrgPaymentGateway, getAttendees, updateAttendee, deleteAttendee, blockAttendee, changeAttendeePassword, exportAttendees, getCategoriesAdmin, createCategory, updateCategory, deleteCategory, seedCategories, type Banner, type EventCategory } from '../../lib/api';
+import { getOrganizers, setOrganizerStatus, deleteOrganizer, updateOrganizer, createOrganizer, getPlans, createPlan, updatePlan, deletePlan, getOrganizersAnalytics, getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, uploadImage, getAllEventsAdmin, setEventFeatured, deleteEvent, getBannersAdmin, createBanner, updateBanner, deleteBanner, uploadBannerImage, impersonateOrganizer, getSystemConfig, updateSystemConfig, setOrgPaymentGateway, setOrgTestMode, forceDeleteEvent, resetEventSales, getAttendees, updateAttendee, deleteAttendee, blockAttendee, changeAttendeePassword, exportAttendees, getCategoriesAdmin, createCategory, updateCategory, deleteCategory, seedCategories, type Banner, type EventCategory } from '../../lib/api';
 import { useAuth } from '../../lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '../../components/Sidebar';
@@ -537,6 +537,51 @@ function AdminDashboard() {
     });
   };
 
+  const handleToggleOrgTestMode = (orgId: string, orgName: string, current: boolean) => {
+    const next = !current;
+    showConfirm(
+      `Modo Prueba: ${orgName}`,
+      next
+        ? `Marcar a "${orgName}" como organizador de PRUEBA. Sus ventas dejarán de contar en las analíticas y sus eventos podrán eliminarse a la fuerza (aun con tickets vendidos). ¿Confirmas?`
+        : `Quitar el Modo Prueba de "${orgName}". Volverá a contar como organizador real en las analíticas. ¿Confirmas?`,
+      async () => {
+        try {
+          await setOrgTestMode(orgId, next, token as string);
+          loadOrganizers(orgsPage);
+          showToast(next ? `"${orgName}" ahora es organizador de prueba.` : `"${orgName}" ya no es de prueba.`, next ? 'warning' : 'success');
+        } catch { showToast('Error al actualizar el modo prueba.', 'error'); }
+      }
+    );
+  };
+
+  const handleForceDeleteEvent = (eventId: string, eventTitle: string) => {
+    showConfirm(
+      `Eliminar evento de prueba`,
+      `Se eliminará "${eventTitle}" junto con TODOS sus tickets y órdenes vendidos. Esta acción es irreversible y solo aplica a organizadores en Modo Prueba. ¿Continuar?`,
+      async () => {
+        try {
+          const res = await forceDeleteEvent(eventId, token as string);
+          loadEvents(eventsPage);
+          showToast(`Evento eliminado (${res.ticketsDeleted} tickets, ${res.ordersDeleted} órdenes).`, 'success');
+        } catch (err: any) { showToast(err.message || 'Error al eliminar el evento.', 'error'); }
+      }
+    );
+  };
+
+  const handleResetEventSales = (eventId: string, eventTitle: string) => {
+    showConfirm(
+      `Vaciar ventas (reset)`,
+      `Se liberarán todos los asientos vendidos de "${eventTitle}" y se borrarán sus tickets/órdenes. El evento, sus zonas y precios se conservan intactos — quedará como recién publicado. Solo aplica a organizadores en Modo Prueba. ¿Continuar?`,
+      async () => {
+        try {
+          const res = await resetEventSales(eventId, token as string);
+          loadEvents(eventsPage);
+          showToast(`Ventas reiniciadas (${res.seatsReleased} asientos liberados, ${res.ticketsDeleted} tickets borrados).`, 'success');
+        } catch (err: any) { showToast(err.message || 'Error al reiniciar las ventas.', 'error'); }
+      }
+    );
+  };
+
   const handleEditOrg = (org: any) => {
     setEditingOrgData(org);
     setEditFormData({ ...org.organizerProfile, email: org.email });
@@ -878,6 +923,18 @@ function AdminDashboard() {
                               }}>
                               {prof.status === 'APPROVED' ? '🟢 Aprobado' : prof.status === 'REJECTED' ? '🔴 Rechazado' : prof.status === 'BLOCKED' ? '🔒 Bloqueado' : '⏳ Pendiente'}
                             </span>
+                            {prof.isTestMode && (
+                              <span
+                                title="Organizador de prueba: sus ventas no cuentan en analíticas"
+                                style={{
+                                  display: 'inline-block', marginTop: '0.35rem', padding: '0.15rem 0.5rem',
+                                  borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700,
+                                  backgroundColor: 'rgba(234,179,8,0.18)', color: '#fde047', border: '1px solid rgba(234,179,8,0.4)',
+                                }}
+                              >
+                                🧪 PRUEBA
+                              </span>
+                            )}
                           </td>
                           <td>
                             {user?.role === 'ADMIN' ? (
@@ -932,6 +989,19 @@ function AdminDashboard() {
                                   style={{ backgroundColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.3)', color: '#a5b4fc' }}
                                 >
                                   👁
+                                </button>
+                              )}
+                              {user?.role === 'ADMIN' && (
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => handleToggleOrgTestMode(org.id, prof.organizationName, !!prof.isTestMode)}
+                                  title={prof.isTestMode ? 'Quitar Modo Prueba' : 'Marcar como organizador de prueba (sandbox)'}
+                                  style={prof.isTestMode
+                                    ? { backgroundColor: 'rgba(234,179,8,0.18)', borderColor: 'rgba(234,179,8,0.4)', color: '#fde047' }
+                                    : { backgroundColor: 'var(--bg-glass)', borderColor: 'var(--border-color)' }
+                                  }
+                                >
+                                  🧪
                                 </button>
                               )}
                               <button
@@ -1052,6 +1122,11 @@ function AdminDashboard() {
                           <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
                             {ev.organizer?.organizerProfile?.organizationName || 'Sin Nombre'}
                           </div>
+                          {ev.organizer?.organizerProfile?.isTestMode && (
+                            <span style={{ display: 'inline-block', marginTop: '0.25rem', padding: '0.1rem 0.4rem', borderRadius: '5px', fontSize: '0.68rem', fontWeight: 700, backgroundColor: 'rgba(234,179,8,0.18)', color: '#fde047', border: '1px solid rgba(234,179,8,0.4)' }}>
+                              🧪 PRUEBA
+                            </span>
+                          )}
                         </td>
                         <td>
                           <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
@@ -1103,6 +1178,28 @@ function AdminDashboard() {
                               >
                                 🗑️
                               </button>
+                            )}
+                            {ev.organizer?.organizerProfile?.isTestMode &&
+                              (ev.zones || []).some((z: any) => (z.seats || []).some((s: any) => s.isSold)) &&
+                              user?.role === 'ADMIN' && (
+                              <>
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => handleResetEventSales(ev.id, ev.title)}
+                                  title="Vaciar ventas (reset): libera asientos y borra tickets, conserva el evento"
+                                  style={{ backgroundColor: 'rgba(99,102,241,0.12)', borderColor: 'rgba(99,102,241,0.35)', color: '#a5b4fc' }}
+                                >
+                                  ♻️
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleForceDeleteEvent(ev.id, ev.title)}
+                                  title="Eliminar evento de prueba (forzado, incluye tickets vendidos)"
+                                  style={{ backgroundColor: 'rgba(234,179,8,0.15)', borderColor: 'rgba(234,179,8,0.4)', color: '#fde047' }}
+                                >
+                                  🧪🗑️
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>

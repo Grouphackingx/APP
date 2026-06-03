@@ -134,6 +134,24 @@ export class AdminController {
     return this.adminService.setOrgPaymentGateway(userId, paidEventsEnabled);
   }
 
+  @Patch('organizers/:id/test-mode')
+  setOrgTestMode(
+    @Param('id') userId: string,
+    @Body('isTestMode') isTestMode: boolean,
+  ) {
+    return this.adminService.setOrgTestMode(userId, isTestMode);
+  }
+
+  @Delete('events/:id/force')
+  forceDeleteEvent(@Param('id') id: string) {
+    return this.adminService.forceDeleteEvent(id);
+  }
+
+  @Post('events/:id/reset-sales')
+  resetEventSales(@Param('id') id: string) {
+    return this.adminService.resetEventSales(id);
+  }
+
   // --- ATTENDEES ---
 
   @Get('attendees')

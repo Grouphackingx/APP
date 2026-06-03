@@ -184,6 +184,11 @@ model OrganizerProfile {
   status                  HostStatus @default(PENDING)
   paidEventsEnabled       Boolean?
 
+  // Modo prueba: organizador sandbox. Sus ventas/ingresos se excluyen de las
+  // analíticas globales y sus eventos pueden borrarse a la fuerza (admin), aun
+  // con tickets vendidos. Para probar el flujo de compra sin contaminar datos reales.
+  isTestMode              Boolean    @default(false)
+
   createdAt               DateTime   @default(now())
   updatedAt               DateTime   @updatedAt
 }
