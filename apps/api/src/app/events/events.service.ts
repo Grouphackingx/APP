@@ -311,15 +311,34 @@ export class EventsService implements OnModuleInit {
         }
     }
 
-    private deleteOrphanedGalleryFiles(oldUrls: string[], newUrls: string[]) {
-        const removed = oldUrls.filter(u => !newUrls.includes(u));
+    // Single-image fields on Event (gallery is handled separately as an array)
+    private static readonly IMAGE_FIELDS = [
+        'imageUrl', 'bannerImageUrl', 'squareImageUrl', 'portraitImageUrl', 'seatingMapImageUrl',
+    ] as const;
+
+    /** Collect every image URL referenced by an event (single fields + gallery). */
+    private collectImageUrls(source: Record<string, unknown>): string[] {
+        const urls: string[] = [];
+        for (const field of EventsService.IMAGE_FIELDS) {
+            const value = source[field];
+            if (typeof value === 'string' && value) urls.push(value);
+        }
+        const gallery = source.galleryUrls;
+        if (Array.isArray(gallery)) urls.push(...gallery.filter((u): u is string => typeof u === 'string'));
+        return urls;
+    }
+
+    /** Delete files referenced before an update but no longer referenced after it. */
+    private deleteOrphanedImageFiles(oldUrls: string[], newUrls: string[]) {
+        const stillUsed = new Set(newUrls);
+        const removed = oldUrls.filter(u => !stillUsed.has(u));
         for (const url of removed) {
             try {
-                // URL is like http://host/uploads/organizers/...  â†’ strip origin
+                // Local URL is like http://host/uploads/organizers/... â†’ strip origin
                 const pathname = new URL(url).pathname; // /uploads/organizers/...
                 const filePath = path.join(process.cwd(), pathname);
                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            } catch { /* ignore â€” URL may be external (Cloudinary) or already gone */ }
+            } catch { /* ignore â€” external URL (Cloudinary) or already gone */ }
         }
     }
 
@@ -368,16 +387,25 @@ export class EventsService implements OnModuleInit {
             }
         }
 
-        // Delete orphaned gallery files before saving new gallery
-        if (basicData.galleryUrls) {
-            const currentEvent = await this.prisma.event.findUnique({ where: { id }, select: { galleryUrls: true } });
-            if (currentEvent) {
-                this.deleteOrphanedGalleryFiles(currentEvent.galleryUrls, basicData.galleryUrls as string[]);
-            }
-        }
+        // Snapshot the images this event currently references, so any that become
+        // orphaned can be deleted AFTER a successful write (covers gallery + single
+        // images: cover, banner, square, portrait, seating map). Only when the
+        // update actually touches an image field.
+        const touchesImages = [...EventsService.IMAGE_FIELDS, 'galleryUrls']
+            .some(f => basicData[f] !== undefined);
+        const beforeImages = touchesImages
+            ? await this.prisma.event.findUnique({
+                where: { id },
+                select: {
+                    imageUrl: true, bannerImageUrl: true, squareImageUrl: true,
+                    portraitImageUrl: true, seatingMapImageUrl: true, galleryUrls: true,
+                },
+            })
+            : null;
 
+        let result;
         if (zones && zones.length > 0) {
-            return this.prisma.$transaction(async (prisma) => {
+            result = await this.prisma.$transaction(async (prisma) => {
                 const existingEvent = await prisma.event.findUnique({
                     where: { id },
                     include: { zones: { include: { seats: true } } }
@@ -502,13 +530,25 @@ export class EventsService implements OnModuleInit {
                     include: { zones: { include: { seats: true } } }
                 });
             });
+        } else {
+            // No zones to update, just update basic event data
+            result = await this.prisma.event.update({
+                where: { id },
+                data: basicData,
+            });
         }
 
-        // No zones to update, just update basic event data
-        return this.prisma.event.update({
-            where: { id },
-            data: basicData,
-        });
+        // After a successful write, delete files no longer referenced by the event
+        if (beforeImages) {
+            const after: Record<string, unknown> = { ...beforeImages };
+            for (const field of EventsService.IMAGE_FIELDS) {
+                if (basicData[field] !== undefined) after[field] = basicData[field];
+            }
+            if (basicData.galleryUrls !== undefined) after.galleryUrls = basicData.galleryUrls;
+            this.deleteOrphanedImageFiles(this.collectImageUrls(beforeImages), this.collectImageUrls(after));
+        }
+
+        return result;
     }
 
     async remove(id: string) {
@@ -525,10 +565,15 @@ export class EventsService implements OnModuleInit {
             throw new Error('Cannot delete event with sold tickets');
         }
 
-        return this.prisma.$transaction([
+        const txResult = await this.prisma.$transaction([
             this.prisma.seat.deleteMany({ where: { zone: { eventId: id } } }),
             this.prisma.zone.deleteMany({ where: { eventId: id } }),
             this.prisma.event.delete({ where: { id } }),
         ]);
+
+        // The event is gone — remove its image files from disk too
+        this.deleteOrphanedImageFiles(this.collectImageUrls(event as unknown as Record<string, unknown>), []);
+
+        return txResult;
     }
 }
