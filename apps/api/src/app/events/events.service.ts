@@ -191,15 +191,36 @@ export class EventsService implements OnModuleInit {
         }
 
         const skip = (page - 1) * limit;
+        // Listing only needs sold-out status, not every seat row. Fetch a filtered
+        // count of sold seats per zone instead of the full seats array (cheap and
+        // independent of seat count). capacity is kept in sync with seat count on
+        // create/update, so soldCount >= capacity means the zone is fully sold.
         const include = {
-            zones: { include: { seats: { select: { isSold: true } } } },
+            zones: {
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    price: true,
+                    capacity: true,
+                    isReservedSeating: true,
+                    sellOnSite: true,
+                    _count: { select: { seats: { where: { isSold: true } } } },
+                },
+            },
             organizer: { select: { name: true, email: true, organizerProfile: { select: { organizationLogo: true, organizationName: true } } } },
         };
 
-        const [data, total] = await Promise.all([
+        const [events, total] = await Promise.all([
             this.prisma.event.findMany({ where, include, orderBy: { date: 'asc' }, skip, take: limit }),
             this.prisma.event.count({ where }),
         ]);
+
+        // Flatten Prisma's _count into a plain soldCount per zone
+        const data = events.map(event => ({
+            ...event,
+            zones: event.zones.map(({ _count, ...zone }) => ({ ...zone, soldCount: _count.seats })),
+        }));
 
         return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
     }

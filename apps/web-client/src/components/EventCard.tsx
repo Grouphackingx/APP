@@ -19,8 +19,12 @@ function formatTime(dateStr: string): string {
 function isEventSoldOut(event: EventItem): boolean {
   if (!event.zones || event.zones.length === 0) return false;
   return event.zones.every(zone => {
-    if (!zone.seats || zone.seats.length === 0) return false;
-    return zone.seats.every(seat => seat.isSold);
+    // Detail data: full seats array present
+    if (zone.seats && zone.seats.length > 0) return zone.seats.every(seat => seat.isSold);
+    // Listing data: aggregate count (zone is sold out when all seats are sold)
+    if (zone.capacity > 0) return (zone.soldCount ?? 0) >= zone.capacity;
+    // sellOnSite or zones without seats are never "sold out"
+    return false;
   });
 }
 

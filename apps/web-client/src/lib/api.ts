@@ -76,6 +76,8 @@ export interface Zone {
   isReservedSeating: boolean;
   sellOnSite?: boolean;
   seats?: Seat[];
+  /** Sold seat count — present in event listings (GET /events) instead of the full seats array */
+  soldCount?: number;
 }
 
 export interface Seat {
