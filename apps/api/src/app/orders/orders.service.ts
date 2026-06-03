@@ -4,6 +4,7 @@ import {
     ConflictException,
     NotFoundException,
 } from '@nestjs/common';
+import { TicketStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { PaymentsService } from '../payments/payments.service';
@@ -224,7 +225,7 @@ export class OrdersService {
                     id: t.id,
                     orderId: newOrder.id,
                     qrCodeToken: t.qrCodeToken,
-                    status: 'VALID' as any, // Cast enum if needed
+                    status: TicketStatus.VALID,
                 })),
             });
 
@@ -250,7 +251,7 @@ export class OrdersService {
                     eventTitle: event.title,
                     eventDate: event.date.toISOString(),
                     eventLocation: event.location,
-                    eventCity: (event as any).city || '',
+                    eventCity: event.city || '',
                     zoneName: seat.zone.name,
                     seatNumber: seat.number ?? null,
                 }));

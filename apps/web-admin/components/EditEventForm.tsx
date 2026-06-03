@@ -27,6 +27,7 @@ interface EventData {
   category?: string;
   bannerImageUrl?: string;
   squareImageUrl?: string;
+  portraitImageUrl?: string;
   galleryUrls?: string[];
   imageUrl?: string;
   seatingMapImageUrl?: string;
@@ -94,7 +95,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
   const [squareImageFile, setSquareImageFile] = useState<File | null>(null);
   const [squareImagePreview, setSquareImagePreview] = useState<string>(initialData?.squareImageUrl || '');
   const [portraitImageFile, setPortraitImageFile] = useState<File | null>(null);
-  const [portraitImagePreview, setPortraitImagePreview] = useState<string>((initialData as any)?.portraitImageUrl || '');
+  const [portraitImagePreview, setPortraitImagePreview] = useState<string>(initialData?.portraitImageUrl || '');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
@@ -238,7 +239,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
         }
       }
 
-      let portraitImageUrl = (initialData as any)?.portraitImageUrl || '';
+      let portraitImageUrl = initialData?.portraitImageUrl || '';
       if (portraitImageFile) {
         try {
           portraitImageUrl = await uploadImage(portraitImageFile, token);

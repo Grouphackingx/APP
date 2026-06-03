@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateEventDto, UpdateEventDto, CreateZoneDto } from '@open-ticket/shared';
-import { Prisma } from '@prisma/client';
+import { Prisma, EventStatus } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -139,7 +139,9 @@ export class EventsService implements OnModuleInit {
 
         return this.prisma.event.create({
             data: {
-                ...(eventData as any),
+                ...eventData,
+                // DTO types status as a plain string; the column is the EventStatus enum
+                status: eventData.status as EventStatus | undefined,
                 slug,
                 organizer: { connect: { id: organizerId } },
                 zones: {

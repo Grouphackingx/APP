@@ -3,7 +3,7 @@ import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, HostStatus } from '@prisma/client';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -35,10 +35,10 @@ export class AdminController {
   @Roles(Role.ADMIN, Role.EDITOR)
   setOrganizerStatus(
     @Param('id') userId: string,
-    @Body('status') status: 'PENDING' | 'APPROVED' | 'REJECTED',
+    @Body('status') status: HostStatus,
     @Body('reason') reason?: string,
   ) {
-    return this.adminService.setOrganizerStatus(userId, status as any, reason);
+    return this.adminService.setOrganizerStatus(userId, status, reason);
   }
 
   @Patch('organizers/:id')

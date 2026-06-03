@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { HostStatus } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -149,7 +150,7 @@ export class AdminService {
     return user;
   }
 
-  async setOrganizerStatus(userId: string, status: any, reason?: string) {
+  async setOrganizerStatus(userId: string, status: HostStatus, reason?: string) {
     const profile = await this.prisma.organizerProfile.findUnique({
       where: { userId },
       include: { user: { select: { email: true, name: true } } },
@@ -164,7 +165,7 @@ export class AdminService {
       data: { status },
     });
 
-    const { email, name } = (profile as any).user;
+    const { email, name } = profile.user;
     const orgName = profile.organizationName;
 
     if (status === 'APPROVED') {
@@ -595,7 +596,7 @@ export class AdminService {
       include: { _count: { select: { orders: true } } },
     });
     if (!existing || existing.role !== 'USER') throw new NotFoundException('Asistente no encontrado');
-    if ((existing as any)._count.orders > 0) {
+    if (existing._count.orders > 0) {
       throw new ForbiddenException(
         'No se puede eliminar este asistente porque tiene órdenes de compra registradas. Usa la opción "Bloquear" para restringir su acceso.',
       );
