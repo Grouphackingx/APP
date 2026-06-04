@@ -348,7 +348,7 @@ export default function RegisterHostPage() {
                   className="btn btn-primary"
                   style={{ flex: 2 }}
                 >
-                  {loading ? 'Creando cuenta...' : 'Finalizar Registro 🚀'}
+                  {loading ? 'Creando cuenta...' : 'Finalizar 🚀'}
                 </button>
               </div>
             </div>
