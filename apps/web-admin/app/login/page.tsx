@@ -49,7 +49,13 @@ export default function LoginPage() {
             marginBottom: '1rem',
           }}
         >
-          <AfroEventosLogo variant="light" height={68} />
+          <a
+            href={process.env.NEXT_PUBLIC_SITE_URL || 'https://afroeventos.com'}
+            title="Ir al portal de clientes"
+            style={{ display: 'inline-flex', lineHeight: 0 }}
+          >
+            <AfroEventosLogo variant="light" height={68} />
+          </a>
         </div>
         <p className="auth-subtitle mb-6 text-slate-500">Panel de Control General</p>
 

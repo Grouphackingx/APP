@@ -24,13 +24,24 @@ export function OrganizerCTA() {
               profesional para ayudar a organizadores a promocionar sus eventos de manera fácil y moderna.
             </p>
 
-            <a
-              href={`${HOST_URL}/register`}
-              className="hero-split-cta animate-fade-in-up stagger-4"
-              rel="noopener noreferrer"
-            >
-              Publicar ahora →
-            </a>
+            <div className="octa-cta-group animate-fade-in-up stagger-4">
+              <a
+                href={`${HOST_URL}/register`}
+                className="hero-split-cta"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Publicar ahora →
+              </a>
+              <a
+                href={`${HOST_URL}/login`}
+                className="hero-split-cta-ghost"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Ya tengo cuenta →
+              </a>
+            </div>
           </div>
 
           {/* Derecha: mockup del panel de organizador */}

@@ -190,7 +190,16 @@ export function EventDetailClient({ event }: { event: EventItem }) {
         <div className="event-detail animate-fade-in">
           {/* Hero Image */}
           <div className="event-detail-hero">
-            <img src={event.bannerImageUrl || event.imageUrl || '/default-banner.jpg'} alt={event.title} />
+            <img
+              className="event-detail-hero-banner"
+              src={event.bannerImageUrl || event.imageUrl || '/default-banner.jpg'}
+              alt={event.title}
+            />
+            <img
+              className="event-detail-hero-square"
+              src={event.squareImageUrl || event.imageUrl || event.bannerImageUrl || '/default-banner.jpg'}
+              alt={event.title}
+            />
           </div>
 
           <div className="event-content-grid">
