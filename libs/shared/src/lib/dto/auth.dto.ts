@@ -1,4 +1,6 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsDateString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsOptional, IsDateString, Matches } from 'class-validator';
+
+const PHONE_REGEX = /^\+?[0-9][\d\s\-()+.]{5,14}$/;
 
 export class LoginDto {
   @IsEmail()
@@ -23,6 +25,7 @@ export class RegisterDto {
   @MinLength(6)
   password!: string;
 
+  @Matches(PHONE_REGEX, { message: 'Formato de teléfono inválido. Ej: 0991234567 o +593991234567' })
   @IsString()
   @IsNotEmpty()
   phone!: string;
@@ -47,6 +50,7 @@ export class RegisterHostDto extends RegisterDto {
   @IsNotEmpty()
   identificationNumber!: string;
 
+  @Matches(PHONE_REGEX, { message: 'Formato de teléfono inválido. Ej: 0991234567 o +593991234567' })
   @IsString()
   @IsNotEmpty()
   override phone!: string;
@@ -89,6 +93,7 @@ export class UpdateBasicInfoDto {
   @IsOptional()
   email?: string;
 
+  @Matches(PHONE_REGEX, { message: 'Formato de teléfono inválido. Ej: 0991234567 o +593991234567' })
   @IsString()
   @IsOptional()
   phone?: string;
@@ -149,6 +154,7 @@ export class UpdateProfileDto {
   @IsOptional()
   password?: string;
 
+  @Matches(PHONE_REGEX, { message: 'Formato de teléfono inválido. Ej: 0991234567 o +593991234567' })
   @IsString()
   @IsOptional()
   phone?: string;

@@ -158,6 +158,10 @@ export default function RegisterPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 required
                 autoComplete="tel"
+                pattern="^\+?[0-9][\d\s\-()+.]{5,14}$"
+                minLength={7}
+                maxLength={16}
+                title="Ingresa un número válido. Ej: 0991234567 o +593991234567"
                 style={{ flex: 1 }}
               />
             </div>

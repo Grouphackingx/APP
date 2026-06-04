@@ -229,7 +229,7 @@ export default function MyProfilePage() {
             </div>
             <div className="profile-field">
               <label htmlFor="phone">Teléfono</label>
-              <input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="+593 99 999 9999" />
+              <input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="+593 99 999 9999" pattern="^\+?[0-9][\d\s\-()+.]{5,14}$" minLength={7} maxLength={16} title="Ingresa un número válido. Ej: 0991234567 o +593991234567" />
             </div>
             <div className="profile-field">
               <label htmlFor="password">Nueva contraseña</label>

@@ -239,7 +239,7 @@ export default function RegisterHostPage() {
               
               <div className="form-group">
                 <label>Teléfono de Soporte Comercial</label>
-                <input required name="phone" value={formData.phone} onChange={handleChange} placeholder="+593 999 999 999" />
+                <input required name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+593 999 999 999" pattern="^\+?[0-9][\d\s\-()+.]{5,14}$" minLength={7} maxLength={16} title="Ingresa un número válido. Ej: 0991234567 o +593991234567" />
               </div>
 
               <div className="form-group">

@@ -1731,7 +1731,7 @@ function AdminDashboard() {
               </div>
               <div className="form-group">
                 <label>Teléfono</label>
-                <input type="text" value={attendeeEditForm.phone || ''} onChange={e => setAttendeeEditForm((p: any) => ({ ...p, phone: e.target.value }))} />
+                <input type="tel" value={attendeeEditForm.phone || ''} onChange={e => setAttendeeEditForm((p: any) => ({ ...p, phone: e.target.value }))} placeholder="Ej: 0991234567" pattern="^\+?[0-9][\d\s\-()+.]{5,14}$" minLength={7} maxLength={16} title="Ingresa un número válido. Ej: 0991234567 o +593991234567" />
               </div>
               {attendeeEditError && (
                 <div style={{ padding: '0.65rem 1rem', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '0.85rem', marginBottom: '1rem' }}>
@@ -1842,7 +1842,7 @@ function AdminDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
                   <label>Teléfono</label>
-                  <input value={editFormData.phone || ''} onChange={e => setEditFormData({...editFormData, phone: e.target.value})} required />
+                  <input type="tel" value={editFormData.phone || ''} onChange={e => setEditFormData({...editFormData, phone: e.target.value})} required placeholder="Ej: 0991234567" pattern="^\+?[0-9][\d\s\-()+.]{5,14}$" minLength={7} maxLength={16} title="Ingresa un número válido. Ej: 0991234567 o +593991234567" />
                 </div>
                 <div className="form-group">
                   <label>Cédula/RUC</label>
@@ -1958,7 +1958,7 @@ function AdminDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group">
                   <label>Teléfono</label>
-                  <input value={createFormData.phone || ''} onChange={e => setCreateFormData({...createFormData, phone: e.target.value})} required />
+                  <input type="tel" value={createFormData.phone || ''} onChange={e => setCreateFormData({...createFormData, phone: e.target.value})} required placeholder="Ej: 0991234567" pattern="^\+?[0-9][\d\s\-()+.]{5,14}$" minLength={7} maxLength={16} title="Ingresa un número válido. Ej: 0991234567 o +593991234567" />
                 </div>
                 <div className="form-group">
                   <label>Cédula/RUC</label>
@@ -2094,7 +2094,7 @@ function AdminDashboard() {
               </div>
               <div className="form-group">
                 <label>Teléfono</label>
-                <input value={userFormData.phone || ''} onChange={e => setUserFormData({...userFormData, phone: e.target.value})} placeholder="0999999999" />
+                <input type="tel" value={userFormData.phone || ''} onChange={e => setUserFormData({...userFormData, phone: e.target.value})} placeholder="Ej: 0991234567" pattern="^\+?[0-9][\d\s\-()+.]{5,14}$" minLength={7} maxLength={16} title="Ingresa un número válido. Ej: 0991234567 o +593991234567" />
               </div>
               <div className="form-group">
                 <label>Contraseña {editingUserData ? '(Dejar en blanco para no cambiar)' : ''}</label>
