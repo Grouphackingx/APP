@@ -238,8 +238,33 @@ export default function RegisterHostPage() {
               </div>
               
               <div className="form-group">
-                <label>Teléfono de Soporte Comercial</label>
-                <input required name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+593 999 999 999" pattern="^\+?[0-9][\d\s\-()+.]{5,14}$" minLength={7} maxLength={16} title="Ingresa un número válido. Ej: 0991234567 o +593991234567" />
+                <label>Teléfono</label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <span style={{
+                    padding: '0.65rem 0.75rem',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.9rem',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    🇪🇨 +593
+                  </span>
+                  <input
+                    required
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="Ej: 0991234567"
+                    pattern="^\+?[0-9][\d\s\-()+.]{5,14}$"
+                    minLength={7}
+                    maxLength={16}
+                    title="Ingresa un número válido. Ej: 0991234567 o +593991234567"
+                    style={{ flex: 1 }}
+                  />
+                </div>
               </div>
 
               <div className="form-group">
