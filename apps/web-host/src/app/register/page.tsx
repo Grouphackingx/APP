@@ -203,7 +203,7 @@ export default function RegisterHostPage() {
                 className="btn btn-primary btn-lg btn-full"
                 style={{ marginTop: '1rem' }}
               >
-                Continuar a Detalles de Empresa →
+                Continuar a Detalles →
               </button>
             </div>
           )}
