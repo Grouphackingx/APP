@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 3 de Junio de 2026 (Sesión 17)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón)
+**Última Actualización:** 3 de Junio de 2026 (Sesión 18)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -670,6 +670,39 @@ Las categorías son entidades gestionables en la BD (`EventCategory`). El campo 
 ---
 
 ## 14. Registro de Cambios
+
+### Sesión del 3 de Junio de 2026 (Sesión 18) — Validación de Formularios + UX Registro Host
+
+#### Contexto / objetivo
+Completar la validación de campos en todos los formularios del proyecto (teléfono sin validación en backend ni frontend) y mejorar la UX del formulario de registro de organizadores en web-host.
+
+#### Cambios realizados
+
+**`libs/shared/src/lib/dto/auth.dto.ts`**:
+- Regex compartida `PHONE_REGEX = /^\+?[0-9][\d\s\-()+.]{5,14}$/`
+- Decorador `@Matches(PHONE_REGEX)` añadido en los 4 DTOs con campo `phone`: `RegisterDto`, `RegisterHostDto`, `UpdateBasicInfoDto`, `UpdateProfileDto`
+- El API ahora rechaza con `400 Bad Request` y mensaje claro cualquier teléfono mal formado
+
+**Frontends — inputs de teléfono**: `type="tel"` + `pattern` + `minLength={7}` + `maxLength={16}` + `title` en:
+- `apps/web-client/src/app/register/page.tsx`
+- `apps/web-client/src/app/my-profile/page.tsx`
+- `apps/web-host/src/app/register/page.tsx`
+- `apps/web-admin/app/dashboard/page.tsx` — 4 modales: editar asistente, editar org, crear org, crear/editar usuario admin
+
+**`apps/web-admin/app/login/page.tsx`**: `minLength={6}` añadido al input de contraseña (único login sin él)
+
+**`apps/web-host/src/app/register/page.tsx`** — mejoras UX:
+- Campo teléfono: label "Teléfono de Soporte Comercial" → "Teléfono"; layout con prefijo `🇪🇨 +593` separado (consistente con web-client register)
+- Botón paso 1: "Continuar a Detalles de Empresa →" → "Continuar a Detalles →"
+- Botón paso 3: "Finalizar Registro 🚀" → "Finalizar 🚀"
+
+#### Commits
+- `7e1c576` — fix(validation): phone format + password minLength en todo el proyecto
+- `c3ad336` — fix(web-host): simplificar etiqueta boton registro paso 1
+- `2423aae` — fix(web-host): etiqueta telefono + prefijo +593 en registro organizador
+- `1550c07` — fix(web-host): simplificar etiqueta boton finalizar registro
+
+---
 
 ### Sesión del 3 de Junio de 2026 (Sesión 17) — UX Responsive Portal Cliente + Admin Login
 
