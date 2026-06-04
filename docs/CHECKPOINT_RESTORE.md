@@ -1,7 +1,7 @@
 # PUNTO DE RESTAURACIÓN: AfroEventos (Sistema Completo)
 
-**Fecha de Última Actualización:** 3 de Junio de 2026 (Sesión 15)
-**Estado del Proyecto:** COMPLETO Y EN PRODUCCIÓN — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **UI Polish**: precios ocultos en EventCard, hover shadows navbar eliminados, logos sidebars y footer clicables + **TODOS LOS SERVICIOS EN PRODUCCIÓN**: API + 3 frontends (Coolify) + DB schema aplicado + admin "Blade" creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP (puerto 587) + 12 plantillas con logo oficial AfroEventos + best practices Gmail/Outlook + **Sesión 14**: Sistema de Categorías de Eventos full-stack (EventCategory model + CategoriesModule + Admin UI + formularios host dinámicos + pills con filtro inteligente) + Buscador corregido (SearchBar con useTransition + loading.tsx + fetches paralelos) + múltiples fixes de filtrado y UX + **Sesión 15**: Modo Prueba de Organizadores (campo `isTestMode` en OrganizerProfile: organizador sandbox excluido de analíticas, con borrado forzado de eventos `forceDeleteEvent` y reset de ventas `resetEventSales`, ambos solo-admin y solo en orgs de prueba) + Kill-switch de pagos en tiempo real (`createOrder` rechaza compras de pago si `paidEventsEnabled` está deshabilitado para el organizador) + UX de errores de compra (mensajes amigables en español sin UUIDs, notificación reubicada junto al botón Comprar) + panel admin con botones 🧪 (toggle prueba), ♻️ (reset ventas) y 🧪🗑️ (borrado forzado)
+**Fecha de Última Actualización:** 3 de Junio de 2026 (Sesión 17)
+**Estado del Proyecto:** COMPLETO Y EN PRODUCCIÓN — Fases 1-4 + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios full-stack + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid paginación real) + OrganizerCTA + Navbar dropdown + Galería rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack, sesión inmediata) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por org) + Límite anual por aniversario en planes + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP, límites y formatos configurables desde .env) + **UI Polish**: precios ocultos en EventCard, hover shadows navbar eliminados, logos sidebars y footer clicables + **TODOS LOS SERVICIOS EN PRODUCCIÓN**: API + 3 frontends (Coolify) + DB schema aplicado + admin "Blade" creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP (puerto 587) + 12 plantillas con logo oficial AfroEventos + best practices Gmail/Outlook + **Sesión 14**: Sistema de Categorías de Eventos full-stack (EventCategory model + CategoriesModule + Admin UI + formularios host dinámicos + pills con filtro inteligente) + Buscador corregido (SearchBar con useTransition + loading.tsx + fetches paralelos) + múltiples fixes de filtrado y UX + **Sesión 15**: Modo Prueba de Organizadores + Kill-switch de pagos en tiempo real + UX errores de compra + **Sesión 16**: `.env` sacado de git + `findAll` con `_count` aggregate + limpieza de imágenes huérfanas generalizada + 8 `as any` eliminados con enums Prisma + **Sesión 17**: UX Responsive completo (imagen 1:1 en móvil, hero carrusel oculto móvil + mejoras tablet, márgenes sección destacados, `object-fit:contain` en card-h, logo admin login clicable, botón "Ya tengo cuenta" en OrganizerCTA)
 
 ---
 
@@ -504,8 +504,8 @@ Cuando `sellOnSite: true` en una zona:
 ### Prioridad Media
 
 - [x] ~~Sistema de categorías de eventos~~ ✅ (2 Jun 2026)
-- [ ] Optimizar queries de findAll (no traer todos los seats si no es necesario)
-- [ ] Galería de imágenes en edición: evitar acumulación de imágenes al reeditar
+- [x] ~~Optimizar queries de findAll (no traer todos los seats)~~ ✅ (3 Jun 2026) → `_count` aggregate en zonas del listado; `GET /events/:slug` sin cambios (sigue cargando seats para el mapa de asientos)
+- [x] ~~Galería de imágenes en edición: evitar acumulación de imágenes al reeditar~~ ✅ (3 Jun 2026) → snapshot de URLs antes de la escritura + `deleteOrphanedImageFiles()` solo si la transacción Prisma fue exitosa
 - [ ] Paginación en endpoints restantes: `GET /orders` y `GET /orders/attendees/me`
 
 ### Prioridad Baja
@@ -595,11 +595,28 @@ Cuando `sellOnSite: true` en una zona:
 
 ## 11. Bugs Conocidos / Deuda Técnica
 
-- **Lint warnings `any`**: Múltiples archivos usan `any` type. Funcional pero debería tiparse mejor.
-- **Galería de imágenes en edición**: Las imágenes de galería se acumulan en vez de reemplazarse.
 - **Ticket sin relación a Seat en BD**: Requiere decodificar todos los JWTs para encontrar compradores de un evento (costoso con muchos tickets). Mejora futura: agregar `eventId` al modelo `Order`.
 - **Límite de 3 banners no validado en backend**: El límite existe solo en la UI Admin. Un POST directo a `/api/banners` podría crear más de 3. Mejora futura: agregar validación en `BannersService.create()`.
 - **BannerSlider sin transición entre slides**: El cambio de imagen es abrupto (no hay fade ni slide). Mejora futura: añadir `opacity` o `translateX` entre slides.
 - **FeaturedCarousel — límite de 3 tarjetas visibles fijo**: En pantallas muy anchas podría mostrarse espacio vacío. Mejora futura: hacer `VISIBLE` responsivo.
-- **findAll incluye todos los seats**: `GET /events` incluye todos los `seats` de todas las zonas. Con muchos eventos esto es pesado. Mejora futura: no incluir seats en listado general, solo en detalle de evento.
+- **Archivos subidos pero no guardados (edit)**: Si el usuario sube una imagen durante la edición de un evento pero no guarda el formulario, el archivo queda huérfano en disco. Requiere job periódico de limpieza.
 - **generalTotal estimado (no exacto) cuando hay múltiples páginas**: Si hay eventos destacados en páginas 2+, el "Mostrar más" puede aparecer un clic de más antes de terminar. Impacto mínimo — solo un fetch extra vacío.
+
+---
+
+### Completado en Sesión 16 (3 Jun 2026) — Deuda Técnica
+
+- **`.env` sacado de git tracking** — `git rm --cached .env .env.local`; `.env.example` con las 20 variables y valores placeholder; advertencia: JWT_SECRET, MAIL_PASS y credenciales de DB ya estaban en historial → deben rotarse externamente ✅
+- **`findAll` optimizado con `_count` aggregate** — `events.service.ts`: `GET /events` ya no carga filas de asientos; `zones.soldCount` calculado con `_count: { select: { seats: { where: { isSold: true } } } }`; `EventDetailClient` y `EventCard` usan `soldCount` en el listado con fallback a `seats[]` en el detalle ✅
+- **Limpieza de imágenes huérfanas generalizada** — `events.service.ts`: constante `IMAGE_FIELDS` (5 campos + gallery), `collectImageUrls()`, `deleteOrphanedImageFiles()`; `update()` hace snapshot antes de escribir y limpia archivos sobrantes solo tras éxito; `remove()` también borra todos los archivos del evento eliminado ✅
+- **`as any` eliminados (8 casts)** — reemplazados con `EventStatus`, `HostStatus`, `TicketStatus` de `@prisma/client`; fix colateral: `HostStatus` en `admin.controller.ts` ahora incluye `BLOCKED` (antes faltaba) ✅
+
+### Completado en Sesión 17 (3 Jun 2026) — UX Responsive Portal Cliente + Admin
+
+- **Imagen 1:1 en detalle de evento (móvil portrait)** — `EventDetailClient.tsx`: dos `<img>` con clases `.event-detail-hero-banner` / `.event-detail-hero-square`; CSS `@media (max-width: 640px) and (orientation: portrait)` muestra la imagen cuadrada con `aspect-ratio: 1/1` ✅
+- **Título de evento responsive** — `global.css`: `font-size: clamp(1.75rem, 5vw + 1rem, 3rem)` + `line-height: 1.1` en `.event-detail h1`; elimina el gap excesivo entre líneas heredado del `line-height: 1.6` del body ✅
+- **Hero carousel oculto en móvil + mejoras tablet** — `global.css`: `.hero-split-right { display: none }` en `≤640px`; en `≤960px`: `transform: none` en `.hero-split-left` (elimina scale 0.9), `max-width: 600px` en subtítulo, carousel height `460px`, offsets de tarjetas laterales `64%` (mejor peek en ancho completo) ✅
+- **Márgenes en sección Destacados** — `global.css`: `padding: 0 1.5rem` en `≤960px` y `padding: 2.5rem 1rem 0` en `≤640px` para `.featured-section`; `.featured-two-grid` apila en columna única en móvil ✅
+- **`featured-card-h` sin recorte de imagen** — `object-fit: contain` en `.featured-card-h-img img`; el banner panorámico se muestra completo con fondo `#121314` en las áreas vacías ✅
+- **Logo admin login clicable** — `apps/web-admin/app/login/page.tsx`: `AfroEventosLogo` envuelto en `<a href={NEXT_PUBLIC_SITE_URL}>` con `title="Ir al portal de clientes"` ✅
+- **Botón "Ya tengo cuenta" en OrganizerCTA** — `OrganizerCTA.tsx`: segundo botón ghost `→ HOST_URL/login` con `target="_blank"`; `global.css`: `.octa-cta-group` flex-wrap + override de padding para ambos botones ✅
