@@ -184,11 +184,14 @@ export class OrdersService {
                     iat: Math.floor(Date.now() / 1000),
                 };
                 const qrCodeToken = this.jwtService.sign(qrPayload, { expiresIn: '365d' });
-                
+
                 return {
                     id: ticketId,
                     qrCodeToken,
                     status: 'VALID',
+                    eventId,
+                    zoneName: seat.zone.name,
+                    seatNumber: seat.number ?? null,
                 };
             });
 
@@ -226,6 +229,9 @@ export class OrdersService {
                     orderId: newOrder.id,
                     qrCodeToken: t.qrCodeToken,
                     status: TicketStatus.VALID,
+                    eventId: t.eventId,
+                    zoneName: t.zoneName,
+                    seatNumber: t.seatNumber,
                 })),
             });
 
@@ -364,7 +370,12 @@ export class OrdersService {
         const myEventIds = new Set(myEvents.map((e) => e.id));
         const eventTitles = Object.fromEntries(myEvents.map((e) => [e.id, e.title]));
 
-        const allTickets = await this.prisma.ticket.findMany({
+        // Filtra en BD por la columna `eventId` en vez de escanear toda la tabla
+        // de tickets. La rama `eventId: null` cubre tickets antiguos previos al
+        // backfill: para esos se decodifica el JWT y se descartan los ajenos.
+        // Tras el backfill, la rama `null` no devuelve filas (todo por índice).
+        const tickets = await this.prisma.ticket.findMany({
+            where: { OR: [{ eventId: { in: Array.from(myEventIds) } }, { eventId: null }] },
             include: {
                 order: {
                     include: {
@@ -393,38 +404,49 @@ export class OrdersService {
 
         const grouped = new Map<string, AttendeeEntry>();
 
-        for (const ticket of allTickets) {
-            try {
-                const decoded = this.jwtService.verify(ticket.qrCodeToken) as {
-                    eventId: string; zoneName: string; seatNumber: string | number | null;
-                };
-                if (!myEventIds.has(decoded.eventId)) continue;
+        for (const ticket of tickets) {
+            let eventId = ticket.eventId;
+            let zoneName = ticket.zoneName;
+            let seatNumber: string | number | null = ticket.seatNumber;
 
-                const key = `${ticket.order.userId}-${decoded.eventId}`;
-                if (!grouped.has(key)) {
-                    grouped.set(key, {
-                        user: ticket.order.user,
-                        eventId: decoded.eventId,
-                        eventTitle: eventTitles[decoded.eventId] || 'Evento',
-                        ticketsBought: 0,
-                        ticketsUsed: 0,
-                        tickets: [],
-                    });
+            // Fallback: tickets antiguos sin columnas pobladas → decodificar JWT
+            if (!eventId) {
+                try {
+                    const decoded = this.jwtService.verify(ticket.qrCodeToken) as {
+                        eventId: string; zoneName: string; seatNumber: string | number | null;
+                    };
+                    eventId = decoded.eventId;
+                    zoneName = zoneName ?? decoded.zoneName;
+                    seatNumber = seatNumber ?? decoded.seatNumber ?? null;
+                } catch {
+                    continue; // token inválido, ignorar
                 }
-                const entry = grouped.get(key);
-                if (!entry) continue;
-                entry.ticketsBought++;
-                if (ticket.status === 'USED') entry.ticketsUsed++;
-                entry.tickets.push({
-                    ticketId: ticket.id,
-                    status: ticket.status,
-                    scannedAt: ticket.scannedAt,
-                    zoneName: decoded.zoneName || 'General',
-                    seatNumber: decoded.seatNumber ?? null,
-                });
-            } catch {
-                // token inválido, ignorar
             }
+
+            if (!eventId || !myEventIds.has(eventId)) continue;
+
+            const key = `${ticket.order.userId}-${eventId}`;
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    user: ticket.order.user,
+                    eventId,
+                    eventTitle: eventTitles[eventId] || 'Evento',
+                    ticketsBought: 0,
+                    ticketsUsed: 0,
+                    tickets: [],
+                });
+            }
+            const entry = grouped.get(key);
+            if (!entry) continue;
+            entry.ticketsBought++;
+            if (ticket.status === 'USED') entry.ticketsUsed++;
+            entry.tickets.push({
+                ticketId: ticket.id,
+                status: ticket.status,
+                scannedAt: ticket.scannedAt,
+                zoneName: zoneName || 'General',
+                seatNumber: seatNumber ?? null,
+            });
         }
 
         const sorted = Array.from(grouped.values()).sort((a, b) =>

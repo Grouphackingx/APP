@@ -286,16 +286,23 @@ export class EventsService implements OnModuleInit {
         newLocation: string,
         newCity: string,
     ) {
-        // eventId is stored only in the ticket JWT â€” decode all tickets to find buyers
-        const allTickets = await this.prisma.ticket.findMany({
+        // eventId ahora vive en la columna Ticket.eventId (indexada). Filtramos por
+        // ella en vez de escanear toda la tabla. La rama `eventId: null` cubre
+        // tickets antiguos previos al backfill: para esos se decodifica el JWT.
+        const candidateTickets = await this.prisma.ticket.findMany({
+            where: { OR: [{ eventId }, { eventId: null }] },
             include: { order: { include: { user: { select: { id: true, email: true, name: true } } } } },
         });
 
         const notified = new Set<string>();
-        for (const ticket of allTickets) {
+        for (const ticket of candidateTickets) {
             try {
-                const decoded = this.jwt.verify(ticket.qrCodeToken) as { eventId: string };
-                if (decoded.eventId !== eventId) continue;
+                let ticketEventId = ticket.eventId;
+                if (!ticketEventId) {
+                    const decoded = this.jwt.verify(ticket.qrCodeToken) as { eventId: string };
+                    ticketEventId = decoded.eventId;
+                }
+                if (ticketEventId !== eventId) continue;
                 const user = ticket.order?.user;
                 if (!user || notified.has(user.id)) continue;
                 notified.add(user.id);

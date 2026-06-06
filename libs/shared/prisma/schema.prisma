@@ -141,6 +141,16 @@ model Ticket {
   qrCodeToken  String       @unique
   status       TicketStatus @default(VALID)
   scannedAt    DateTime?
+
+  // Denormalizado desde el QR JWT para poder filtrar/paginar por evento en BD
+  // sin decodificar todos los tokens. Nullable por compatibilidad con tickets
+  // antiguos; las lecturas hacen fallback a decodificar el JWT cuando es null.
+  // Backfill: scripts/backfill-ticket-event.js
+  eventId      String?
+  zoneName     String?
+  seatNumber   String?
+
+  @@index([eventId])
 }
 
 enum OrganizerMemberRole {
