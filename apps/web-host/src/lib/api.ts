@@ -81,7 +81,11 @@ export async function createEvent(data: any, token: string) {
   });
 }
 
-export async function uploadImage(file: File, token: string, type?: 'logo' | 'event' | 'user-avatar', eventId?: string, organizerId?: string): Promise<string> {
+export type ImageKind =
+  | 'banner' | 'logo' | 'avatar'
+  | 'event-banner' | 'event-square' | 'event-portrait' | 'event-seatmap' | 'event-gallery';
+
+export async function uploadImage(file: File, token: string, type?: 'logo' | 'event' | 'user-avatar', eventId?: string, organizerId?: string, kind?: ImageKind): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -90,6 +94,7 @@ export async function uploadImage(file: File, token: string, type?: 'logo' | 'ev
   if (type) params.append('type', type);
   if (eventId) params.append('eventId', eventId);
   if (organizerId) params.append('organizerId', organizerId);
+  if (kind) params.append('kind', kind);
   
   if (params.toString()) {
     url += `?${params.toString()}`;

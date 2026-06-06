@@ -105,6 +105,27 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
     text: string;
     type: 'error' | 'success';
   } | null>(null);
+  const [imageWarning, setImageWarning] = useState<string>('');
+
+  // Aviso (no bloqueante) si la imagen es menor a lo recomendado: el servidor la
+  // ampliará para cumplir la proporción y podría verse borrosa.
+  const checkMinSize = (file: File, minW: number, minH: number, label: string) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      // minH <= 0 → solo se valida el ancho (caso banner: altura libre, no se recorta).
+      const tooSmall = img.naturalWidth < minW || (minH > 0 && img.naturalHeight < minH);
+      if (tooSmall) {
+        const rec = minH > 0 ? `${minW}×${minH}px` : `${minW}px de ancho`;
+        setImageWarning(`La imagen "${label}" (${img.naturalWidth}×${img.naturalHeight}px) es menor que lo recomendado (${rec}) y podría verse borrosa.`);
+      } else {
+        setImageWarning('');
+      }
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
+  };
 
   const [zones, setZones] = useState<ZoneInput[]>(
     initialData?.zones?.map((z) => {
@@ -241,7 +262,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       let bannerImageUrl = initialData?.bannerImageUrl || '';
       if (bannerImageFile) {
         try {
-          bannerImageUrl = await uploadImage(bannerImageFile, token);
+          bannerImageUrl = await uploadImage(bannerImageFile, token, undefined, undefined, undefined, 'event-banner');
         } catch (uploadError: unknown) {
           throw new Error(`Error subiendo banner: ${(uploadError as Error).message}`);
         }
@@ -250,7 +271,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       let squareImageUrl = initialData?.squareImageUrl || '';
       if (squareImageFile) {
         try {
-          squareImageUrl = await uploadImage(squareImageFile, token);
+          squareImageUrl = await uploadImage(squareImageFile, token, undefined, undefined, undefined, 'event-square');
         } catch (uploadError: unknown) {
           throw new Error(`Error subiendo imagen cuadrada: ${(uploadError as Error).message}`);
         }
@@ -259,7 +280,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       let portraitImageUrl = initialData?.portraitImageUrl || '';
       if (portraitImageFile) {
         try {
-          portraitImageUrl = await uploadImage(portraitImageFile, token);
+          portraitImageUrl = await uploadImage(portraitImageFile, token, undefined, undefined, undefined, 'event-portrait');
         } catch (uploadError: unknown) {
           throw new Error(`Error subiendo imagen retrato: ${(uploadError as Error).message}`);
         }
@@ -269,7 +290,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
 
       if (seatingMapImageFile) {
         try {
-          seatingMapImageUrl = await uploadImage(seatingMapImageFile, token);
+          seatingMapImageUrl = await uploadImage(seatingMapImageFile, token, undefined, undefined, undefined, 'event-seatmap');
         } catch (uploadError: unknown) {
           throw new Error(`Error subiendo croquis: ${(uploadError as Error).message}`);
         }
@@ -279,7 +300,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
       if (galleryFiles.length > 0) {
         try {
           for (const file of galleryFiles) {
-            const url = await uploadImage(file, token);
+            const url = await uploadImage(file, token, undefined, undefined, undefined, 'event-gallery');
             galleryUrls.push(url);
           }
         } catch (uploadError: unknown) {
@@ -365,7 +386,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
 
 
         <div className="form-group">
-          <label>Banner Panorámico (Recomendado: 2000x576 — Relación 126:36)</label>
+          <label>Banner Panorámico (horizontal · recomendado 1500×500px — relación 3:1)</label>
           <div className="image-upload-container">
             <input
               type="file"
@@ -377,17 +398,16 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                   if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setMessage({ text: `La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, type: 'error' }); e.target.value = ''; return; }
                   setBannerImageFile(file);
                   setBannerImagePreview(URL.createObjectURL(file));
+                  checkMinSize(file, 1500, 0, 'Banner');
                 }
               }}
               className="file-input"
               hidden
             />
-            <label htmlFor="bannerUpload" className="file-label file-label--banner">
+            <label htmlFor="bannerUpload" className={`file-label file-label--banner${bannerImagePreview ? ' file-label--natural' : ''}`}>
               {bannerImagePreview ? (
-                <div
-                  className="image-preview"
-                  style={{ backgroundImage: `url(${bannerImagePreview})` }}
-                >
+                <div className="image-preview image-preview--natural">
+                  <img src={bannerImagePreview} alt="Banner" />
                   <div className="image-overlay">Cambiar Banner</div>
                 </div>
               ) : (
@@ -402,7 +422,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
 
         <div className="image-upload-pair">
           <div className="form-group">
-            <label>Imagen Cuadrada (Relación 1:1)</label>
+            <label>Imagen Cuadrada (recomendado 1080×1080px — relación 1:1)</label>
             <div className="image-upload-container">
               <input
                 type="file"
@@ -414,6 +434,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                     if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setMessage({ text: `La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, type: 'error' }); e.target.value = ''; return; }
                     setSquareImageFile(file);
                     setSquareImagePreview(URL.createObjectURL(file));
+                    checkMinSize(file, 1080, 1080, 'Cuadrada');
                   }
                 }}
                 className="file-input"
@@ -438,7 +459,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
           </div>
 
           <div className="form-group">
-            <label>Imagen Retrato (Relación 3:4)</label>
+            <label>Imagen Retrato (recomendado 1200×1600px — relación 3:4)</label>
             <div className="image-upload-container">
               <input
                 type="file"
@@ -450,6 +471,7 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                     if (file.size > parseFloat(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5') * 1024 * 1024) { setMessage({ text: `La imagen no debe superar ${process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'} MB.`, type: 'error' }); e.target.value = ''; return; }
                     setPortraitImageFile(file);
                     setPortraitImagePreview(URL.createObjectURL(file));
+                    checkMinSize(file, 1200, 1600, 'Retrato');
                   }
                 }}
                 className="file-input"
@@ -466,13 +488,19 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
                 ) : (
                   <div className="upload-placeholder">
                     <span>🖼️ Cargar Imagen 3:4</span>
-                    <small>(Recomendado: 1200×1600px — Max {process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'}MB)</small>
+                    <small>(Max {process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '2.5'}MB)</small>
                   </div>
                 )}
               </label>
             </div>
           </div>
         </div>
+
+        {imageWarning && (
+          <p style={{ color: '#f59e0b', fontSize: '0.85rem', margin: '0 0 0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            ⚠️ {imageWarning}
+          </p>
+        )}
 
         <div className="form-group">
           <label htmlFor="description">Descripción</label>

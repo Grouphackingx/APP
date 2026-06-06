@@ -1000,18 +1000,19 @@ textarea {
 .event-detail-hero {
   background: var(--color-secondary-light);
   width: 100%;
-  aspect-ratio: 289 / 111;
+  /* Sin proporción fija: el contenedor se adapta a la altura natural del banner
+     para mostrarlo completo (el flyer importa de arriba a abajo), sin recorte
+     ni bandas. */
   border-radius: 15px;
   overflow: hidden;
   margin-bottom: 3rem;
   position: relative;
 }
 
-.event-detail-hero img {
+.event-detail-hero-banner {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
+  height: auto;
 }
 
 .event-detail-hero-square {
@@ -1019,6 +1020,7 @@ textarea {
 }
 
 @media (max-width: 640px) and (orientation: portrait) {
+  /* En móvil vertical se usa la imagen cuadrada (1:1, cover). */
   .event-detail-hero {
     aspect-ratio: 1 / 1;
   }
@@ -1027,7 +1029,10 @@ textarea {
   }
   .event-detail-hero-square {
     display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
+    object-position: center;
   }
 }
 
@@ -1691,262 +1696,18 @@ textarea {
   }
 }
 
-/* ===== My Tickets Page ===== */
-.my-tickets-page {
-  padding: 8rem 2rem 4rem;
-  max-width: 1000px;
-  margin: 0 auto;
-  min-height: 80vh;
-}
-
-.my-tickets-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-}
-
-.my-tickets-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.ticket-stat-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  text-align: center;
-  transition: var(--transition-base);
-}
-
-.ticket-stat-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-color-hover);
-}
-
-.ticket-stat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.ticket-stat-value {
-  font-family: var(--font-heading);
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 0.25rem;
-}
+/* ===== Estilos de "Mis Tickets" =====
+   Las clases .my-tickets-*, .order-*, .ticket-*, .ticket-stat-* y .qr-* viven
+   ahora SOLO en apps/web-client/src/app/my-tickets/my-tickets.css (única fuente,
+   importada por esa página). Antes estaban duplicadas aquí con valores distintos,
+   lo que provocaba render no determinista según el orden de carga del bundle
+   (p. ej. la grilla de tickets alternaba entre 2 y 3 columnas). */
 
 .zone-item-sidebar button.seat {
   width: 32px;
   height: 32px;
   font-size: 0.75rem;
 }
-
-.ticket-stat-label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-/* Orders List */
-.orders-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.order-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: var(--transition-base);
-}
-
-.order-card:hover {
-  border-color: var(--color-primary);
-}
-
-.order-card-header {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.order-card-header:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.order-event-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.order-event-icon {
-  width: 48px;
-  height: 48px;
-  background: var(--color-secondary-light);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-}
-
-.order-event-info h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.order-event-meta {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.order-summary-right {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.order-amount {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.order-ticket-count {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  background: var(--bg-input);
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--radius-full);
-}
-
-.order-card-details {
-  padding: 1.5rem;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-input);
-}
-
-.order-meta-row {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  padding-bottom: 1rem;
-  border-bottom: 1px dashed var(--border-color);
-}
-
-.order-status {
-  margin-left: auto;
-  font-weight: 600;
-}
-
-.status-completed { color: var(--color-success); }
-
-.tickets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.ticket-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  position: relative;
-}
-
-.ticket-top {
-  padding: 1.25rem;
-}
-
-.ticket-badge-row {
-  margin-bottom: 1rem;
-}
-
-.ticket-status-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-full);
-}
-
-.badge-valid { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
-.badge-used { background: var(--bg-input); color: var(--text-muted); }
-
-.ticket-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.ticket-info-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.ticket-info-label {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-.ticket-info-value {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.ticket-qr-section {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-  background: white;
-  margin: 0 1.25rem 1.25rem;
-  border-radius: var(--radius-md);
-}
-
-.qr-code-inner {
-  transition: transform 0.2s;
-}
-.qr-code-inner:hover {
-  transform: scale(1.02);
-}
-.qr-used .qr-code-inner { opacity: 0.6; }
-.qr-canvas { display: block; border-radius: 4px; }
-.qr-used .qr-canvas { filter: grayscale(100%) brightness(0.7); }
-.qr-code-label { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
-.qr-label-text { font-size: 0.78rem; color: var(--text-muted); text-align: center; letter-spacing: 0.3px; }
-.qr-valid .qr-label-text { color: var(--color-success); animation: qrPulse 2.5s ease-in-out infinite; }
-.qr-ticket-id { font-family: var(--font-heading); font-weight: 600; font-size: 0.72rem; color: var(--text-accent); letter-spacing: 0.5px; }
-.qr-code-error { width: 100%; padding: 2rem 1.25rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.2); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
-.qr-error-icon { font-size: 1.5rem; }
-@keyframes qrPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-.ticket-tear-line {
-  height: 1px;
-  margin: 0 1rem;
-  background: repeating-linear-gradient(90deg, var(--border-color) 0, var(--border-color) 6px, transparent 6px, transparent 12px);
-  position: relative;
-}
-.ticket-tear-line::before, .ticket-tear-line::after { content: ''; position: absolute; top: -6px; width: 12px; height: 12px; background: var(--bg-card); border-radius: 50%; }
-.ticket-tear-line::before { left: -1.5rem; }
-.ticket-tear-line::after { right: -1.5rem; }
-
-.ticket-footer { padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); }
-.ticket-link { color: var(--color-primary-light); font-weight: 600; transition: var(--transition-fast); }
-.ticket-link:hover { color: var(--color-primary); text-decoration: underline; }
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
@@ -2357,7 +2118,7 @@ textarea {
 
 .featured-card-v-img {
   width: 100%;
-  aspect-ratio: 2000 / 576;
+  aspect-ratio: 3 / 1;
   overflow: hidden;
   position: relative;
   background: #121314;
@@ -2383,13 +2144,13 @@ textarea {
 .featured-card-h {
   display: flex;
   flex-direction: row;
+  align-items: center;
   background: var(--bg-card);
   border: 1px solid #2a2800;
   border-radius: var(--radius-lg);
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  min-height: 240px;
   position: relative;
   transition: border-color 0.25s ease;
 }
@@ -2408,26 +2169,29 @@ textarea {
   border-color: rgba(245, 158, 11, 0.45);
 }
 
-/* Imagen panorámica — 60% del ancho */
+/* Imagen panorámica — 60% del ancho. La imagen se muestra a su proporción
+   natural (height:auto) para que el flyer se vea completo, sin recorte ni
+   bandas. El fondo iguala al de la tarjeta por si el texto resultara más alto. */
 .featured-card-h-img {
   flex: 0 0 60%;
+  align-self: stretch;
   position: relative;
   overflow: hidden;
-  background: #121314;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
 }
 
 .featured-card-h-img img {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
+  height: auto;
   display: block;
 }
 
 /* Info — 40% restante */
 .featured-card-h-body {
   flex: 1;
-  padding: 2rem 2.25rem;
+  padding: 1.5rem 2.25rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2480,15 +2244,15 @@ textarea {
   /* 2-event grid: apila en columna única en móvil */
   .featured-two-grid { grid-template-columns: 1fr; }
 
-  /* Panoramic → vertical en mobile */
+  /* Panoramic → vertical en mobile. Imagen full-width a proporción natural. */
   .featured-card-h {
     flex-direction: column;
+    align-items: stretch;
     min-height: unset;
   }
   .featured-card-h-img {
     flex: 0 0 auto;
     width: 100%;
-    aspect-ratio: 16 / 5;
   }
   .featured-card-h-body {
     padding: 1.25rem 1.25rem 1.5rem;

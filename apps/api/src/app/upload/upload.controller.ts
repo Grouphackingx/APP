@@ -18,6 +18,46 @@ const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
 const ALLOWED_TYPES    = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || 'image/jpeg,image/png,image/webp').split(',');
 const IMAGE_QUALITY = parseInt(process.env.UPLOAD_IMAGE_QUALITY || '80', 10);
 
+// ── Perfiles de redimensionado por "kind" ──────────────────────────────────────
+// Las imágenes se normalizan en el servidor para garantizar proporción y un peso
+// acotado, independientemente del tamaño que suba el organizador.
+//   - { width, height }: proporción fija, recorte 'cover' centrado.
+//   - { maxWidth }:      conserva la proporción, solo limita el tamaño (sin recorte).
+type ResizeProfile = { width: number; height: number } | { maxWidth: number };
+
+const RESIZE_PROFILES: Record<string, ResizeProfile> = {
+  // Proporción fija (cover, centrado)
+  'banner':         { width: 1600, height: 300 }, // publicidad 16:3
+  'logo':           { width: 400, height: 400 },  // 1:1 (se muestra circular)
+  'avatar':         { width: 400, height: 400 },  // 1:1 (se muestra circular)
+  'event-square':   { width: 1080, height: 1080 }, // 1:1 (EventCard)
+  'event-portrait': { width: 1200, height: 1600 }, // 3:4 (hero carrusel)
+  // Sin recorte: el banner del evento es un flyer cuyo contenido importa de
+  // arriba a abajo — se conserva su proporción natural y solo se limita el ancho.
+  // El croquis y la galería también deben verse completos.
+  'event-banner':   { maxWidth: 1600 },
+  'event-seatmap':  { maxWidth: 1600 },
+  'event-gallery':  { maxWidth: 1600 },
+};
+
+// Cap por defecto para imágenes sin perfil conocido (evita archivos enormes).
+const DEFAULT_MAX_WIDTH = 1920;
+
+/**
+ * Resuelve el perfil de redimensionado. Usa `kind` si viene y es conocido; si no,
+ * lo infiere del `type` de almacenamiento cuando es inequívoco (banner/logo/avatar).
+ * Devuelve null para aplicar solo el cap por defecto (sin recorte).
+ */
+function resolveResizeProfile(kind?: string, type?: string): ResizeProfile | null {
+  if (kind && RESIZE_PROFILES[kind]) return RESIZE_PROFILES[kind];
+  if (!kind) {
+    if (type === 'banner') return RESIZE_PROFILES['banner'];
+    if (type === 'logo') return RESIZE_PROFILES['logo'];
+    if (type === 'user-avatar' || type === 'member-avatar') return RESIZE_PROFILES['avatar'];
+  }
+  return null;
+}
+
 // ── Cloudinary config ─────────────────────────────────────────────────────────
 if (USE_CLOUDINARY) {
   cloudinary.config({
@@ -39,8 +79,8 @@ class MulterExceptionFilter implements ExceptionFilter {
   }
 }
 
-// ── Sharp: optimize to WebP ───────────────────────────────────────────────────
-async function optimizeImage(inputPath: string): Promise<string> {
+// ── Sharp: optimize to WebP (+ normalize dimensions) ──────────────────────────
+async function optimizeImage(inputPath: string, profile: ResizeProfile | null): Promise<string> {
   const nameWithoutExt = basename(inputPath, extname(inputPath));
   const finalPath = join(dirname(inputPath), `${nameWithoutExt}.webp`);
   // Write to a .tmp file first to avoid reading+writing the same path
@@ -48,7 +88,17 @@ async function optimizeImage(inputPath: string): Promise<string> {
   const tmpPath = `${finalPath}.tmp`;
 
   try {
-    await sharp(inputPath)
+    // .rotate() sin args respeta la orientación EXIF (fotos de móvil).
+    let pipeline = sharp(inputPath).rotate();
+    if (profile && 'width' in profile) {
+      // Proporción fija: recorte cover centrado (puede ampliar imágenes pequeñas).
+      pipeline = pipeline.resize(profile.width, profile.height, { fit: 'cover' });
+    } else {
+      // Sin perfil de recorte: solo limitar el tamaño, nunca ampliar.
+      const maxWidth = profile && 'maxWidth' in profile ? profile.maxWidth : DEFAULT_MAX_WIDTH;
+      pipeline = pipeline.resize({ width: maxWidth, withoutEnlargement: true });
+    }
+    await pipeline
       .webp({ quality: IMAGE_QUALITY })
       .toFile(tmpPath);
     fs.renameSync(tmpPath, finalPath);
@@ -160,6 +210,7 @@ export class UploadController {
     @Query('type') type?: string,
     @Query('eventId') eventId?: string,
     @Query('organizerId') organizerId?: string,
+    @Query('kind') kind?: string,
   ) {
     if (!file) throw new BadRequestException('No se recibió ningún archivo.');
     if (file.size > MAX_UPLOAD_BYTES) {
@@ -167,9 +218,10 @@ export class UploadController {
     }
 
     // ── Optimize with Sharp (always, before storing anywhere) ─────────────────
+    const resizeProfile = resolveResizeProfile(kind, type);
     let optimizedPath: string;
     try {
-      optimizedPath = await optimizeImage(file.path);
+      optimizedPath = await optimizeImage(file.path, resizeProfile);
     } catch {
       try { fs.unlinkSync(file.path); } catch { /* ignore */ }
       throw new BadRequestException('Error al procesar la imagen.');

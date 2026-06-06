@@ -619,7 +619,7 @@ tr:hover td {
 }
 
 /* Aspect ratios por tipo de imagen */
-.file-label--banner  { aspect-ratio: 2000 / 576; }
+.file-label--banner  { aspect-ratio: 3 / 1; }
 .file-label--square  { aspect-ratio: 1 / 1; }
 .file-label--portrait { aspect-ratio: 3 / 4; }
 
@@ -657,6 +657,23 @@ tr:hover td {
   background-size: cover;
   background-position: center;
   position: relative;
+}
+
+/* Preview a proporción natural: el contenedor se adapta a la altura real de la
+   imagen (para el banner, que no se recorta y puede tener cualquier proporción). */
+.file-label--natural { aspect-ratio: auto; }
+
+.image-preview--natural {
+  width: 100%;
+  height: auto;
+  background: none;
+  line-height: 0;
+}
+
+.image-preview--natural img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .image-overlay {
