@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 3 de Junio de 2026 (Sesión 18)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas)
+**Última Actualización:** 6 de Junio de 2026 (Sesión 19)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -246,10 +246,12 @@ model Order {
 
 model Ticket {
   id, orderId → Order, qrCodeToken (unique JWT), status (default VALID), scannedAt?
+  // Denormalizado desde el QR JWT (Sesión 19) — permite filtrar/paginar por evento en BD:
+  eventId? (indexado), zoneName?, seatNumber?
 }
 ```
 
-**Nota crítica**: El `Ticket` no tiene relación directa con `Seat` ni `Event`. La información del asiento y el `eventId` se codifican dentro del QR JWT y se decodifican en runtime para el endpoint `GET /orders` y para notificaciones de cambio de evento.
+**Nota crítica**: El `Ticket` no tiene relación directa con `Seat`. El `seatId` sigue solo en el QR JWT. Desde la Sesión 19, `eventId`, `zoneName` y `seatNumber` están denormalizados como columnas (nullable), así que `getMyEventAttendees` y `notifyBuyersOfChange` filtran por `eventId` en BD en lugar de decodificar todos los JWT. Se mantiene fallback a decodificar el JWT cuando la columna es nula (tickets previos al backfill). Backfill idempotente: `node scripts/backfill-ticket-event.js`. `GET /orders` sigue decodificando el JWT por ticket (acotado por la paginación).
 
 ---
 
@@ -496,6 +498,8 @@ start-all.bat
 
 - [x] ~~Sistema de categorías de eventos~~ ✅ (2 Jun 2026)
 - [x] ~~Optimizar queries de findAll (sin traer todos los seats)~~ ✅ (3 Jun 2026) → `_count` aggregate en listado general
+- [x] ~~Paginación en `GET /orders` y `GET /orders/attendees/me`~~ ✅ (5 Jun 2026) → ambos paginan; `attendees/me` filtra por la nueva columna `Ticket.eventId`
+- [x] ~~Deuda técnica: `eventId` no en BD (decodificar todos los JWT)~~ ✅ (5 Jun 2026) → columnas `eventId`/`zoneName`/`seatNumber` en `Ticket`
 - [ ] CDN para imágenes (Cloudinary preparado, solo falta `STORAGE_PROVIDER=cloudinary` + credenciales)
 - [ ] Reportes financieros básicos para organizadores (ingresos por evento)
 
@@ -513,8 +517,8 @@ start-all.bat
 - **Puertos no estándar**: PostgreSQL en 5435, Redis en 6380.
 - **Prisma 5.22.0**: Versión bloqueada por incompatibilidades de CLI con v7+.
 - **Pagos simulados**: El módulo `PaymentsService` siempre retorna `true`.
-- **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. La info del asiento se codifica en el QR JWT.
-- **eventId no en Ticket DB**: Para notificar compradores de un evento hay que decodificar todos los JWT de tickets — costoso con muchos tickets. Mejora futura: agregar `eventId` al modelo `Order`.
+- **Ticket sin relación a Seat**: El modelo `Ticket` no tiene `seatId`. El `seatId` se codifica solo en el QR JWT (no se usa en lecturas).
+- **eventId en Ticket DB** ✅ (5 Jun 2026): `Ticket` ahora tiene `eventId` (indexada), `zoneName` y `seatNumber`. `notifyBuyersOfChange` y `getMyEventAttendees` filtran por `eventId` en BD en lugar de decodificar todos los JWT. Se mantiene fallback de decodificación para tickets antiguos con columna nula. Backfill idempotente: `node scripts/backfill-ticket-event.js` (correr una vez en local y en el contenedor API de Coolify).
 - **ValidationPipe Global**: `main.ts` tiene `whitelist: true`. PATCH de eventos usa `@Request()` para evitar filtrado de campos de zona.
 - **NX Daemon**: Activo con `useDaemonProcess: true` y `watch: true` en `project.json`. Hot-reload automático.
 - **Emails vacíos**: Si `MAIL_HOST` está vacío en `.env`, los emails fallan silenciosamente (no bloquean el flujo).
@@ -670,6 +674,50 @@ Las categorías son entidades gestionables en la BD (`EventCategory`). El campo 
 ---
 
 ## 14. Registro de Cambios
+
+### Sesión del 5-6 de Junio de 2026 (Sesión 19) — Deuda técnica `eventId` + Sistema de Imágenes (resize/recorte/recomendaciones) + De-dup CSS tickets
+
+#### Contexto / objetivo
+Cerrar la deuda técnica del `eventId` codificado solo en el QR JWT (paginación real de asistentes y notificaciones), y rehacer el manejo de imágenes para que encajen bien en todos lados (proporción, recorte, resolución) con información correcta al organizador.
+
+#### Cambios realizados
+
+**1. Deuda técnica `Ticket.eventId` (backend)**
+- `libs/shared/prisma/schema.prisma`: `Ticket` gana `eventId String?` (con `@@index`), `zoneName String?`, `seatNumber String?` (nullable por compatibilidad). `prisma db push` aplicado en local.
+- `orders.service.ts` `createOrder`: puebla las 3 columnas al crear cada ticket.
+- `orders.service.ts` `getMyEventAttendees`: filtra `WHERE eventId IN (...)` en BD (antes cargaba TODOS los tickets de la plataforma y decodificaba todos los JWT). Lee zona/asiento de columnas. Fallback a decodificar JWT para tickets con columna nula (`OR eventId: null`).
+- `events.service.ts` `notifyBuyersOfChange`: filtra `WHERE OR[{eventId},{eventId:null}]` en vez de escanear toda la tabla. Mismo fallback JWT.
+- `scripts/backfill-ticket-event.js`: backfill idempotente que decodifica el QR (sin verificar firma) y rellena las columnas de tickets antiguos. **Ejecutado en local (95/95 tickets, 0 nulls).**
+- ⚠️ **Pendiente en producción (Coolify)**: en el contenedor `afroeventos-api` → `npx prisma db push` + `node scripts/backfill-ticket-event.js`. Sin backfill, los tickets viejos siguen funcionando por el fallback JWT (sin downtime).
+
+**2. Sistema de imágenes — resize server-side por tipo (`apps/api/src/app/upload/upload.controller.ts`)**
+- Nuevo mapa `RESIZE_PROFILES` + `resolveResizeProfile(kind, type)`. Sharp ahora redimensiona (no solo comprime a WebP) + `.rotate()` (EXIF).
+- Perfiles: `event-square` → **1080×1080** (cover), `event-portrait` → **1200×1600** (cover), `banner`/publicidad → 1600×300 (cover 16:3), `logo`/`avatar` → 400×400 (cover). Sin recorte (solo cap de ancho, preserva proporción): `event-banner` → maxWidth 1600, `event-seatmap` y `event-gallery` → maxWidth 1600. Default sin perfil: cap 1920, sin ampliar.
+- Nuevo query param `kind`; si no viene, se infiere de `type` (banner/logo/avatar). **El banner del evento NO se recorta** (es un flyer; se conserva completo a su proporción natural).
+
+**3. Frontend host (`CreateEventForm.tsx`, `EditEventForm.tsx`, `lib/api.ts`)**
+- `uploadImage()` acepta `kind` (param final). Los 5 uploads de evento pasan su `kind` (`event-banner|square|portrait|seatmap|gallery`).
+- **Aviso de resolución mínima** no bloqueante (`checkMinSize`): lee `naturalWidth/Height` y avisa "podría verse borrosa" si es menor a lo recomendado. Banner valida solo ancho (≥1500), cuadrada 1080×1080, retrato 1200×1600.
+- **Etiquetas con tamaño recomendado**: Banner → "horizontal · recomendado 1500×500px — relación 3:1"; Cuadrada → "recomendado 1080×1080px — relación 1:1"; Retrato → "recomendado 1200×1600px — relación 3:4".
+- **Preview del banner a proporción natural** (`file-label--natural` / `image-preview--natural`): el contenedor de subida se adapta a la imagen (antes recortaba con un `aspect-ratio` fijo 2000/576).
+
+**4. Frontend cliente — banner a proporción natural (`web-client/global.css`)**
+- `.event-detail-hero` (detalle): sin `aspect-ratio` fijo; el banner se muestra completo a su altura natural (`height:auto`).
+- `.featured-card-h` (1 destacado): imagen a proporción natural, sin recorte ni bandas (quitado `min-height` + `object-fit:contain`).
+- `.featured-card-v-img` (2 destacados) y `.file-label--banner` (host): alineados a `aspect-ratio: 3/1` para coincidir con la recomendación (1500×500). El carrusel de 3+ usa imagen cuadrada (1:1), no se afecta.
+
+**5. Incidente de imágenes (resuelto)**
+- Durante una limpieza de prueba se borró `uploads/organizers/temp/` (compartía carpeta con imágenes reales). Recuperadas las versionadas en git; 5 `.webp` no versionados se perdieron → se **vaciaron las referencias muertas** de 2 eventos (usan placeholder). Backup local completo en `D:\AFROEVENTOS\backups\uploads-2026-06-05`.
+- **`uploads/` sacado de git tracking** (`git rm -r --cached uploads/`, commit `6536faf`) para alinear con `.gitignore` (`uploads/` ya estaba ignorado; 116 archivos legacy quedaron trackeados por accidente). Producción usa el volumen `afroeventos-uploads`.
+
+**6. De-duplicación de CSS de tickets (`web-client/global.css`)**
+- Había estilos de "Mis Tickets" (`.tickets-grid`, `.ticket-*`, `.order-*`, `.qr-*`) **duplicados** en `global.css` y `my-tickets.css` con valores distintos → render no determinista según orden de carga del bundle (la grilla alternaba 2↔3 columnas). Se eliminó el bloque duplicado de `global.css`; `my-tickets.css` queda como única fuente.
+
+#### Estado / verificación
+- Typecheck API + web-host (exit 0), build API OK, web-client compila. Backend probado con uploads reales (perfiles correctos). Backfill verificado.
+- Cambios **commiteados y pusheados** a `origin/main` en 4 commits: `6536faf` (uploads fuera de git), `1d59812` (eventId), `d492a2f` (imágenes + de-dup CSS), `38b6296`/docs. Pendiente solo en producción: `prisma db push` (automático en el deploy) + `node scripts/backfill-ticket-event.js` en el contenedor API.
+
+---
 
 ### Sesión del 3 de Junio de 2026 (Sesión 18) — Validación de Formularios + UX Registro Host
 
