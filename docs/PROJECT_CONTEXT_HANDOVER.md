@@ -1,6 +1,6 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 6 de Junio de 2026 (Sesión 19)
+**Última Actualización:** 8 de Junio de 2026 (Sesión 20)
 **Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
@@ -506,7 +506,7 @@ start-all.bat
 ### Prioridad Baja
 
 - [ ] Websockets para mapa de asientos en tiempo real
-- [ ] Rate limiting en API
+- [x] ~~Rate limiting en API~~ ✅ (8 Jun 2026) → `@Throttle()` en endpoints sensibles; mensajes 429 en español en los 3 frontends
 - [ ] CI/CD pipeline con tests
 - [ ] Tests unitarios e integración
 
@@ -674,6 +674,42 @@ Las categorías son entidades gestionables en la BD (`EventCategory`). El campo 
 ---
 
 ## 14. Registro de Cambios
+
+### Sesión del 8 de Junio de 2026 (Sesión 20) — Rate Limiting en API
+
+#### Contexto / objetivo
+Activar protección contra fuerza bruta, spam de emails y abuso de compras/uploads. El paquete `@nestjs/throttler` v6 ya estaba instalado y el `ThrottlerGuard` global registrado en `AppModule` con 3 tiers (`short`/`medium`/`long`). Solo faltaban los decoradores específicos en endpoints sensibles y el manejo de 429 en los frontends.
+
+#### Cambios realizados
+
+**`apps/api/src/app/auth/auth.controller.ts`**:
+- `POST /auth/login` → `@Throttle({ long: { limit: 10, ttl: 900000 } })` — 10 intentos por IP cada 15 min
+- `POST /auth/register` → `@Throttle({ long: { limit: 10, ttl: 3600000 } })` — 10 por IP por hora
+- `POST /auth/register-host` → `@Throttle({ long: { limit: 5, ttl: 3600000 } })` — 5 por IP por hora
+- `POST /auth/forgot-password` → `@Throttle({ long: { limit: 5, ttl: 900000 } })` — 5 por IP cada 15 min
+- `POST /auth/resend-verification` → `@Throttle({ long: { limit: 5, ttl: 900000 } })` — 5 por IP cada 15 min
+- `POST /auth/reset-password` → `@Throttle({ long: { limit: 10, ttl: 900000 } })` — 10 por IP cada 15 min
+
+**`apps/api/src/app/orders/orders.controller.ts`**:
+- `POST /orders/purchase` → `@Throttle({ medium: { limit: 15, ttl: 60000 } })` — 15 por IP por minuto
+
+**`apps/api/src/app/upload/upload.controller.ts`**:
+- `POST /upload` → `@Throttle({ medium: { limit: 20, ttl: 60000 } })` — 20 por IP por minuto (Sharp es CPU-intensivo)
+
+**Frontends — manejo de 429 en español** (en todos los `fetchAPI` y funciones de upload independientes):
+- `apps/web-client/src/lib/api.ts` — 2 lugares (`fetchAPI` + `uploadImage`)
+- `apps/web-host/src/lib/api.ts` — 3 lugares (`fetchAPI` + 2 funciones de upload)
+- `apps/web-admin/lib/api.ts` — 3 lugares (`fetchAPI` + `uploadImage` + `uploadBannerImage`)
+- Mensaje genérico: `"Demasiados intentos. Espera unos minutos antes de intentarlo de nuevo."`
+- Mensaje de upload: `"Demasiadas subidas. Espera un minuto antes de intentarlo de nuevo."`
+
+#### Notas técnicas
+- `@Throttle({ long: { limit: X, ttl: Y } })` sobreescribe solo el throttler `long` para ese endpoint; los throttlers `short` (10/s) y `medium` (60/10s) del módulo siguen activos como protección contra ráfagas.
+- El throttling es por IP (comportamiento por defecto de `ThrottlerGuard`). No se implementó throttling por usuario autenticado.
+- Todos los demás endpoints (GET públicos, endpoints de admin, etc.) solo tienen los límites globales: 10/s, 60/10s, 200/min.
+- Sin cambios de schema ni migrations. Deploy automático en Coolify al pushear a `main`.
+
+---
 
 ### Sesión del 5-6 de Junio de 2026 (Sesión 19) — Deuda técnica `eventId` + Sistema de Imágenes (resize/recorte/recomendaciones) + De-dup CSS tickets
 
