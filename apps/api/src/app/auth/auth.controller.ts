@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Patch, Post, HttpCode, UseGuards, Request, Req, ForbiddenException, Query } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, RegisterHostDto, UpdateProfileDto, UpdateBasicInfoDto, UpdateOrganizerProfileInfoDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -8,6 +9,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 export class AuthController {
     constructor(private readonly authService: AuthService) { }
 
+    // 10 intentos por IP cada 15 minutos — previene fuerza bruta
+    @Throttle({ long: { limit: 10, ttl: 900000 } })
     @Post('login')
     @HttpCode(200)
     login(@Body() loginDto: LoginDto, @Req() req: ExpressRequest) {
@@ -17,11 +20,15 @@ export class AuthController {
         return this.authService.login(loginDto, ip);
     }
 
+    // 10 registros por IP por hora — previene creación masiva de cuentas
+    @Throttle({ long: { limit: 10, ttl: 3600000 } })
     @Post('register')
     register(@Body() registerDto: RegisterDto) {
         return this.authService.register(registerDto);
     }
 
+    // 5 registros de organizador por IP por hora
+    @Throttle({ long: { limit: 5, ttl: 3600000 } })
     @Post('register-host')
     registerHost(@Body() registerHostDto: RegisterHostDto) {
         return this.authService.registerHost(registerHostDto);
@@ -70,18 +77,24 @@ export class AuthController {
         return this.authService.verifyEmail(token);
     }
 
+    // 5 reenvíos por IP cada 15 minutos — previene spam de emails de verificación
+    @Throttle({ long: { limit: 5, ttl: 900000 } })
     @Post('resend-verification')
     @HttpCode(200)
     resendVerification(@Body('email') email: string) {
         return this.authService.resendVerification(email);
     }
 
+    // 5 solicitudes por IP cada 15 minutos — previene spam de emails de reset
+    @Throttle({ long: { limit: 5, ttl: 900000 } })
     @Post('forgot-password')
     @HttpCode(200)
     forgotPassword(@Body('email') email: string) {
         return this.authService.forgotPassword(email);
     }
 
+    // 10 intentos por IP cada 15 minutos — el token ya expira en 1h
+    @Throttle({ long: { limit: 10, ttl: 900000 } })
     @Post('reset-password')
     @HttpCode(200)
     resetPassword(@Body('token') token: string, @Body('password') password: string) {

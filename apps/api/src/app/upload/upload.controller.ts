@@ -1,5 +1,6 @@
 import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException, Req, Query, HttpStatus } from '@nestjs/common';
 import { Catch, ArgumentsHost, ExceptionFilter, UseFilters } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { MulterError } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -179,6 +180,8 @@ function getLocalPathPart(req: any, type: string, eventId: string, organizerId: 
 @Controller('upload')
 @UseFilters(MulterExceptionFilter)
 export class UploadController {
+  // 20 subidas por IP por minuto — Sharp es CPU-intensivo; previene abuso
+  @Throttle({ medium: { limit: 20, ttl: 60000 } })
   @Post()
   @UseInterceptors(
     FileInterceptor('file', {

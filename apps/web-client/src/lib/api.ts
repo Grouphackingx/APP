@@ -24,6 +24,7 @@ async function fetchAPI<T>(endpoint: string, options: FetchOptions = {}): Promis
   });
 
   if (!res.ok) {
+    if (res.status === 429) throw new Error('Demasiados intentos. Espera unos minutos antes de intentarlo de nuevo.');
     const error = await res.json().catch(() => ({ message: 'Error del servidor' }));
     throw new Error(error.message || `Error ${res.status}`);
   }
@@ -284,6 +285,7 @@ export async function uploadUserAvatar(file: File, userId: string, token?: strin
   });
 
   if (!res.ok) {
+    if (res.status === 429) throw new Error('Demasiadas subidas. Espera un minuto antes de intentarlo de nuevo.');
     const err = await res.json().catch(() => ({ message: 'Error al subir la imagen' }));
     throw new Error(err.message || `Error ${res.status}`);
   }

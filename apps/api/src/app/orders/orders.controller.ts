@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, UseGuards, Request, Query } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { OrdersService } from './orders.service';
 import { LockSeatsDto, CreateOrderDto } from '@open-ticket/shared';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,6 +31,8 @@ export class OrdersController {
      * POST /api/orders/purchase
      * Create an order, mark seats as sold, generate QR tickets.
      */
+    // 15 compras por IP por minuto — previene automatización de compras fraudulentas
+    @Throttle({ medium: { limit: 15, ttl: 60000 } })
     @Post('purchase')
     purchase(@Request() req: any, @Body() dto: CreateOrderDto) {
         return this.ordersService.createOrder(req.user.userId, dto.eventId, dto.seatIds);

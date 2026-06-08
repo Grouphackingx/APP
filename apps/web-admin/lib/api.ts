@@ -16,6 +16,7 @@ async function fetchAPI<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   const res = await fetch(`${API_BASE}${endpoint}`, { ...restOptions, headers });
   if (!res.ok) {
+    if (res.status === 429) throw new Error('Demasiados intentos. Espera unos minutos antes de intentarlo de nuevo.');
     const error = await res.json().catch(() => ({ message: 'Error del servidor' }));
     throw new Error(error.message || `Error ${res.status}`);
   }
@@ -174,8 +175,9 @@ export async function uploadImage(file: File, token: string, type?: 'logo' | 'ev
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Error uploading image' }));
-    throw new Error(error.message || 'Error uploading image');
+    if (res.status === 429) throw new Error('Demasiadas subidas. Espera un minuto antes de intentarlo de nuevo.');
+    const error = await res.json().catch(() => ({ message: 'Error al subir la imagen' }));
+    throw new Error(error.message || 'Error al subir la imagen');
   }
 
   const data = await res.json();
@@ -280,8 +282,9 @@ export async function uploadBannerImage(file: File, token: string): Promise<stri
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Error uploading banner image' }));
-    throw new Error(error.message || 'Error uploading banner image');
+    if (res.status === 429) throw new Error('Demasiadas subidas. Espera un minuto antes de intentarlo de nuevo.');
+    const error = await res.json().catch(() => ({ message: 'Error al subir imagen de banner' }));
+    throw new Error(error.message || 'Error al subir imagen de banner');
   }
 
   const data = await res.json();

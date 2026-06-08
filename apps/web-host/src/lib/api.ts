@@ -36,6 +36,7 @@ async function fetchAPI<T>(endpoint: string, options: FetchOptions = {}): Promis
       window.location.href = '/login';
       return {} as T;
     }
+    if (res.status === 429) throw new Error('Demasiados intentos. Espera unos minutos antes de intentarlo de nuevo.');
     const error = await res.json().catch(() => ({ message: 'Error del servidor' }));
     throw new Error(error.message || `Error ${res.status}`);
   }
@@ -110,8 +111,9 @@ export async function uploadImage(file: File, token: string, type?: 'logo' | 'ev
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Error uploading image' }));
-    throw new Error(error.message || 'Error uploading image');
+    if (res.status === 429) throw new Error('Demasiadas subidas. Espera un minuto antes de intentarlo de nuevo.');
+    const error = await res.json().catch(() => ({ message: 'Error al subir la imagen' }));
+    throw new Error(error.message || 'Error al subir la imagen');
   }
 
   const data = await res.json();
@@ -189,6 +191,7 @@ export async function uploadMemberAvatar(file: File, memberId: string, token: st
     body: formData,
   });
   if (!res.ok) {
+    if (res.status === 429) throw new Error('Demasiadas subidas. Espera un minuto antes de intentarlo de nuevo.');
     const error = await res.json().catch(() => ({ message: 'Error al subir imagen' }));
     throw new Error(error.message || 'Error al subir imagen');
   }
