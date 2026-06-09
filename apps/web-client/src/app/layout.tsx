@@ -27,7 +27,7 @@ const jsonLd = {
   '@type': 'Organization',
   name: 'AfroEventos',
   url: 'https://afroeventos.com',
-  logo: 'https://afroeventos.com/favicon.svg',
+  logo: 'https://afroeventos.com/logo-og.svg',
   description:
     'El punto de encuentro de nuestra gente. Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma.',
 };
