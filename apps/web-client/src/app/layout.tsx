@@ -10,8 +10,9 @@ export const metadata = {
     'El punto de encuentro de nuestra gente. Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma.',
   keywords: 'eventos, tickets, conciertos, festivales, entradas, boletos, afro, cultura',
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    shortcut: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: '/logo-og.svg',
   },
   openGraph: {
     siteName: 'AfroEventos',
