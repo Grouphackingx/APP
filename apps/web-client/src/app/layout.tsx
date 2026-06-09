@@ -22,6 +22,16 @@ export const metadata = {
   },
 };
 
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'AfroEventos',
+  url: 'https://afroeventos.com',
+  logo: 'https://afroeventos.com/favicon.svg',
+  description:
+    'El punto de encuentro de nuestra gente. Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma.',
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -30,6 +40,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body suppressHydrationWarning>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <Providers>
           <div className="bg-animated" />
           <Navbar />
