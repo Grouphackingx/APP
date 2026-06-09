@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 8 de Junio de 2026 (Sesión 20)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas)
+**Última Actualización:** 8 de Junio de 2026 (Sesión 22)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas) + **Sesión 21**: Copy UI web-client (hero headline "EL PUNTO DE ENCUENTRO DE NUESTRA GENTE", subtítulo, fuente 1.13rem, OrganizerCTA 1.04rem, CTA login eventos) + web-admin puerto 4202 fijado en project.json + **Sesión 22**: SEO/OG metadata completo (título, descripción, opengraph-image.tsx, JSON-LD Organization) + sistema de favicon completo (favicon.svg negro rx=120, logo-og.svg para Google, apple-touch-icon.png PNG 1080×1080, redirect /favicon.ico, next.config.js)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -674,6 +674,104 @@ Las categorías son entidades gestionables en la BD (`EventCategory`). El campo 
 ---
 
 ## 14. Registro de Cambios
+
+### Sesión del 8 de Junio de 2026 (Sesión 22) — SEO / OG Metadata + Sistema de Favicon Completo
+
+#### Contexto / objetivo
+Mejorar el aspecto del sitio al compartir links (WhatsApp, Telegram, Slack, Discord, Twitter/X) y en resultados de búsqueda de Google. El favicon anterior era transparente y no tenía imagen OG configurada.
+
+#### Cambios realizados
+
+**`apps/web-client/src/app/layout.tsx`**:
+- Título actualizado: `"AfroEventos — El punto de encuentro de nuestra gente"`
+- Descripción: `"El punto de encuentro de nuestra gente. Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma."`
+- `openGraph.title` y `openGraph.description` explícitos
+- `icons`: SVG con `type: 'image/svg+xml'` + PNG fallback `apple-touch-icon.png`
+- JSON-LD `Organization` schema: name, url, logo (`/logo-og.svg`), description — ayuda a Google a mostrar el logo correcto en resultados de búsqueda
+
+**`apps/web-client/src/app/opengraph-image.tsx`** *(nuevo)*:
+- Generación de imagen OG server-side con Next.js `ImageResponse` (Satori)
+- 1200×630px, fondo negro `#000000`
+- Logo SVG (todos los paths con `fill="#6ac44d"`) + texto "AfroEventos" blanco + tagline verde
+- Se sirve automáticamente como `og:image` para todas las rutas del web-client
+
+**`apps/web-client/public/favicon.svg`**:
+- Agregado `<rect width="680" height="684.4" rx="120" ry="120" fill="#000000"/>` como primer hijo del `<svg>`
+- Fondo negro con esquinas redondeadas (~18% del ancho) — estilo app icon moderno
+
+**`apps/web-client/public/logo-og.svg`** *(nuevo)*:
+- Copia de `favicon.svg` (mismo fondo negro + rx=120 + paths verdes)
+- Referenciado exclusivamente por el JSON-LD Organization logo para Google
+
+**`apps/web-client/public/apple-touch-icon.png`** *(nuevo)*:
+- Fuente: `D:\CLIENTESGH\AFROEVENTOS\Logo 2026\AfroFavicon1080x1080.png` (34KB)
+- Usado como `apple-touch-icon` (iOS home screen) y como fallback PNG para Slack/Discord/Telegram
+
+**`apps/web-client/public/favicon.ico`** *(eliminado)*:
+- El `.ico` antiguo (transparente) tomaba prioridad sobre el `.svg` en navegadores → causaba que producción mostrara el favicon sin fondo negro
+- Reemplazado por redirect 301 en `next.config.js`
+
+**`apps/web-client/next.config.js`**:
+- Nuevo `async redirects()`: `/favicon.ico` → `/favicon.svg` (permanent: true)
+- Garantiza que crawlers y herramientas que buscan `/favicon.ico` reciban el favicon actualizado
+
+#### Commits
+- `9c8733f` — feat(web-client): actualizar OG metadata y agregar imagen de preview social
+- `d7567c4` — feat(web-client): fondo negro en favicon + structured data para Google
+- `5b8beef` — feat(web-client): favicon negro con esquinas redondeadas
+- `78adff1` — fix(web-client): favicon negro con esquinas redondeadas en produccion
+- `6fc4ba3` — fix(web-client): corregir 3 issues post-analisis de favicon/metadata
+- `66ab482` — feat(web-client): agregar apple-touch-icon PNG para iOS y crawlers
+
+#### Estado del sistema de favicon (definitivo)
+
+| Contexto | Archivo | Formato |
+| :--- | :--- | :--- |
+| Tab navegador (moderno) | `public/favicon.svg` | SVG negro rx=120 |
+| iOS "Agregar a pantalla de inicio" | `public/apple-touch-icon.png` | PNG 1080×1080 ✅ |
+| Slack / Discord / Telegram | `public/apple-touch-icon.png` | PNG fallback ✅ |
+| Google JSON-LD logo | `public/logo-og.svg` | SVG negro rx=120 ✅ |
+| Preview social (og:image) | `src/app/opengraph-image.tsx` | PNG 1200×630 generado ✅ |
+| `/favicon.ico` (legacy) | redirect 301 → `/favicon.svg` | next.config.js |
+
+#### Notas técnicas
+- **Prioridad de favicon en navegadores**: los navegadores prefieren `favicon.ico` sobre SVG por compatibilidad histórica. Eliminar el `.ico` + redirect 301 asegura que el SVG actualizado sea servido.
+- **Google Search**: el pequeño ícono circular al lado de la URL en resultados siempre usa el favicon del sitio. La descripción y título en resultados se actualizan cuando Google re-indexa (1-7 días). Usar Google Search Console → "Solicitar indexación" para acelerar.
+- **JSON-LD vs favicon**: el JSON-LD `Organization.logo` afecta el Knowledge Panel y datos estructurados de Google, no el favicon en resultados de búsqueda.
+- **`opengraph-image.tsx` runtime**: usa Node.js runtime (por defecto, sin `export const runtime = 'edge'`). Compatible con Coolify.
+
+---
+
+### Sesión del 8 de Junio de 2026 (Sesión 21) — Copy UI Web-Client + Puerto web-admin
+
+#### Contexto / objetivo
+Actualizar los textos del hero y secciones clave del Portal de Clientes para reflejar mejor la propuesta de valor de AfroEventos. Corregir conflicto de puertos en web-admin para desarrollo local.
+
+#### Cambios realizados
+
+**`apps/web-client/src/app/page.tsx`**:
+- Hero headline: `"EL PUNTO DE / ENCUENTRO DE / NUESTRA <span class='accent'>GENTE</span>"` (3 líneas con cortes semánticos, acento en la palabra de mayor peso emocional)
+- Hero subtitle: `"Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma."`
+
+**`apps/web-client/src/app/global.css`**:
+- `.hero-split-sub` font-size: `1.05rem` → `1.13rem` (+8%, best practice UX para legibilidad)
+- `.octa-sub` font-size: igualado al subtítulo (1.13rem) y luego reducido 8% → `1.04rem`
+
+**`apps/web-client/src/app/eventos/[id]/EventDetailClient.tsx`**:
+- CTA de login: `"Inicia sesión para comprar/seleccionar asientos."` → `"Inicia sesión para reservar/comprar entradas."`
+
+**`apps/web-admin/project.json`**:
+- Agregado target `dev` explícito con `"command": "next dev --port=4202"`
+- Soluciona conflicto: sin este target, Next.js usaba el puerto 3000 por defecto, colisionando con el API NestJS
+
+#### Commit
+- `75f2598` — feat(web-client): actualizar copy y tipografía del hero
+
+#### Notas técnicas
+- **Headline 3 líneas**: distribución de 3 líneas con corte natural ("DE" al final de cada línea) optimiza la lectura vertical y el acento visual en la palabra final. Sin punto al final de titulares (best practice UX).
+- **`rx="120"` en favicon**: 120/680 ≈ 17.6% del ancho — rango estándar de íconos de apps móviles (iOS usa ~22%, Android ~25%).
+
+---
 
 ### Sesión del 8 de Junio de 2026 (Sesión 20) — Rate Limiting en API
 
