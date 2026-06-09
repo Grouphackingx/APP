@@ -5,10 +5,10 @@ import { Providers } from '../components/Providers';
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:4200'),
-  title: 'AfroEventos — Descubre Eventos Increíbles',
+  title: 'AfroEventos — El punto de encuentro de nuestra gente',
   description:
-    'Encuentra y compra tickets para los mejores eventos, conciertos y festivales. Selecciona tus asientos y recibe tu entrada digital al instante.',
-  keywords: 'eventos, tickets, conciertos, festivales, entradas, boletos',
+    'El punto de encuentro de nuestra gente. Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma.',
+  keywords: 'eventos, tickets, conciertos, festivales, entradas, boletos, afro, cultura',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
@@ -16,6 +16,9 @@ export const metadata = {
   openGraph: {
     siteName: 'AfroEventos',
     type: 'website',
+    title: 'AfroEventos — El punto de encuentro de nuestra gente',
+    description:
+      'El punto de encuentro de nuestra gente. Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma.',
   },
 };
 
