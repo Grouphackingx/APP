@@ -106,17 +106,16 @@ export default async function HomePage(props: {
               <span className="hero-split-eyebrow">Plataforma de Eventos</span>
 
               <h1 className="hero-split-headline">
-                MÚSICA, BAILE
+                EL PUNTO DE
                 <br />
-                Y CULTURA QUE
+                ENCUENTRO DE
                 <br />
-                TE <span className="accent">PRENDE</span>
+                NUESTRA <span className="accent">GENTE</span>
               </h1>
 
 
               <p className="hero-split-sub">
-                Los mejores shows de música afro, salsa y bomba en un solo lugar.
-                Accede a los mejores eventos, festivales y fiestas desde una sola plataforma.
+                Descubre eventos, fiestas, festivales, conciertos y experiencias culturales en una sola plataforma.
               </p>
 
               <div className="hero-split-actions">

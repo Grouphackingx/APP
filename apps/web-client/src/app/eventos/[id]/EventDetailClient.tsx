@@ -428,7 +428,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
 
                 {!user && (
                   <div style={{ marginBottom: '0', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Inicia sesión para comprar/seleccionar asientos.</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Inicia sesión para reservar/comprar entradas.</p>
                     <Link href={`/login?redirect=${encodeURIComponent(`/eventos/${event.slug || event.id}`)}`} className="btn btn-primary btn-sm btn-full">Iniciar Sesión</Link>
                   </div>
                 )}

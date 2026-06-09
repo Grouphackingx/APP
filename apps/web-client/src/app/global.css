@@ -384,7 +384,7 @@ textarea {
 }
 
 .hero-split-sub {
-  font-size: 1.05rem;
+  font-size: 1.13rem;
   color: var(--text-secondary);
   line-height: 1.75;
   max-width: 420px;
@@ -2425,7 +2425,7 @@ textarea {
 }
 
 .octa-sub {
-  font-size: 1.05rem;
+  font-size: 1.04rem;
   color: var(--text-secondary);
   line-height: 1.75;
   margin: 0;
