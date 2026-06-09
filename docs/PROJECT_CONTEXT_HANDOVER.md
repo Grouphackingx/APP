@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 8 de Junio de 2026 (Sesión 22)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas) + **Sesión 21**: Copy UI web-client (hero headline "EL PUNTO DE ENCUENTRO DE NUESTRA GENTE", subtítulo, fuente 1.13rem, OrganizerCTA 1.04rem, CTA login eventos) + web-admin puerto 4202 fijado en project.json + **Sesión 22**: SEO/OG metadata completo (título, descripción, opengraph-image.tsx, JSON-LD Organization) + sistema de favicon completo (favicon.svg negro rx=120, logo-og.svg para Google, apple-touch-icon.png PNG 1080×1080, redirect /favicon.ico, next.config.js)
+**Última Actualización:** 9 de Junio de 2026 (Sesión 23)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas) + **Sesión 21**: Copy UI web-client (hero headline "EL PUNTO DE ENCUENTRO DE NUESTRA GENTE", subtítulo, fuente 1.13rem, OrganizerCTA 1.04rem, CTA login eventos) + web-admin puerto 4202 fijado en project.json + **Sesión 22**: SEO/OG metadata completo (título, descripción, opengraph-image.tsx, JSON-LD Organization) + sistema de favicon completo (favicon.svg negro rx=120, logo-og.svg para Google, apple-touch-icon.png PNG 1080×1080, redirect /favicon.ico, next.config.js) + **Sesión 23**: Notificación por email a admins globales cuando se registra un nuevo organizador (template `new-organizer-registered` + `sendNewOrganizerAlert` + fire-and-forget en `registerHost`)
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -674,6 +674,39 @@ Las categorías son entidades gestionables en la BD (`EventCategory`). El campo 
 ---
 
 ## 14. Registro de Cambios
+
+### Sesión del 9 de Junio de 2026 (Sesión 23) — Notificación a Admins al Registrarse un Nuevo Organizador
+
+#### Contexto / objetivo
+Cuando un nuevo organizador se registra, los administradores globales no recibían ningún aviso. El perfil quedaba en estado PENDING indefinidamente hasta que el admin visitara el panel manualmente. El objetivo es avisarles de inmediato por email para agilizar la aprobación.
+
+#### Cambios realizados
+
+**`apps/api/src/app/mail/templates/new-organizer-registered.template.ts`** *(nuevo)*:
+- Template email para administradores globales
+- Hero con badge "Acción requerida" + ícono 🔔
+- Card de datos del solicitante: Organización, Representante, Correo, Ubicación
+- CTA `"Revisar solicitud →"` que enlaza directo a `${adminUrl}?view=organizers`
+- Preview text optimizado para notificaciones en bandeja de entrada
+
+**`apps/api/src/app/mail/mail.service.ts`**:
+- Import del nuevo template
+- Nuevo método `sendNewOrganizerAlert(to, adminName, { organizerName, organizerEmail, organizationName, city?, province? })`
+- Asunto: `"🔔 Nueva solicitud de organizador: [Nombre Organización]"`
+- Usa `NEXT_PUBLIC_ADMIN_URL` de config para construir el link
+
+**`apps/api/src/app/auth/auth.service.ts`**:
+- Después del `sendWelcomeHost` (fire-and-forget), se hace `prisma.user.findMany({ where: { role: 'ADMIN' } })`
+- Se envía `sendNewOrganizerAlert` a cada admin en paralelo (fire-and-forget individual)
+- Si no hay admins o falla el query, no afecta el registro del organizador
+
+#### Comportamiento
+- El organizador se registra → recibe su email de bienvenida (existente) → sin cambios visibles para él
+- Cada admin con `role: ADMIN` recibe el email de alerta con los datos del nuevo organizador y un botón directo a la sección de Organizadores del panel
+- Todo fire-and-forget: si el email falla, el registro del organizador no se ve afectado
+- Sin cambios de schema ni migrations
+
+---
 
 ### Sesión del 8 de Junio de 2026 (Sesión 22) — SEO / OG Metadata + Sistema de Favicon Completo
 

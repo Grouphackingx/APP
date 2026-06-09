@@ -413,6 +413,22 @@ export class AuthService {
             result.name,
             result.organizerProfile?.organizationName || result.name,
         ).catch(() => null);
+
+        // Notify all global admins about the new organizer pending review
+        this.prisma.user.findMany({ where: { role: 'ADMIN' }, select: { email: true, name: true } })
+            .then((admins) => {
+                for (const admin of admins) {
+                    this.mail.sendNewOrganizerAlert(admin.email, admin.name, {
+                        organizerName: result.name,
+                        organizerEmail: result.email,
+                        organizationName: result.organizerProfile?.organizationName || result.name,
+                        city: dto.city,
+                        province: dto.province,
+                    }).catch(() => null);
+                }
+            })
+            .catch(() => null);
+
         return {
             access_token: this.jwtService.sign(payload),
             user: result,

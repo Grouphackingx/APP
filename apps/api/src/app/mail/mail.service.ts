@@ -14,6 +14,7 @@ import { eventRescheduledTemplate } from './templates/event-rescheduled.template
 import { memberInvitationTemplate } from './templates/member-invitation.template';
 import { passwordChangedTemplate } from './templates/password-changed.template';
 import { accountCreatedByAdminTemplate } from './templates/account-created-by-admin.template';
+import { newOrganizerRegisteredTemplate } from './templates/new-organizer-registered.template';
 
 export interface TicketInfo {
   ticketId: string;
@@ -51,10 +52,41 @@ export class MailService {
     });
   }
 
+  private htmlToText(html: string): string {
+    return html
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?(p|div|tr|h[1-6])[^>]*>/gi, '\n')
+      .replace(/<td[^>]*>/gi, ' ')
+      .replace(/<a[^>]+href="([^"]+)"[^>]*>/gi, (_, url) => `${url} — `)
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&middot;/g, '·')
+      .replace(/&copy;/g, '©')
+      .replace(/&zwnj;|&#8203;/g, '')
+      .replace(/&[a-zA-Z]+;/g, '')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\n[ \t]+/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
   private async send(to: string, subject: string, html: string): Promise<void> {
     if (!this.transporter) return;
     try {
-      await this.transporter.sendMail({ from: this.fromAddress, to, subject, html, encoding: 'utf-8' });
+      await this.transporter.sendMail({
+        from: this.fromAddress,
+        to,
+        subject,
+        html,
+        text: this.htmlToText(html),
+        encoding: 'utf-8',
+      });
       this.logger.log(`Email sent → ${to} [${subject}]`);
     } catch (err) {
       this.logger.error(`Failed to send email to ${to}: ${(err as Error).message}`);
@@ -165,6 +197,25 @@ export class MailService {
       to,
       '¡Tu cuenta en AfroEventos está lista! — Accede ahora',
       accountCreatedByAdminTemplate({ name, email, password, role, organizationName, loginUrl }),
+    );
+  }
+
+  async sendNewOrganizerAlert(
+    to: string,
+    adminName: string,
+    data: {
+      organizerName: string;
+      organizerEmail: string;
+      organizationName: string;
+      city?: string;
+      province?: string;
+    },
+  ): Promise<void> {
+    const adminUrl = this.config.get<string>('NEXT_PUBLIC_ADMIN_URL') || 'http://localhost:4202';
+    await this.send(
+      to,
+      `Nueva solicitud de organizador pendiente: ${data.organizationName}`,
+      newOrganizerRegisteredTemplate({ adminName, adminUrl, ...data }),
     );
   }
 
