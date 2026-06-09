@@ -12,7 +12,6 @@ export const metadata = {
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
     shortcut: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
-    apple: '/logo-og.svg',
   },
   openGraph: {
     siteName: 'AfroEventos',
