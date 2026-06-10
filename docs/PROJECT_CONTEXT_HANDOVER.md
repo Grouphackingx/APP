@@ -331,6 +331,16 @@ uploads/
 - Patrón fire-and-forget en todos los callers: `.catch(() => null)` — nunca bloquea el flujo del usuario.
 - **Proveedor en producción**: Resend SMTP (`smtp.resend.com:587`, STARTTLS). Puerto 465 bloqueado por el hosting — usar siempre 587 con `MAIL_SECURE=false`.
 - **Dominio verificado**: `afroeventos.com` en Resend (región us-east-1). Remitente: `no-reply@afroeventos.com`.
+- **Texto plano automático** (Sesión 23): `mail.service.ts` genera versión `text/plain` con `htmlToText()` para cada email enviado — mejora entregabilidad en todos los templates (penalización de filtros spam por HTML-only eliminada).
+
+### Entregabilidad — DNS de `afroeventos.com` (configuración completa ✅)
+
+| Registro | Estado | Detalle |
+| :--- | :--- | :--- |
+| **DKIM** | ✅ | `resend._domainkey.afroeventos.com` TXT — Resend firma automáticamente |
+| **SPF** | ✅ | `send.afroeventos.com` TXT: `v=spf1 include:amazonses.com ~all` — subdominio envelope-from de Resend |
+| **DMARC** | ✅ | `_dmarc.afroeventos.com` TXT: `v=DMARC1; p=quarantine; rua=mailto:soporte@afroeventos.com` — agregado Sesión 23 |
+| **MX rebotes** | ✅ | `send.afroeventos.com` MX → `feedback-smtp.us-east-1.amazonses.com` |
 
 ### Base Layout (`base.layout.ts`) — Compatibilidad de Clientes de Correo
 
@@ -357,6 +367,7 @@ uploads/
 | `sendMemberInvitation(to, memberName, orgName, memberRole, email, password)` | `member-invitation` | Invitación a miembro con credenciales |
 | `sendEventCanceled(to, buyerName, eventTitle, eventDate, eventLocation, eventCity, orderId)` | `event-canceled` | Aviso de cancelación a comprador |
 | `sendEventRescheduled(to, buyerName, eventTitle, oldDate, newDate, newLocation, newCity)` | `event-rescheduled` | Aviso de reprogramación a comprador |
+| `sendNewOrganizerAlert(to, adminName, { organizerName, organizerEmail, organizationName, city?, province? })` | `new-organizer-registered` | Alerta a cada admin global cuando se registra un nuevo organizador pendiente de revisión |
 
 ---
 

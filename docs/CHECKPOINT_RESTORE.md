@@ -244,7 +244,7 @@ MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
 > Si `MAIL_HOST` está vacío, los emails se "envían" sin error (se loguean silenciosamente).
 > Patrón fire-and-forget en todos los lados: `.catch(() => null)` — nunca bloquea el flujo del usuario.
 
-### Templates Implementados (13 total)
+### Templates Implementados (14 total)
 
 | Template | Trigger | Descripción |
 | :--- | :--- | :--- |
@@ -260,13 +260,17 @@ MAIL_FROM=AfroEventos <no-reply@afroeventos.com>
 | `member-invitation` | Host crea miembro ADMIN/STAFF | Credenciales + descripción del rol + URL del panel |
 | `event-canceled` | Evento cancelado (status → CANCELLED) | Aviso urgente con detalle del evento + info de reembolso |
 | `event-rescheduled` | Evento reprogramado (fecha/lugar cambiados) | Comparación fecha/lugar anterior vs. nueva |
+| `new-organizer-registered` | Registro de nuevo organizador | Alerta a todos los admins con datos del solicitante + CTA directo al panel |
 | `base.layout` | Base compartida | Layout HTML responsive con logo, gradiente y footer |
+
+> **Entregabilidad** (Sesión 23): `mail.service.ts` genera `text/plain` automáticamente con `htmlToText()` para todos los templates. DNS completo: DKIM ✅ SPF ✅ DMARC ✅ (`_dmarc.afroeventos.com` → `p=quarantine`)
 
 ### Cuándo se dispara cada email
 
 | Acción del sistema | Email enviado |
 | :--- | :--- |
 | `POST /api/auth/register` | `welcome-user` + `verify-email` |
+| `POST /api/auth/register-host` | `welcome-host` al organizador + `new-organizer-registered` a **todos los admins** (fire-and-forget) |
 | `GET /api/auth/verify-email?token=` (éxito) | _(ninguno)_ |
 | `POST /api/auth/forgot-password` | `reset-password` (si el email existe; siempre responde igual) |
 | `POST /api/auth/reset-password` (éxito) | _(ninguno actualmente)_ |
