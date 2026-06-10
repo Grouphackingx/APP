@@ -73,7 +73,7 @@ export function FeaturedEventsSection({ events }: { events: EventItem[] }) {
                 >
                   <div className="featured-card-v-img">
                     {img
-                      ? <Image src={img} alt={event.title} fill sizes="(max-width: 768px) 100vw, 600px" />
+                      ? <Image src={img} alt={event.title} fill quality={90} sizes="(max-width: 768px) 100vw, 600px" />
                       : <div className="featured-card-no-img">🎵</div>
                     }
                     <span className="featured-badge">★ Destacado</span>

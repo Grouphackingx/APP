@@ -701,6 +701,7 @@ Un test de [GTmetrix](https://gtmetrix.com) sobre `afroeventos.com` (tras los ca
 **2. `next.config.js` — config de imágenes**
 - `images.remotePatterns`: `api.afroeventos.com` (prod), `localhost:3000` + `127.0.0.1:3000` (dev), `res.cloudinary.com` (futuro). Las URLs de subidas se guardan absolutas (ver `upload.controller.ts`).
 - `images.dangerouslyAllowLocalIP`: Next 16 bloquea por anti-SSRF las imágenes que resuelven a IP privada. Se activa **solo cuando la API es local** (`/localhost|127\.0\.0\.1/.test(NEXT_PUBLIC_API_URL || 'localhost')`) → en local (dev y build) permite optimizar `localhost`; en Coolify (`api.afroeventos.com`) queda **desactivado** y la protección sigue intacta.
+- **Calidad (ajuste post-deploy):** el usuario reportó imágenes con baja calidad. Causa: las subidas vienen en WebP **q80** (`UPLOAD_IMAGE_QUALITY`) y `next/image` las re-comprimía en su default **q75** (por debajo del origen) → pérdida visible en flyers con texto. Fix: `images.qualities: [75, 90]` + `quality={90}` en los 5 componentes. Además se corrigieron los `sizes`: las tarjetas miden hasta **380px** (3 col) pero el `sizes` decía `280px` → en pantallas retina pedía una variante más pequeña y se veía borrosa (EventCard 280→380, Hero 420→500, FeaturedCarousel 360→400).
 
 **3. CSS (`global.css`)** — `position:relative` en `.hcc-link` y `.banner-slide-link` (eran `display:block` sin posicionar; necesario para anclar el `fill`, sin cambio visual).
 

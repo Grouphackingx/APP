@@ -57,6 +57,7 @@ export function BannerSlider({ banners }: BannerSliderProps) {
                       alt={banner.title || 'Banner publicitario'}
                       className="banner-slide-img"
                       fill
+                      quality={90}
                       sizes="(max-width: 1280px) 100vw, 1200px"
                     />
                   </a>
@@ -66,6 +67,7 @@ export function BannerSlider({ banners }: BannerSliderProps) {
                     alt={banner.title || 'Banner publicitario'}
                     className="banner-slide-img"
                     fill
+                    quality={90}
                     sizes="(max-width: 1280px) 100vw, 1200px"
                   />
                 )}

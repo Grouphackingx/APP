@@ -15,6 +15,10 @@ const nextConfig = {
       { protocol: 'http', hostname: '127.0.0.1', port: '3000' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
     ],
+    // Las subidas ya vienen en WebP q80 (UPLOAD_IMAGE_QUALITY). El default de
+    // next/image (q75) las re-comprime por debajo del origen y se nota en flyers
+    // con texto. Permitimos q90 para minimizar la pérdida por doble compresión.
+    qualities: [75, 90],
     // Next 16 bloquea por anti-SSRF las imágenes que resuelven a IP privada.
     // En local (dev o build) las subidas viven en http://localhost:3000 (IP
     // privada), así que lo permitimos SOLO cuando la API es local. En Coolify

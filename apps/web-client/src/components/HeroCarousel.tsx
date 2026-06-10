@@ -131,7 +131,7 @@ export function HeroCarousel({ events }: { events: CarouselEvent[] }) {
                 className="hcc-link"
               >
                 {img ? (
-                  <Image src={img} alt={event.title} className="hcc-img" fill sizes="(max-width: 768px) 80vw, 420px" draggable={false} priority={isActive} />
+                  <Image src={img} alt={event.title} className="hcc-img" fill quality={90} sizes="(max-width: 768px) 90vw, 500px" draggable={false} priority={isActive} />
                 ) : (
                   <div className="hcc-placeholder">
                     <span>🎵</span>
