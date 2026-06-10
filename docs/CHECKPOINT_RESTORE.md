@@ -517,6 +517,8 @@ Cuando `sellOnSite: true` en una zona:
 
 ### Prioridad Baja
 
+- [ ] **Volumen persistente para `.next/cache` en Coolify (web-client)** → la caché de imágenes optimizadas de `next/image` vive dentro del contenedor y se borra en cada redeploy; un volumen la haría sobrevivir (evaluado Sesión 26, pospuesto por no ser urgente)
+- [ ] Optimizar imágenes de galería/detalle con miniaturas en backend (las height:auto de ratio natural quedaron como `<img>` lazy; `next/image fill` las distorsionaría)
 - [ ] Websockets para actualización en tiempo real del mapa de asientos
 - [x] ~~Rate limiting en API~~ ✅ (8 Jun 2026) → `@Throttle()` en endpoints sensibles; mensajes 429 en español
 - [ ] CI/CD pipeline

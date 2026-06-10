@@ -723,7 +723,13 @@ Un test de [GTmetrix](https://gtmetrix.com) sobre `afroeventos.com` (tras los ca
 - **Render** (nuevo): `next/image` redimensiona al tamaño real por dispositivo y cachea. Automático para toda imagen futura en los componentes de la home.
 - El optimizador `/_next/image` corre en el contenedor `afroeventos-web-client` (usa `sharp`): algo de CPU en la **primera** carga de cada tamaño, luego cacheada.
 
+#### Caché de imágenes (dos capas)
+- **Servidor (compartida por todos los visitantes):** la primera petición de una imagen en cierto tamaño redimensiona con `sharp` y guarda el resultado en `.next/cache/images` del contenedor. Todos los visitantes siguientes (nuevos o recurrentes) reciben esa versión optimizada **sin re-procesar** → el costo de CPU es **una vez por (imagen + tamaño)**, no por visitante.
+- **Navegador (por dispositivo):** un visitante nuevo descarga la versión liviana (~42 KB) una vez; su navegador la cachea (respuesta de `/_next/image` con `Cache-Control: max-age=14400` = `minimumCacheTTL` por defecto).
+- ⚠️ **La caché del servidor vive dentro del contenedor** → cada redeploy de Coolify la borra y el primer visitante post-deploy vuelve a disparar la optimización. Decisión Sesión 26: **dejarlo así por ahora**.
+
 #### Pendiente / próximos pasos
+- **Volumen persistente para `.next/cache` en Coolify** (igual que el de `/app/uploads` en la API) para que la caché de imágenes optimizadas sobreviva a los redeploys. Evaluado en Sesión 26 → pospuesto (no urgente).
 - Opcional: optimizar también galería/detalle generando **miniaturas en backend** (respetan ratio, sin el problema de `fill`).
 - Re-test en GTmetrix tras el deploy para confirmar la caída de los ~465 KB.
 
