@@ -29,6 +29,14 @@ COPY --from=builder /app/apps/web-client/.next/standalone ./
 COPY --from=builder /app/apps/web-client/.next/static ./apps/web-client/.next/static
 COPY --from=builder /app/apps/web-client/public ./apps/web-client/public
 
+# next/image usa `sharp` para optimizar imágenes. El trazado de Next al standalone
+# omite el binario nativo + las libs de libvips (@img/sharp-libvips-*), lo que hace
+# que el optimizador degrade a servir el original SIN redimensionar. Copiamos los
+# paquetes completos desde el builder (misma plataforma alpine/musl) para que el
+# redimensionado funcione en producción.
+COPY --from=builder /app/node_modules/@img ./node_modules/@img
+COPY --from=builder /app/node_modules/sharp ./node_modules/sharp
+
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0

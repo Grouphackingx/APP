@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import type { EventItem } from '../lib/api';
 import { FeaturedCarousel } from './FeaturedCarousel';
 
@@ -72,7 +73,7 @@ export function FeaturedEventsSection({ events }: { events: EventItem[] }) {
                 >
                   <div className="featured-card-v-img">
                     {img
-                      ? <img src={img} alt={event.title} loading="lazy" decoding="async" />
+                      ? <Image src={img} alt={event.title} fill sizes="(max-width: 768px) 100vw, 600px" />
                       : <div className="featured-card-no-img">🎵</div>
                     }
                     <span className="featured-badge">★ Destacado</span>

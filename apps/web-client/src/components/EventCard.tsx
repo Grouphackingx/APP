@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { EventItem } from '../lib/api';
 
 function formatDate(dateStr: string): string {
@@ -44,7 +45,12 @@ export function EventCard({
       id={`event-card-${event.id}`}
     >
       <div className="event-card-image">
-        <img src={event.squareImageUrl || event.imageUrl || '/default-portrait.svg'} alt={event.title} loading="lazy" decoding="async" />
+        <Image
+          src={event.squareImageUrl || event.imageUrl || '/default-portrait.svg'}
+          alt={event.title}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+        />
         {event.category && (
           <div className="event-card-badge event-card-badge--category">
             {event.category}

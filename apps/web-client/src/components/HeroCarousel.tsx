@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface CarouselEvent {
   id: string;
@@ -130,7 +131,7 @@ export function HeroCarousel({ events }: { events: CarouselEvent[] }) {
                 className="hcc-link"
               >
                 {img ? (
-                  <img src={img} alt={event.title} className="hcc-img" draggable={false} loading={isActive ? 'eager' : 'lazy'} fetchPriority={isActive ? 'high' : 'auto'} decoding="async" />
+                  <Image src={img} alt={event.title} className="hcc-img" fill sizes="(max-width: 768px) 80vw, 420px" draggable={false} priority={isActive} />
                 ) : (
                   <div className="hcc-placeholder">
                     <span>🎵</span>

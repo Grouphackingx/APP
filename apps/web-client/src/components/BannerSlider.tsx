@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import type { BannerItem } from '../lib/api';
 
 interface BannerSliderProps {
@@ -51,21 +52,21 @@ export function BannerSlider({ banners }: BannerSliderProps) {
               >
                 {banner.linkUrl ? (
                   <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="banner-slide-link" tabIndex={i === current ? 0 : -1}>
-                    <img
+                    <Image
                       src={resolveUrl(banner.imageUrl)}
                       alt={banner.title || 'Banner publicitario'}
                       className="banner-slide-img"
-                      loading="lazy"
-                      decoding="async"
+                      fill
+                      sizes="(max-width: 1280px) 100vw, 1200px"
                     />
                   </a>
                 ) : (
-                  <img
+                  <Image
                     src={resolveUrl(banner.imageUrl)}
                     alt={banner.title || 'Banner publicitario'}
                     className="banner-slide-img"
-                    loading="lazy"
-                    decoding="async"
+                    fill
+                    sizes="(max-width: 1280px) 100vw, 1200px"
                   />
                 )}
               </div>

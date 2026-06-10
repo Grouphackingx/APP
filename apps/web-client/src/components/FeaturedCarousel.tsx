@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { EventItem } from '../lib/api';
 
 function formatDate(dateStr: string): string {
@@ -95,7 +96,7 @@ export function FeaturedCarousel({ events }: { events: EventItem[] }) {
                 >
                   <div className="fcarousel-img">
                     {img
-                      ? <img src={img} alt={event.title} loading="lazy" decoding="async" />
+                      ? <Image src={img} alt={event.title} fill sizes="(max-width: 768px) 80vw, 360px" />
                       : <div className="fcarousel-no-img">🎵</div>
                     }
                     <span className="featured-badge">★ Destacado</span>
