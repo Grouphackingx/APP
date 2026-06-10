@@ -31,7 +31,7 @@ export default function DashboardPageWrapper() {
 }
 
 function DashboardPage() {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, isLoading: authLoading } = useAuth();
   const { showConfirm, modalNode } = useConfirm();
   const { showToast, toastNode } = useToast();
   const router = useRouter();
@@ -145,22 +145,116 @@ function DashboardPage() {
     );
   };
 
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0d0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
+
   if (user && user.role === 'HOST' && user.organizerProfile?.status !== 'APPROVED') {
     return (
-      <div className="dashboard-layout">
-        <Sidebar user={user} activeView="dashboard" onNavigate={() => undefined} onLogout={logout} />
-        <div className="main-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="auth-card" style={{ textAlign: 'center', maxWidth: '500px' }}>
-            <div style={{ fontSize: '3rem', margin: '1rem 0' }}>⏳</div>
-            <h2>Cuenta en Revisión</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-              Tu organización está siendo evaluada por el equipo de AfroEventos. Te notificaremos cuando tu acceso sea aprobado.
-            </p>
-            <button className="btn btn-secondary" onClick={logout} style={{ width: '100%' }}>
-              ← Cerrar Sesión y Volver
-            </button>
-          </div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'radial-gradient(ellipse at 65% 15%, rgba(106,196,77,0.09) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(106,196,77,0.05) 0%, transparent 40%), #0a0d0f',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+      }}>
+        {/* Logo */}
+        <div style={{ marginBottom: '2rem', opacity: 0.85 }}>
+          <img src="/logo.svg" alt="AfroEventos" style={{ height: '36px' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
+
+        {/* Card */}
+        <div style={{
+          width: '100%',
+          maxWidth: '480px',
+          background: 'rgba(17,19,24,0.97)',
+          border: '1px solid rgba(106,196,77,0.15)',
+          borderRadius: '20px',
+          padding: '2.75rem 2.5rem',
+          boxShadow: '0 0 0 1px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.55)',
+          textAlign: 'center',
+        }}>
+          {/* Badge */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(245,158,11,0.1)',
+            border: '1px solid rgba(245,158,11,0.28)',
+            color: '#f59e0b',
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '1.8px',
+            textTransform: 'uppercase',
+            padding: '5px 14px',
+            borderRadius: '20px',
+            marginBottom: '1.5rem',
+          }}>
+            <span style={{ fontSize: '13px' }}>⏳</span> Pendiente de aprobación
+          </div>
+
+          <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.65rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>
+            Solicitud recibida
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: 1.7, fontSize: '0.9rem' }}>
+            Recibimos la solicitud de <strong style={{ color: '#e5e7eb' }}>{user.organizerProfile?.organizationName || user.name}</strong>.
+            Nuestro equipo revisará tu solicitud en la brevedad posible.
+          </p>
+
+          {/* Progress steps */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '2rem', textAlign: 'left' }}>
+            {[
+              { icon: '✅', label: 'Solicitud enviada', sub: 'Tu información llegó correctamente a nuestro equipo.', active: true },
+              { icon: '🔍', label: 'Revisión en proceso', sub: 'Verificará los datos de tu organización.', active: false },
+              { icon: '🎉', label: 'Cuenta activada', sub: 'Recibirás un correo con acceso a tu panel de organizador.', active: false },
+            ].map((step, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                gap: '14px',
+                alignItems: 'center',
+                padding: '14px 16px',
+                background: step.active ? 'rgba(106,196,77,0.07)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${step.active ? 'rgba(106,196,77,0.2)' : 'rgba(55,65,81,0.35)'}`,
+                borderRadius: '12px',
+                opacity: step.active ? 1 : 0.55,
+              }}>
+                <div style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  background: step.active ? 'rgba(106,196,77,0.15)' : 'rgba(55,65,81,0.3)',
+                  border: `2px solid ${step.active ? '#6AC44D' : '#374151'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '15px',
+                  flexShrink: 0,
+                }}>
+                  {step.active ? step.icon : <span style={{ color: '#6b7280', fontWeight: 700, fontSize: '12px' }}>{i + 1}</span>}
+                </div>
+                <div>
+                  <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: 700, color: step.active ? '#e5e7eb' : '#9ca3af' }}>{step.label}</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', lineHeight: 1.5 }}>{step.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button className="btn btn-secondary" onClick={logout} style={{ width: '100%' }}>
+            ← Cerrar Sesión y Volver
+          </button>
+        </div>
+
+        <p style={{ marginTop: '1.5rem', fontSize: '12px', color: '#4b5563' }}>
+          ¿Tienes dudas? Escríbenos a{' '}
+          <a href="mailto:soporte@afroeventos.com" style={{ color: '#6AC44D', textDecoration: 'none' }}>soporte@afroeventos.com</a>
+        </p>
       </div>
     );
   }

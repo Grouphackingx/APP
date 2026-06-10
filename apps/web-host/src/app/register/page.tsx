@@ -141,7 +141,7 @@ export default function RegisterHostPage() {
           </a>
         </div>
         <h1>Únete como Organizador</h1>
-        <p className="auth-subtitle">Crea, administra y vende tickets para tus eventos masivos</p>
+        <p className="auth-subtitle">Crea, administra y publica tus eventos</p>
 
         {/* Stepper Simple */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
@@ -330,7 +330,7 @@ export default function RegisterHostPage() {
                         <span style={{ fontSize: '1.5rem', fontWeight: '900' }}>${p.price} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.price > 0 ? '/año' : ''}</span></span>
                       </div>
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                        {p.maxEvents === 0 ? 'Eventos ilimitados.' : `Crea y gestiona hasta ${p.maxEvents} evento${p.maxEvents === 1 ? '' : 's'}.`}
+                        {p.maxEvents === 0 ? 'Eventos ilimitados.' : `Crea y gestiona hasta ${p.maxEvents} evento${p.maxEvents === 1 ? '' : 's'} por año.`}
                       </p>
                     </div>
                   );

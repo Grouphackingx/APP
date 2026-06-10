@@ -9,8 +9,12 @@ export const metadata: Metadata = {
   title: 'Global Admin Dashboard | AfroEventos',
   description: 'Administración de Organizadores y Eventos',
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.png', type: 'image/png', sizes: '1080x1080' },
+    ],
+    shortcut: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '1080x1080', type: 'image/png' }],
   },
   // Panel de administración 100% privado: nunca debe indexarse.
   robots: {

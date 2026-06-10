@@ -20,7 +20,7 @@ export function welcomeHostTemplate({ name, organizationName, hostUrl }: Welcome
           ¡Gracias, ${firstName}!<br/>Estamos revisando tu solicitud.
         </h1>
         <p style="margin:0;font-size:15px;line-height:1.7;color:#9ca3af;">
-          Recibimos tu solicitud para registrar <strong style="color:#e5e7eb;">${organizationName}</strong> como organizador en AfroEventos. Nuestro equipo la revisará en las próximas <strong style="color:#6AC44D;">24 a 48 horas hábiles</strong>.
+          Recibimos tu solicitud para registrar <strong style="color:#e5e7eb;">${organizationName}</strong> como organizador en AfroEventos. Nuestro equipo revisará tu solicitud en la brevedad posible.
         </p>
       </td>
     </tr>
@@ -32,28 +32,12 @@ export function welcomeHostTemplate({ name, organizationName, hostUrl }: Welcome
           ¿Qué sigue?
         </p>
         ${stepRow('1', '✅', 'Solicitud enviada', 'Tu información llegó correctamente a nuestro equipo.', true)}
-        ${stepRow('2', '🔍', 'Revisión en proceso', 'Verificamos los datos de tu organización. Esto toma 24–48 h.', false)}
+        ${stepRow('2', '🔍', 'Revisión en proceso', 'Verificará los datos de tu organización.', false)}
         ${stepRow('3', '🎉', 'Cuenta activada', 'Recibirás un correo con acceso a tu panel de organizador.', false)}
       </td>
     </tr>
 
     ${divider()}
-
-    <!-- TIP -->
-    <tr>
-      <td style="background-color:#111318;padding:28px 40px;" class="pd-mobile">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-          <tr>
-            <td style="background:#0f1a10;border:1px solid #1a3a1a;border-radius:12px;padding:20px 24px;">
-              <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#6AC44D;">💡 Mientras esperas</p>
-              <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                Puedes revisar nuestra guía de mejores prácticas para organizar eventos exitosos, explorar cómo funciona el sistema de tickets, o contactarnos si tienes alguna pregunta.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
 
     <!-- CTA -->
     <tr>

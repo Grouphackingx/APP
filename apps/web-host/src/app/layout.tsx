@@ -10,8 +10,12 @@ export const metadata: Metadata = {
   description:
     'Publica tus eventos, vende entradas y gestiona a tus asistentes desde el panel de organizadores de AfroEventos.',
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.png', type: 'image/png', sizes: '1080x1080' },
+    ],
+    shortcut: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '1080x1080', type: 'image/png' }],
   },
   // El panel es una aplicación privada: por defecto no se indexa.
   // Las páginas públicas de captación (/register, /login) lo sobrescriben.
