@@ -1,7 +1,7 @@
 # PROJECT CONTEXT & HANDOVER: AfroEventos
 
-**Última Actualización:** 9 de Junio de 2026 (Sesión 23)
-**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas) + **Sesión 21**: Copy UI web-client (hero headline "EL PUNTO DE ENCUENTRO DE NUESTRA GENTE", subtítulo, fuente 1.13rem, OrganizerCTA 1.04rem, CTA login eventos) + web-admin puerto 4202 fijado en project.json + **Sesión 22**: SEO/OG metadata completo (título, descripción, opengraph-image.tsx, JSON-LD Organization) + sistema de favicon completo (favicon.svg negro rx=120, logo-og.svg para Google, apple-touch-icon.png PNG 1080×1080, redirect /favicon.ico, next.config.js) + **Sesión 23**: Notificación por email a admins globales cuando se registra un nuevo organizador (template `new-organizer-registered` + `sendNewOrganizerAlert` + fire-and-forget en `registerHost`)
+**Última Actualización:** 9 de Junio de 2026 (Sesión 24)
+**Estado del Proyecto:** Fases 1-4 Completas + Portal Cliente completo + Panel Host completo + Panel Admin completo + Sistema de Emails Transaccionales completo + Auth flow (verify/forgot/reset password) + URLs `/eventos/` en español + Favicons AfroEventos + Sistema de Banners Publicitarios completo (full-stack) + UI/UX Portal Cliente (Destacados Adaptativos + FeaturedCarousel + EventsGrid con paginación real) + OrganizerCTA + Navbar dropdown + Galería de eventos rediseñada + sellOnSite en zonas (full-stack) + Bloqueo de Organizadores (full-stack) + Modales personalizados (sin confirm/alert nativo) + Persistencia de vista en URL + Impersonación de Organizadores por Admin + Control de Pasarela de Pagos (global + por organizador) + Límite de eventos por plan con conteo anual por aniversario + Paginación real en API + Sistema de imágenes optimizado (Sharp WebP + límites configurables desde .env) + **UI Polish**: precios ocultos en EventCard + hover shadows eliminados en navbar + logos de sidebars clicables + logo footer clicable + **PLATAFORMA COMPLETA EN PRODUCCIÓN**: API + 3 frontends desplegados en Coolify + DB con schema aplicado + primer admin creado + **EMAILS EN PRODUCCIÓN**: Resend SMTP configurado + 12 plantillas con logo oficial + best practices de entregabilidad + **Sesión 13**: Asistentes Admin + Planes ocultos + Preview eventos + Flujo Borrador→Publicar + **Sesión 14**: Categorías full-stack + Buscador fix + Banner slider fixes + **Sesión 15**: Modo Prueba + Kill-switch pagos + UX compra + **Sesión 16**: `.env` sacado de git + `findAll` optimizado + limpieza imágenes huérfanas + `as any` eliminados + **Sesión 17**: UX Responsive Portal Cliente completo (imagen 1:1 móvil portrait, hero carousel oculto móvil, tablet hero/destacados mejorado, `object-fit:contain`, logo admin login clicable, OrganizerCTA segundo botón) + **Sesión 18**: Validación completa de formularios (`@Matches` teléfono en backend + `pattern`/`type=tel` en 6 frontends) + UX web-host registro (prefijo +593 en teléfono, etiquetas botones simplificadas) + **Sesión 19**: `Ticket.eventId/zoneName/seatNumber` (denormalizado, paginación real de `attendees/me` + notificaciones sin decodificar JWT, backfill) + Sistema de imágenes con resize server-side por tipo (Sharp `kind`: banner libre/no-recorta, cuadrada 1080×1080, retrato 1200×1600) + aviso de resolución mínima + etiquetas con tamaño recomendado + banner a proporción natural (detalle/tarjeta destacada/preview host) + `uploads/` sacado de git tracking (commit `9cc64bb`) + de-duplicación de estilos de tickets en `global.css` (fix grilla 2-vs-3 columnas) + **Sesión 21**: Copy UI web-client (hero headline "EL PUNTO DE ENCUENTRO DE NUESTRA GENTE", subtítulo, fuente 1.13rem, OrganizerCTA 1.04rem, CTA login eventos) + web-admin puerto 4202 fijado en project.json + **Sesión 22**: SEO/OG metadata completo (título, descripción, opengraph-image.tsx, JSON-LD Organization) + sistema de favicon completo (favicon.svg negro rx=120, logo-og.svg para Google, apple-touch-icon.png PNG 1080×1080, redirect /favicon.ico, next.config.js) + **Sesión 23**: Notificación por email a admins globales cuando se registra un nuevo organizador (template `new-organizer-registered` + `sendNewOrganizerAlert` + fire-and-forget en `registerHost`) + **Sesión 24**: UX pantalla PENDING organizadores (full-page sin sidebar, progress tracker, authLoading guard sin flash) + favicons web-host/web-admin corregidos (favicon.svg negro rx=120 + apple-touch-icon.png + icons config completo) + copy registro organizador + email welcome-host sin tiempos específicos
 **Propósito:** Carga instantánea de contexto para modelos de IA o desarrolladores.
 
 ---
@@ -685,6 +685,62 @@ Las categorías son entidades gestionables en la BD (`EventCategory`). El campo 
 ---
 
 ## 14. Registro de Cambios
+
+### Sesión del 9 de Junio de 2026 (Sesión 24) — UX Pantalla PENDING + Favicons web-host/web-admin + Copy registro
+
+#### Contexto / objetivo
+Mejorar la experiencia de un organizador recién registrado cuya cuenta está pendiente de aprobación: eliminar el flash del dashboard en la recarga, mostrar una pantalla dedicada sin sidebar, y corregir los favicons de los paneles de organizador y admin para que sean idénticos al Portal de Clientes.
+
+#### Cambios realizados
+
+**`apps/web-host/src/app/dashboard/page.tsx`**:
+- Añadido guard `authLoading` al inicio del componente: mientras el `AuthContext` resuelve el `localStorage`, se muestra un spinner sobre fondo negro. Elimina el "flash" del dashboard completo que aparecía al recargar la página con una cuenta PENDING.
+- Nueva pantalla dedicada para organizadores `status !== 'APPROVED'` (reemplaza el layout con Sidebar que mostraba el menú de navegación de forma inaccesible):
+  - Full-page sin Sidebar (fondo oscuro con gradiente verde sutil de marca)
+  - Logo AfroEventos arriba
+  - Badge "⏳ PENDIENTE DE APROBACIÓN" (ámbar)
+  - Título "Solicitud recibida" + párrafo con nombre de la organización
+  - Progress tracker de 3 pasos (igual que el email welcome-host): Solicitud enviada ✅ / Revisión en proceso / Cuenta activada
+  - Botón "← Cerrar Sesión y Volver"
+  - Línea de soporte `soporte@afroeventos.com` al pie
+
+**`apps/api/src/app/mail/templates/welcome-host.template.ts`**:
+- Eliminada la sección "💡 Mientras esperas" (cuadro TIP con texto de orientación)
+- Texto del hero: `"24 a 48 horas hábiles"` → `"en la brevedad posible"` (no da compromisos de tiempo)
+- Texto del step 2 del tracker: `"Verificamos los datos de tu organización. Esto toma 24–48 h."` → `"Verificará los datos de tu organización."` (coherencia de tiempo verbal con "Nuestro equipo revisará…")
+
+**`apps/web-host/src/app/register/page.tsx`**:
+- Subtítulo de la página: `"Crea, administra y vende tickets para tus eventos masivos"` → `"Crea, administra y publica tus eventos"`
+- Descripción de plan en el selector de planes: añadido `"por año"` al texto de límite de eventos (`"Crea y gestiona hasta N eventos por año."`)
+
+**`apps/web-host/public/favicon.svg`** y **`apps/web-admin/public/favicon.svg`**:
+- Reemplazados con el SVG correcto de web-client: incluye `<rect ... rx="120" fill="#000000"/>` — fondo negro con esquinas redondeadas estilo app icon. Los SVG anteriores solo tenían los paths del icono sin fondo.
+
+**`apps/web-host/public/apple-touch-icon.png`** y **`apps/web-admin/public/apple-touch-icon.png`** *(nuevos)*:
+- Copiados desde `web-client/public/apple-touch-icon.png` (1080×1080 PNG)
+
+**`apps/web-host/src/app/layout.tsx`** y **`apps/web-admin/app/layout.tsx`**:
+- `icons` actualizado al mismo formato que web-client: array con SVG + PNG, `shortcut` y `apple` explícitos:
+  ```typescript
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/apple-touch-icon.png', type: 'image/png', sizes: '1080x1080' },
+    ],
+    shortcut: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '1080x1080', type: 'image/png' }],
+  }
+  ```
+
+#### Comportamiento
+- Al recargar `/dashboard` con cuenta PENDING: spinner negro → pantalla dedicada (sin destello del dashboard)
+- Organizador PENDING ve solo la pantalla de solicitud, sin acceso visual a ninguna función del panel
+- Favicon idéntico en las 3 aplicaciones: fondo negro, esquinas redondeadas, icono verde
+
+#### Commit
+- `2d736a0` — fix(ux): mejoras de UX en registro de organizadores, emails y favicons
+
+---
 
 ### Sesión del 9 de Junio de 2026 (Sesión 23) — Notificación a Admins al Registrarse un Nuevo Organizador
 
