@@ -289,22 +289,6 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                   <div style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', aspectRatio: '21/9' }}>
                     <iframe src={event.mapUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Mapa del evento" />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <a
-                      className="map-directions-btn"
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                        [event.location, event.city].filter(Boolean).join(', ') || event.title
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Abrir indicaciones en Google Maps"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polygon points="3 11 22 2 13 21 11 13 3 11" />
-                      </svg>
-                      Cómo llegar
-                    </a>
-                  </div>
                 </div>
               )}
 
