@@ -36,6 +36,13 @@ import { OgImageModule } from './og-image/og-image.module';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
+      // Los nombres de archivo son UUID inmutables: al reemplazar un logo/avatar
+      // se genera un UUID nuevo (URL nueva), así que es seguro cachear 1 año.
+      // Elimina la re-descarga de imágenes en cada visita (Expires headers).
+      serveStaticOptions: {
+        maxAge: '365d',
+        immutable: true,
+      },
     }),
     PrismaModule,
     RedisModule,

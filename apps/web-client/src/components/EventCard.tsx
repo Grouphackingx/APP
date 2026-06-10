@@ -44,7 +44,7 @@ export function EventCard({
       id={`event-card-${event.id}`}
     >
       <div className="event-card-image">
-        <img src={event.squareImageUrl || event.imageUrl || '/default-portrait.svg'} alt={event.title} />
+        <img src={event.squareImageUrl || event.imageUrl || '/default-portrait.svg'} alt={event.title} loading="lazy" decoding="async" />
         {event.category && (
           <div className="event-card-badge event-card-badge--category">
             {event.category}

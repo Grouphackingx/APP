@@ -95,7 +95,7 @@ export function FeaturedCarousel({ events }: { events: EventItem[] }) {
                 >
                   <div className="fcarousel-img">
                     {img
-                      ? <img src={img} alt={event.title} />
+                      ? <img src={img} alt={event.title} loading="lazy" decoding="async" />
                       : <div className="fcarousel-no-img">🎵</div>
                     }
                     <span className="featured-badge">★ Destacado</span>

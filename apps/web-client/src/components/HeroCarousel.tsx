@@ -130,7 +130,7 @@ export function HeroCarousel({ events }: { events: CarouselEvent[] }) {
                 className="hcc-link"
               >
                 {img ? (
-                  <img src={img} alt={event.title} className="hcc-img" draggable={false} />
+                  <img src={img} alt={event.title} className="hcc-img" draggable={false} loading={isActive ? 'eager' : 'lazy'} fetchPriority={isActive ? 'high' : 'auto'} decoding="async" />
                 ) : (
                   <div className="hcc-placeholder">
                     <span>🎵</span>

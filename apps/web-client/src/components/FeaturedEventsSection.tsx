@@ -40,7 +40,7 @@ export function FeaturedEventsSection({ events }: { events: EventItem[] }) {
                 >
                   <div className="featured-card-h-img">
                     {img
-                      ? <img src={img} alt={event.title} />
+                      ? <img src={img} alt={event.title} loading="lazy" decoding="async" />
                       : <div className="featured-card-no-img">🎵</div>
                     }
                     <span className="featured-badge">★ Destacado</span>
@@ -72,7 +72,7 @@ export function FeaturedEventsSection({ events }: { events: EventItem[] }) {
                 >
                   <div className="featured-card-v-img">
                     {img
-                      ? <img src={img} alt={event.title} />
+                      ? <img src={img} alt={event.title} loading="lazy" decoding="async" />
                       : <div className="featured-card-no-img">🎵</div>
                     }
                     <span className="featured-badge">★ Destacado</span>

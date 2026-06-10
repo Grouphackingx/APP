@@ -55,6 +55,8 @@ export function BannerSlider({ banners }: BannerSliderProps) {
                       src={resolveUrl(banner.imageUrl)}
                       alt={banner.title || 'Banner publicitario'}
                       className="banner-slide-img"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </a>
                 ) : (
@@ -62,6 +64,8 @@ export function BannerSlider({ banners }: BannerSliderProps) {
                     src={resolveUrl(banner.imageUrl)}
                     alt={banner.title || 'Banner publicitario'}
                     className="banner-slide-img"
+                    loading="lazy"
+                    decoding="async"
                   />
                 )}
               </div>

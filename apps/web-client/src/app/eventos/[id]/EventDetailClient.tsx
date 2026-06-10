@@ -15,7 +15,7 @@ function EventGallery({ urls }: { urls: string[] }) {
       <div className="evg-section">
         <h3 className="evg-title">Galería</h3>
         <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-          <img src={urls[0]} alt="Galería" style={{ width: '100%', height: 'auto', display: 'block' }} />
+          <img src={urls[0]} alt="Galería" style={{ width: '100%', height: 'auto', display: 'block' }} loading="lazy" decoding="async" />
         </div>
       </div>
     );
@@ -27,7 +27,7 @@ function EventGallery({ urls }: { urls: string[] }) {
       <h3 className="evg-title">Galería</h3>
 
       <div className="evg-main">
-        <img key={active} src={urls[active]} alt={`Galería ${active + 1}`} className="evg-main-img" />
+        <img key={active} src={urls[active]} alt={`Galería ${active + 1}`} className="evg-main-img" loading="lazy" decoding="async" />
         <button className="evg-arrow evg-arrow--prev" onClick={() => setActive(i => (i - 1 + urls.length) % urls.length)} aria-label="Anterior">‹</button>
         <button className="evg-arrow evg-arrow--next" onClick={() => setActive(i => (i + 1) % urls.length)} aria-label="Siguiente">›</button>
         <div className="evg-counter">{active + 1} / {urls.length}</div>
@@ -36,7 +36,7 @@ function EventGallery({ urls }: { urls: string[] }) {
       <div className="evg-thumbs">
         {urls.map((url, i) => (
           <button key={i} className={`evg-thumb${i === active ? ' evg-thumb--active' : ''}`} onClick={() => setActive(i)} aria-label={`Ver imagen ${i + 1}`}>
-            <img src={url} alt={`Miniatura ${i + 1}`} />
+            <img src={url} alt={`Miniatura ${i + 1}`} loading="lazy" decoding="async" />
           </button>
         ))}
       </div>
@@ -194,11 +194,16 @@ export function EventDetailClient({ event }: { event: EventItem }) {
               className="event-detail-hero-banner"
               src={event.bannerImageUrl || event.imageUrl || '/default-banner.jpg'}
               alt={event.title}
+              loading="lazy"
+              fetchPriority="high"
+              decoding="async"
             />
             <img
               className="event-detail-hero-square"
               src={event.squareImageUrl || event.imageUrl || event.bannerImageUrl || '/default-banner.jpg'}
               alt={event.title}
+              loading="lazy"
+              decoding="async"
             />
           </div>
 
@@ -243,7 +248,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                 <div className="info-item">
                   <div className="info-item-icon">
                     {event.organizer?.organizerProfile?.organizationLogo ? (
-                      <img src={event.organizer.organizerProfile.organizationLogo} alt={event.organizer.organizerProfile.organizationName || event.organizer.name} className="organizer-avatar" />
+                      <img src={event.organizer.organizerProfile.organizationLogo} alt={event.organizer.organizerProfile.organizationName || event.organizer.name} className="organizer-avatar" loading="lazy" decoding="async" />
                     ) : (
                       <div className="organizer-avatar organizer-avatar--fallback">
                         {(event.organizer?.organizerProfile?.organizationName || event.organizer?.name || '?').charAt(0).toUpperCase()}
@@ -319,7 +324,7 @@ export function EventDetailClient({ event }: { event: EventItem }) {
 
                 {event.seatingMapImageUrl && (
                   <div className="seating-map-container" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-                    <img src={event.seatingMapImageUrl} alt="Mapa de Localidades" style={{ maxWidth: '100%', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }} />
+                    <img src={event.seatingMapImageUrl} alt="Mapa de Localidades" style={{ maxWidth: '100%', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }} loading="lazy" decoding="async" />
                   </div>
                 )}
 

@@ -167,7 +167,7 @@ export default function MyProfilePage() {
         <div className={`profile-avatar-wrapper${uploadingAvatar ? ' avatar-uploading' : ''}`}>
           <div className="profile-avatar">
             {avatarPreview
-              ? <img src={avatarPreview} alt="Foto de perfil" />
+              ? <img src={avatarPreview} alt="Foto de perfil" loading="lazy" decoding="async" />
               : <span>👤</span>
             }
           </div>
