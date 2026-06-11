@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>AfroEventos · Manual de Marca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#6AC44D; --green-light:#4caf50; --green-dark:#2e7031;
+    --bg:#0A0B0D; --card:#121314; --card2:#1A1B1D;
+    --border:#232426; --white:#FFFFFF; --gray:#82868E; --muted:#5e626b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  html,body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;}
+  @page{size:A4;margin:0;}
+  .page{
+    width:210mm;min-height:297mm;padding:22mm 20mm;background:var(--bg);
+    position:relative;overflow:hidden;page-break-after:always;display:flex;flex-direction:column;
+  }
+  .page:last-child{page-break-after:auto;}
+
+  /* ---------- PORTADA ---------- */
+  .cover{justify-content:center;align-items:flex-start;}
+  .cover::before{content:'';position:absolute;top:-120mm;right:-90mm;width:240mm;height:240mm;border-radius:50%;background:radial-gradient(circle,rgba(106,196,77,0.18),transparent 60%);}
+  .cover-eyebrow{font-size:11pt;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+  .cover-eyebrow::before{content:'';width:34px;height:2px;background:var(--green);}
+  .cover h1{font-family:'Anton',sans-serif;font-size:68pt;line-height:0.98;text-transform:uppercase;letter-spacing:0.01em;}
+  .cover h1 .accent{color:var(--green);}
+  .cover-sub{font-size:13pt;color:var(--gray);margin-top:26px;max-width:130mm;line-height:1.7;}
+  .cover-foot{position:absolute;bottom:22mm;left:20mm;right:20mm;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:14px;font-size:9.5pt;color:var(--muted);letter-spacing:0.04em;}
+
+  /* ---------- SECCIONES ---------- */
+  .sec-tag{font-size:9.5pt;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+  .sec-tag::before{content:'';width:24px;height:2px;background:var(--green);}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:26pt;font-weight:700;margin-bottom:6px;}
+  .sec-lead{font-size:11pt;color:var(--gray);line-height:1.7;max-width:150mm;margin-bottom:26px;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:16px;}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .card-title{font-family:'Space Grotesk',sans-serif;font-size:15pt;font-weight:600;}
+  .card-meta{font-size:9pt;color:var(--green);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;}
+  .card-desc{font-size:10pt;color:var(--gray);line-height:1.6;margin-top:4px;}
+
+  /* Tipos: muestra grande */
+  .type-anton{font-family:'Anton',sans-serif;font-size:40pt;text-transform:uppercase;line-height:1;}
+  .type-grotesk{font-family:'Space Grotesk',sans-serif;font-size:30pt;font-weight:700;}
+  .type-inter{font-family:'Inter',sans-serif;font-size:26pt;font-weight:600;}
+  .glyphs{font-size:10pt;color:var(--muted);margin-top:10px;letter-spacing:0.02em;}
+
+  /* Paleta */
+  .swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .sw{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .sw-color{height:70px;}
+  .sw-info{padding:10px 12px;background:var(--card);}
+  .sw-name{font-size:10pt;font-weight:600;}
+  .sw-hex{font-family:'Space Grotesk',sans-serif;font-size:10pt;color:var(--green);letter-spacing:0.04em;margin-top:2px;}
+  .sw-use{font-size:8.5pt;color:var(--muted);margin-top:3px;}
+
+  /* Hero breakdown */
+  .hero-demo{background:linear-gradient(120deg,#0d0e10,#121314);border:1px solid var(--border);border-radius:16px;padding:34px 30px;position:relative;overflow:hidden;margin-bottom:22px;}
+  .hero-demo::before{content:'';position:absolute;top:-40mm;right:-40mm;width:90mm;height:90mm;border-radius:50%;background:radial-gradient(circle,rgba(106,196,77,0.15),transparent 60%);}
+  .hd-eyebrow{font-size:9pt;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .hd-eyebrow::before{content:'';width:24px;height:2px;background:var(--green);}
+  .hd-title{font-family:'Anton',sans-serif;font-size:34pt;line-height:1.05;text-transform:uppercase;}
+  .hd-title .accent{color:var(--green);}
+  .hd-sub{font-size:10.5pt;color:var(--gray);margin-top:14px;max-width:120mm;line-height:1.6;}
+  .hd-cta{display:inline-block;margin-top:18px;background:#fff;color:#000;font-weight:800;font-size:9pt;letter-spacing:0.08em;text-transform:uppercase;padding:11px 26px;border-radius:999px;}
+
+  .spec-row{display:flex;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px;}
+  .spec-k{width:46mm;background:var(--card2);padding:12px 16px;font-size:9.5pt;font-weight:600;color:var(--white);}
+  .spec-v{flex:1;background:var(--card);padding:12px 16px;font-size:9.5pt;color:var(--gray);line-height:1.5;}
+  .spec-v b{color:var(--white);font-weight:600;}
+  .spec-v .chip{display:inline-block;font-family:'Space Grotesk',sans-serif;background:rgba(106,196,77,0.12);color:var(--green);padding:1px 7px;border-radius:5px;font-size:9pt;}
+
+  .footer{margin-top:auto;border-top:1px solid var(--border);padding-top:12px;font-size:8.5pt;color:var(--muted);display:flex;justify-content:space-between;letter-spacing:0.04em;}
+  .dl{font-size:10pt;color:var(--gray);line-height:1.9;margin-top:6px;}
+  .dl a{color:var(--green);text-decoration:none;}
+  ul.tips{list-style:none;margin-top:8px;}
+  ul.tips li{font-size:10pt;color:var(--gray);line-height:1.6;padding-left:20px;position:relative;margin-bottom:8px;}
+  ul.tips li::before{content:'';position:absolute;left:0;top:8px;width:8px;height:8px;border-radius:50%;background:var(--green);}
+  ul.tips li b{color:var(--white);font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- ========== PORTADA ========== -->
+<section class="page cover">
+  <div class="cover-eyebrow">Identidad Visual · 2026</div>
+  <h1>Manual<br>de <span class="accent">Marca</span></h1>
+  <p class="cover-sub">Guía de tipografías, colores y estilo del hero para mantener una identidad coherente en la web y en todas las publicaciones de redes sociales.</p>
+  <div class="cover-foot">
+    <span>AFROEVENTOS.COM</span>
+    <span>Documento interno · v1.0</span>
+  </div>
+</section>
+
+<!-- ========== TIPOGRAFÍAS ========== -->
+<section class="page">
+  <div class="sec-tag">01 · Tipografías</div>
+  <h2>Las fuentes de la marca</h2>
+  <p class="sec-lead">Tres familias de Google Fonts (gratuitas) componen todo el sistema. Cada una tiene un rol específico: impacto, jerarquía y lectura.</p>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">Anton</span><span class="card-meta">Titulares de impacto · Hero</span></div>
+    <div class="type-anton">AFRO EVENTOS</div>
+    <div class="card-desc">Para los títulos grandes y el hero. Siempre en MAYÚSCULAS. Transmite fuerza y presencia.</div>
+    <div class="glyphs">A B C D E F G &nbsp; a b c d e f g &nbsp; 0 1 2 3 4 5 &nbsp; Peso: 400</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">Space Grotesk</span><span class="card-meta">Títulos secundarios</span></div>
+    <div class="type-grotesk">Eventos Destacados</div>
+    <div class="card-desc">Subtítulos, nombres de sección y encabezados de tarjetas. Moderna y técnica.</div>
+    <div class="glyphs">A B C D E F G &nbsp; a b c d e f g &nbsp; 0 1 2 3 4 5 &nbsp; Pesos: 400 – 700</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title">Inter</span><span class="card-meta">Texto y botones</span></div>
+    <div class="type-inter">Descubre los mejores eventos de tu ciudad.</div>
+    <div class="card-desc">Cuerpo de texto, descripciones, botones y todo lo demás. Máxima legibilidad.</div>
+    <div class="glyphs">A B C D E F G &nbsp; a b c d e f g &nbsp; 0 1 2 3 4 5 &nbsp; Pesos: 300 – 900</div>
+  </div>
+
+  <div class="footer"><span>AfroEventos · Manual de Marca</span><span>01 · Tipografías</span></div>
+</section>
+
+<!-- ========== HERO ========== -->
+<section class="page">
+  <div class="sec-tag">02 · El Hero</div>
+  <h2>Estilo del hero de inicio</h2>
+  <p class="sec-lead">La firma visual de AfroEventos. Replica esta estructura en posts de portada y anuncios para mantener consistencia con la web.</p>
+
+  <div class="hero-demo">
+    <div class="hd-eyebrow">La plataforma de eventos</div>
+    <div class="hd-title">VIVE LA<br><span class="accent">EXPERIENCIA</span></div>
+    <p class="hd-sub">Encuentra, compra y disfruta los mejores eventos cerca de ti, todo en un solo lugar.</p>
+    <span class="hd-cta">Explorar eventos</span>
+  </div>
+
+  <div class="spec-row"><div class="spec-k">Eyebrow</div><div class="spec-v"><b>Inter</b> · peso 700 · MAYÚSCULAS · espaciado de letras amplio (0.14em) · color <span class="chip">#6AC44D</span></div></div>
+  <div class="spec-row"><div class="spec-k">Título</div><div class="spec-v"><b>Anton</b> · MAYÚSCULAS · blanco <span class="chip">#FFFFFF</span> con palabra clave en verde <span class="chip">#6AC44D</span> · interlineado ajustado</div></div>
+  <div class="spec-row"><div class="spec-k">Subtítulo</div><div class="spec-v"><b>Inter</b> · peso normal · gris <span class="chip">#82868E</span></div></div>
+  <div class="spec-row"><div class="spec-k">Botón (CTA)</div><div class="spec-v"><b>Inter</b> · peso 800 · MAYÚSCULAS · fondo blanco + texto negro · forma de píldora</div></div>
+
+  <div class="footer"><span>AfroEventos · Manual de Marca</span><span>02 · El Hero</span></div>
+</section>
+
+<!-- ========== COLORES ========== -->
+<section class="page">
+  <div class="sec-tag">03 · Paleta de color</div>
+  <h2>Colores de la marca</h2>
+  <p class="sec-lead">Tema oscuro con un verde vibrante como protagonista. Usa el negro como fondo y el verde para acentos y llamados a la acción.</p>
+
+  <div class="swatches">
+    <div class="sw"><div class="sw-color" style="background:#6AC44D"></div><div class="sw-info"><div class="sw-name">Verde primario</div><div class="sw-hex">#6AC44D</div><div class="sw-use">Marca · acentos · botones</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#4caf50"></div><div class="sw-info"><div class="sw-name">Verde claro</div><div class="sw-hex">#4caf50</div><div class="sw-use">Hover · resaltados</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#2e7031"></div><div class="sw-info"><div class="sw-name">Verde oscuro</div><div class="sw-hex">#2e7031</div><div class="sw-use">Estados activos</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#0A0B0D"></div><div class="sw-info"><div class="sw-name">Negro fondo</div><div class="sw-hex">#0A0B0D</div><div class="sw-use">Fondo principal</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#121314"></div><div class="sw-info"><div class="sw-name">Negro tarjeta</div><div class="sw-hex">#121314</div><div class="sw-use">Tarjetas · superficies</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#232426"></div><div class="sw-info"><div class="sw-name">Borde</div><div class="sw-hex">#232426</div><div class="sw-use">Separadores sutiles</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#FFFFFF"></div><div class="sw-info"><div class="sw-name">Blanco</div><div class="sw-hex">#FFFFFF</div><div class="sw-use">Títulos · texto principal</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#82868E"></div><div class="sw-info"><div class="sw-name">Gris texto</div><div class="sw-hex">#82868E</div><div class="sw-use">Texto secundario</div></div></div>
+    <div class="sw"><div class="sw-color" style="background:#5e626b"></div><div class="sw-info"><div class="sw-name">Gris tenue</div><div class="sw-hex">#5e626b</div><div class="sw-use">Texto apagado · pies</div></div></div>
+  </div>
+
+  <div class="footer"><span>AfroEventos · Manual de Marca</span><span>03 · Paleta de color</span></div>
+</section>
+
+<!-- ========== USO EN REDES ========== -->
+<section class="page">
+  <div class="sec-tag">04 · Aplicación en redes</div>
+  <h2>Cómo publicar con coherencia</h2>
+  <p class="sec-lead">Pautas rápidas para que cada post se sienta parte de AfroEventos.</p>
+
+  <ul class="tips">
+    <li><b>Fondo:</b> usa siempre el negro <span style="color:var(--green)">#0A0B0D</span> como base. Da contraste y deja brillar el verde.</li>
+    <li><b>Titular:</b> en <b>Anton</b>, MAYÚSCULAS, blanco, con <b>una sola palabra clave en verde</b>. No más de 3–4 palabras.</li>
+    <li><b>Eyebrow:</b> texto corto en <b>Inter</b> peso bold, mayúsculas y con mucho espaciado entre letras, en verde. Va arriba del titular.</li>
+    <li><b>Texto de apoyo:</b> en <b>Inter</b>, gris, breve y legible.</li>
+    <li><b>Botón / llamado a la acción:</b> píldora blanca con texto negro en mayúsculas (Inter bold).</li>
+    <li><b>Verde con moderación:</b> es un acento, no el fondo. Úsalo para destacar, no para rellenar.</li>
+  </ul>
+
+  <div class="card" style="margin-top:24px;">
+    <div class="card-title" style="margin-bottom:12px;">Descarga de fuentes (gratis)</div>
+    <div class="dl">
+      Anton — <a>fonts.google.com/specimen/Anton</a><br>
+      Space Grotesk — <a>fonts.google.com/specimen/Space+Grotesk</a><br>
+      Inter — <a>fonts.google.com/specimen/Inter</a>
+    </div>
+    <div class="card-desc" style="margin-top:12px;">En <b style="color:var(--white)">Canva</b> las tres están disponibles por nombre. Combínalas con el fondo negro y el verde de marca y tus publicaciones tendrán la misma identidad que la web.</div>
+  </div>
+
+  <div class="footer"><span>AfroEventos · Manual de Marca</span><span>04 · Aplicación en redes</span></div>
+</section>
+
+</body>
+</html>

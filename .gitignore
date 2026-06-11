@@ -69,3 +69,6 @@ npm-debug.*
 *.orig.*
 web-build/
 cache/
+
+# Material de marketing / marca (no se sube a GitHub)
+mk-afroeventos/
