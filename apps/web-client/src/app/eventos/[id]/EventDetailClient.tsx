@@ -383,7 +383,9 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                 <div className="zones-list">
                   {event.zones.map((zone) => {
                     const availableCount = (zone.seats || []).filter((s) => !s.isSold && !soldSeatIds.includes(s.id)).length;
-                    const isSoldOut = availableCount === 0;
+                    // Solo está "agotada" una zona que realmente tiene asientos y todos están vendidos.
+                    // Una zona gratis o sin capacidad (precio 0 / capacity 0) no es agotada — es de entrada libre.
+                    const isSoldOut = (zone.seats?.length ?? 0) > 0 && availableCount === 0;
 
                     if (zone.sellOnSite) {
                       return (
@@ -414,7 +416,11 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                             </h3>
                             {zone.description && <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem', marginBottom: '0.5rem', fontWeight: 400, lineHeight: '1.4' }}>{zone.description}</div>}
                           </div>
-                          <span>{Number(zone.price) === 0 ? 'GRATIS' : `$${Number(zone.price).toFixed(2)}`}</span>
+                          {Number(zone.price) === 0 ? (
+                            <span style={{ display: 'inline-block', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase', color: 'var(--color-primary)', background: 'rgba(106,196,77,0.12)', border: '1px solid rgba(106,196,77,0.28)', padding: '3px 9px', borderRadius: '6px', whiteSpace: 'nowrap', lineHeight: 1.4 }}>Gratis</span>
+                          ) : (
+                            <span>{`$${Number(zone.price).toFixed(2)}`}</span>
+                          )}
                         </div>
 
                         {Number(zone.price) !== 0 && (event.hasSeatingChart !== false && zone.capacity <= 50 ? (
