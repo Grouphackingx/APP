@@ -624,12 +624,12 @@ export function EditEventForm({ token, initialData, onSuccess }: EditEventFormPr
           <input
             id="videoEmbedCode"
             type="text"
-            placeholder='Pega aquí el código <iframe src="...">, URL de YouTube, etc.'
+            placeholder='Pega el enlace de YouTube, Instagram, TikTok, Facebook o Vimeo'
             value={videoEmbedCode}
             onChange={(e) => setVideoEmbedCode(e.target.value)}
           />
           <small className="form-text text-muted">
-            Soporta enlaces de YouTube, Vimeo, Facebook, etc.
+            Soporta YouTube (incl. Shorts), Instagram, TikTok, Facebook y Vimeo. Pega el enlace de “Compartir” o el código &lt;iframe&gt;.
           </small>
         </div>
 

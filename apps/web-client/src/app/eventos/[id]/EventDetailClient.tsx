@@ -75,11 +75,46 @@ function stringToColor(str: string): string {
   return ZONE_COLORS[Math.abs(hash) % ZONE_COLORS.length];
 }
 
-function getVideoEmbedUrl(url: string): string {
-  if (!url) return '';
-  const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-  if (ytMatch && ytMatch[1]) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-  return url;
+// Convierte una URL/embed de video a su src embebible. Devuelve null si no se puede embeber.
+function getVideoEmbed(url: string): { src: string; vertical: boolean } | null {
+  if (!url) return null;
+  // Si pegaron un <iframe ... src="...">, trabajar sobre el src extraído
+  const iframeSrc = url.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  const raw = (iframeSrc ? iframeSrc[1] : url).trim();
+
+  // YouTube (watch / youtu.be / shorts / live / embed / nocookie)
+  const yt = raw.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i);
+  if (yt?.[1]) return { src: `https://www.youtube.com/embed/${yt[1]}`, vertical: /\/shorts\//i.test(raw) };
+
+  // Vimeo
+  const vm = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vm?.[1]) return { src: `https://player.vimeo.com/video/${vm[1]}`, vertical: false };
+
+  // Instagram (post / reel / tv)
+  const ig = raw.match(/instagram\.com\/(p|reel|reels|tv)\/([\w-]+)/i);
+  if (ig) {
+    const kind = ig[1].toLowerCase() === 'reels' ? 'reel' : ig[1].toLowerCase();
+    return { src: `https://www.instagram.com/${kind}/${ig[2]}/embed`, vertical: true };
+  }
+
+  // TikTok (.../video/ID, /v/ID, /embed/v2/ID, /player/v1/ID)
+  const tt = raw.match(/tiktok\.com\/(?:@[\w.]+\/video\/|v\/|embed\/v2\/|player\/v1\/)(\d+)/i);
+  if (tt?.[1]) return { src: `https://www.tiktok.com/player/v1/${tt[1]}`, vertical: true };
+
+  // Facebook (video, watch, reel, fb.watch)
+  if (/facebook\.com|fb\.watch/i.test(raw)) {
+    if (/plugins\/video\.php/i.test(raw)) return { src: raw, vertical: /reel/i.test(raw) };
+    const vertical = /facebook\.com\/reel\//i.test(raw);
+    return { src: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(raw)}&show_text=false`, vertical };
+  }
+
+  // Otro embed ya válido
+  if (/\/embed|player\./i.test(raw)) return { src: raw, vertical: false };
+
+  // URL de red social no reconocida que el iframe rechazaría → no mostrar
+  if (/youtube\.com|youtu\.be|instagram\.com|tiktok\.com|facebook\.com|fb\.watch/i.test(raw)) return null;
+
+  return { src: raw, vertical: false };
 }
 
 interface SelectedSeat {
@@ -292,14 +327,18 @@ export function EventDetailClient({ event }: { event: EventItem }) {
                 </div>
               )}
 
-              {event.videoUrl && (
-                <div className="event-detail-video" style={{ marginTop: '2rem' }}>
-                  <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Video</h3>
-                  <div style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', aspectRatio: '16/9' }}>
-                    <iframe src={getVideoEmbedUrl(event.videoUrl)} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title="Video del evento" />
+              {(() => {
+                const video = event.videoUrl ? getVideoEmbed(event.videoUrl) : null;
+                if (!video) return null;
+                return (
+                  <div className="event-detail-video" style={{ marginTop: '2rem' }}>
+                    <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Video</h3>
+                    <div style={{ overflow: 'hidden', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', aspectRatio: video.vertical ? '9/16' : '16/9', maxWidth: video.vertical ? 360 : undefined, margin: video.vertical ? '0 auto' : undefined }}>
+                      <iframe src={video.src} width="100%" height="100%" style={{ border: 0 }} allow="autoplay; encrypted-media; picture-in-picture; web-share; fullscreen" allowFullScreen loading="lazy" title="Video del evento" />
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {event.galleryUrls && event.galleryUrls.length > 0 && (
                 <EventGallery urls={event.galleryUrls} />

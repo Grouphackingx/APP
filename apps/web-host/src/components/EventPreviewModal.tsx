@@ -28,11 +28,36 @@ function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' });
 }
 
-function getVideoEmbedUrl(url: string): string {
-  if (!url) return '';
-  const yt = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-  if (yt?.[1]) return `https://www.youtube.com/embed/${yt[1]}`;
-  return url;
+// Convierte una URL/embed de video a su src embebible. Devuelve null si no se puede embeber.
+function getVideoEmbed(url: string): { src: string; vertical: boolean } | null {
+  if (!url) return null;
+  const iframeSrc = url.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  const raw = (iframeSrc ? iframeSrc[1] : url).trim();
+
+  const yt = raw.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i);
+  if (yt?.[1]) return { src: `https://www.youtube.com/embed/${yt[1]}`, vertical: /\/shorts\//i.test(raw) };
+
+  const vm = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vm?.[1]) return { src: `https://player.vimeo.com/video/${vm[1]}`, vertical: false };
+
+  const ig = raw.match(/instagram\.com\/(p|reel|reels|tv)\/([\w-]+)/i);
+  if (ig) {
+    const kind = ig[1].toLowerCase() === 'reels' ? 'reel' : ig[1].toLowerCase();
+    return { src: `https://www.instagram.com/${kind}/${ig[2]}/embed`, vertical: true };
+  }
+
+  const tt = raw.match(/tiktok\.com\/(?:@[\w.]+\/video\/|v\/|embed\/v2\/|player\/v1\/)(\d+)/i);
+  if (tt?.[1]) return { src: `https://www.tiktok.com/player/v1/${tt[1]}`, vertical: true };
+
+  if (/facebook\.com|fb\.watch/i.test(raw)) {
+    if (/plugins\/video\.php/i.test(raw)) return { src: raw, vertical: /reel/i.test(raw) };
+    const vertical = /facebook\.com\/reel\//i.test(raw);
+    return { src: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(raw)}&show_text=false`, vertical };
+  }
+
+  if (/\/embed|player\./i.test(raw)) return { src: raw, vertical: false };
+  if (/youtube\.com|youtu\.be|instagram\.com|tiktok\.com|facebook\.com|fb\.watch/i.test(raw)) return null;
+  return { src: raw, vertical: false };
 }
 
 // ── Gallery sub-component ──────────────────────────────────────────────────────
@@ -229,14 +254,18 @@ export function EventPreviewModal({ event, onClose }: Props) {
               )}
 
               {/* Video */}
-              {event.videoUrl && (
+              {(() => {
+                const video = event.videoUrl ? getVideoEmbed(event.videoUrl) : null;
+                if (!video) return null;
+                return (
                 <div style={{ marginBottom: '2rem' }}>
                   <h3 style={sectionTitle}>Video</h3>
-                  <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', aspectRatio: '16/9' }}>
-                    <iframe src={getVideoEmbedUrl(event.videoUrl)} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title="Video" />
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', aspectRatio: video.vertical ? '9/16' : '16/9', maxWidth: video.vertical ? 360 : undefined, margin: video.vertical ? '0 auto' : undefined }}>
+                    <iframe src={video.src} width="100%" height="100%" style={{ border: 0 }} allow="autoplay; encrypted-media; picture-in-picture; web-share; fullscreen" allowFullScreen loading="lazy" title="Video" />
                   </div>
                 </div>
-              )}
+                );
+              })()}
 
               {/* Gallery */}
               {event.galleryUrls?.length > 0 && <Gallery urls={event.galleryUrls} />}
